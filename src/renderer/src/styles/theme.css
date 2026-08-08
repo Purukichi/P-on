@@ -1,0 +1,46 @@
+/* ダークテーマの土台。ここの変数を書き換えれば全体の印象が変わる。 */
+:root {
+  /* --- 色 --- */
+  --color-bg: #101014;
+  --color-surface: #17171d;
+  --color-surface-raised: #1f1f27;
+  --color-border: #2a2a35;
+
+  --color-text: #eceCf2;
+  --color-text-muted: #8a8a99;
+  --color-text-faint: #5c5c6b;
+
+  --color-accent: #6c8cff;
+  --color-accent-hover: #8aa2ff;
+  --color-accent-contrast: #0b0b10;
+
+  --color-track: #2a2a35;
+  --color-danger: #ff6b6b;
+
+  /* --- かたち --- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* --- 余白 --- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* --- 文字 --- */
+  --font-sans:
+    'Segoe UI', system-ui, -apple-system, 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', Meiryo,
+    sans-serif;
+  --font-mono: 'Cascadia Mono', 'Consolas', ui-monospace, monospace;
+  --font-size-sm: 12px;
+  --font-size-md: 14px;
+  --font-size-lg: 17px;
+
+  /* --- その他 --- */
+  --transition-fast: 120ms ease;
+  --shadow-soft: 0 8px 24px rgb(0 0 0 / 45%);
+}

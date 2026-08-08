@@ -1,0 +1,74 @@
+/* 再生 / 停止ボタン。前後スキップを足すならここに並べる。 */
+.transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+.transport__button {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 0;
+  width: 44px;
+  height: 44px;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.transport__button:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent-hover);
+}
+
+.transport__button:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.transport__button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 主役の再生ボタンだけ大きく、アクセント色で */
+.transport__button--play {
+  width: 60px;
+  height: 60px;
+  background: var(--color-accent);
+  border-color: transparent;
+  color: var(--color-accent-contrast);
+}
+
+.transport__button--play:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  color: var(--color-accent-contrast);
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+}
+
+.transport__button--play .icon {
+  width: 26px;
+  height: 26px;
+}
+
+/* data-playing に応じて ▶ / ⏸ を差し替える */
+.transport__button--play .icon--pause,
+.transport__button--play[data-playing='true'] .icon--play {
+  display: none;
+}
+
+.transport__button--play[data-playing='true'] .icon--pause {
+  display: block;
+}

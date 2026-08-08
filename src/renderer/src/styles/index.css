@@ -1,0 +1,16 @@
+/*
+ * スタイルの入口。
+ * 色や角丸などの「見た目の決め事」は theme.css の変数に集約してあるので、
+ * 全体の印象を変えたいときはまず theme.css を触るのが早い。
+ * 個別パーツを作り込みたいときは components/*.css を編集する。
+ */
+@import './theme.css';
+@import './base.css';
+
+@import './components/button.css';
+@import './components/artwork.css';
+@import './components/track-info.css';
+@import './components/seekbar.css';
+@import './components/transport.css';
+@import './components/volume.css';
+@import './components/status.css';

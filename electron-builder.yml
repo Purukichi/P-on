@@ -1,0 +1,37 @@
+appId: com.hamon.player
+productName: HAMON
+copyright: Copyright © 2026
+
+directories:
+  buildResources: build
+  output: release
+
+# out/ (electron-vite の成果物) と package.json だけがパッケージに入ればよい
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.editorconfig,.gitignore,README.md,CHANGELOG.md}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml,yarn.lock}'
+
+win:
+  # build/icon.ico を置くとアイコンが差し替わる (無ければ Electron 既定アイコン)
+  # icon: build/icon.ico
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  shortcutName: ${productName}
+
+portable:
+  artifactName: ${productName}-${version}-portable.${ext}

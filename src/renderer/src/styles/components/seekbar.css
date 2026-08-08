@@ -1,0 +1,68 @@
+/* シークバー。
+   再生位置は JS が `--fill` (0..1) を書き込むので、
+   バーの塗り分けは CSS 側だけで完結している。 */
+.seekbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.seekbar__input {
+  --fill: 0;
+  --seek-height: 6px;
+  --thumb-size: 14px;
+
+  appearance: none;
+  width: 100%;
+  height: var(--seek-height);
+  margin: 0;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(
+    to right,
+    var(--color-accent) calc(var(--fill) * 100%),
+    var(--color-track) calc(var(--fill) * 100%)
+  );
+  cursor: pointer;
+  transition: height var(--transition-fast);
+}
+
+.seekbar__input::-webkit-slider-thumb {
+  appearance: none;
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  border-radius: 50%;
+  border: none;
+  background: var(--color-text);
+  box-shadow: 0 0 0 0 rgb(108 140 255 / 35%);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.seekbar__input:hover::-webkit-slider-thumb,
+.seekbar__input:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 6px rgb(108 140 255 / 25%);
+}
+
+.seekbar__input:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.seekbar__input:disabled::-webkit-slider-thumb {
+  opacity: 0;
+}
+
+.seekbar__times {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.seekbar__time--current {
+  color: var(--color-text);
+}
