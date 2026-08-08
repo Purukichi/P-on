@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ja" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: hamon-media:; media-src 'self' hamon-media:; font-src 'self'; connect-src 'self' ws:"
+    />
+    <title>HAMON mini</title>
+  </head>
+  <body class="mini-body">
+    <!--
+      ミニプレイヤー。音は鳴らさず、メインウィンドウの再生状態を映して操作を送り返すだけ。
+      ウィンドウ自体が Windows 11 のアクリル素材なので、背景は透過させたままにしている。
+    -->
+    <div class="mini" id="mini" data-playing="false" data-has-track="false">
+      <img class="mini__art" data-el="mini-art" alt="" />
+      <div class="mini__placeholder" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+          <path d="M2 12c1.6-4 3.2-4 4.8 0s3.2 4 4.8 0 3.2-4 4.8 0 3.2 4 4.8 0" />
+        </svg>
+      </div>
+
+      <!-- ドラッグ用の当たり判定。マウスを乗せると下の操作面が出る -->
+      <div class="mini__grip" data-el="mini-grip"></div>
+
+      <div class="mini__panel" data-el="mini-panel">
+        <header class="mini__head">
+          <div class="mini__meta">
+            <p class="mini__title" data-el="mini-title">曲が選ばれていません</p>
+            <p class="mini__artist" data-el="mini-artist">—</p>
+          </div>
+          <button
+            class="mini__iconbutton"
+            type="button"
+            data-el="mini-restore"
+            title="最小化してメインウィンドウに戻る"
+            aria-label="最小化してメインウィンドウに戻る"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="11" width="14" height="2" rx="1" /></svg>
+          </button>
+        </header>
+
+        <div class="mini__seek">
+          <input
+            class="mini__range"
+            type="range"
+            data-el="mini-seek"
+            min="0"
+            max="1"
+            step="0.0001"
+            value="0"
+            aria-label="再生位置"
+          />
+          <div class="mini__times">
+            <span data-el="mini-current">0:00</span>
+            <span data-el="mini-duration">0:00</span>
+          </div>
+        </div>
+
+        <div class="mini__controls">
+          <button class="mini__button" type="button" data-el="mini-prev" title="前の曲" aria-label="前の曲">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 6h2v12H7zm11 0v12l-8-6z" /></svg>
+          </button>
+
+          <button
+            class="mini__button mini__button--play"
+            type="button"
+            data-el="mini-toggle"
+            aria-label="再生"
+          >
+            <svg class="icon--play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>
+            <svg class="icon--pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5h3v14H8zm5 0h3v14h-3z" /></svg>
+          </button>
+
+          <button class="mini__button" type="button" data-el="mini-next" title="次の曲" aria-label="次の曲">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15 6h2v12h-2zM6 6l8 6-8 6z" /></svg>
+          </button>
+
+          <div class="mini__volume">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13L7.5 14.5H4z" /></svg>
+            <input
+              class="mini__range mini__range--volume"
+              type="range"
+              data-el="mini-volume"
+              min="0"
+              max="1"
+              step="0.01"
+              value="0.8"
+              aria-label="音量"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./src/mini.js"></script>
+  </body>
+</html>

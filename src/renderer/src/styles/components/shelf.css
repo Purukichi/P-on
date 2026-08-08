@@ -1,149 +1,192 @@
-/* 画面下のプレイリスト棚。参考画像のアルバム一覧にあたる部分。 */
+/*
+ * 画面下のコレクション棚。
+ * プレイリスト / アルバム / シングルのジャケットが並ぶ。
+ */
 .shelf {
+  position: relative;
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-6);
+  padding: var(--space-4) var(--space-6) var(--space-5);
+  background: var(--color-bg);
   border-top: 1px solid var(--color-border);
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
+  transition: background var(--transition-theme);
 }
 
 .shelf__list {
   display: flex;
   gap: var(--space-3);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-bottom: var(--space-2);
+  scrollbar-width: thin;
 }
 
-.shelf__card {
+.shelf__empty {
+  margin: 0;
+  align-self: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-faint);
+}
+
+/* ---- カード ---- */
+
+.card {
   position: relative;
   display: grid;
   grid-template-rows: auto auto auto;
   justify-items: start;
-  gap: 2px;
-  width: 108px;
+  gap: 1px;
+  width: 104px;
   flex: none;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
   cursor: pointer;
 }
 
-.shelf__art {
+.card__art {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 100%;
-  aspect-ratio: 1;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-text-faint);
+  width: 104px;
+  height: 104px;
+  border-radius: var(--radius-md);
+  background: var(--color-panel);
   overflow: hidden;
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+  box-shadow: var(--shadow-soft);
   transition:
     outline-color var(--transition-fast),
     transform var(--transition-fast);
-  outline: 2px solid transparent;
-  outline-offset: 3px;
 }
 
-.shelf__art svg {
-  width: 32px;
-  height: 32px;
+.card:hover .card__art {
+  transform: translateY(-3px);
 }
 
-.shelf__image {
+.card[data-active='true'] .card__art {
+  outline-color: var(--color-accent);
+}
+
+.card[data-dropping='true'] .card__art {
+  outline-color: var(--color-accent);
+  transform: translateY(-5px);
+}
+
+.card__image {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.shelf__card:hover .shelf__art {
-  transform: translateY(-2px);
+/* 種類の印。アルバム / シングルは CD、プレイリストはリスト */
+.card__badge {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
 }
 
-.shelf__card[data-active='true'] .shelf__art {
-  outline-color: var(--color-accent);
+.card__badge svg {
+  width: 14px;
+  height: 14px;
 }
 
-/* 曲をドラッグしてきたときに受け皿だと分かるように */
-.shelf__card[data-dropping='true'] .shelf__art {
-  outline-color: var(--color-success);
-  transform: translateY(-4px);
+.card[data-type='playlist'] .card__badge {
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
 }
 
-.shelf__name {
-  margin-top: var(--space-1);
-  font-size: var(--font-size-xs);
+.card__name {
+  margin-top: var(--space-2);
   max-width: 100%;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.shelf__count {
+.card__sub {
+  max-width: 100%;
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* カードのツール（名前変更 / 削除）はホバー時だけ */
-.shelf__tools {
+/* プレイリストだけ、ホバー時に名前変更 / 削除を出す */
+.card__tools {
   position: absolute;
-  inset: auto 0 auto auto;
-  top: 0;
+  top: 4px;
+  right: 4px;
   display: none;
   gap: 2px;
-  padding: 2px;
 }
 
-.shelf__card:hover .shelf__tools,
-.shelf__card:focus-within .shelf__tools {
+.card:hover .card__tools,
+.card:focus-within .card__tools {
   display: flex;
 }
 
-.shelf__tool {
+.card__tool {
   appearance: none;
   border: none;
   border-radius: var(--radius-sm);
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
   font: inherit;
   font-size: 10px;
-  padding: 1px 5px;
+  padding: 2px 5px;
   cursor: pointer;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 
-.shelf__tool:hover {
+.card__tool:hover {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
   opacity: 1;
 }
 
-/* 「＋ プレイリスト」 */
+/* ---- 「＋ プレイリスト」 ---- */
+
 .shelf__add {
   appearance: none;
   display: grid;
   place-items: center;
   align-content: center;
-  gap: var(--space-1);
-  width: 108px;
+  gap: 2px;
+  width: 104px;
+  height: 104px;
   flex: none;
   border: 1px dashed var(--color-border-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-text-muted);
   font: inherit;
-  font-size: 20px;
   cursor: pointer;
   transition:
     border-color var(--transition-fast),
+    background var(--transition-fast),
     color var(--transition-fast);
 }
 
 .shelf__add:hover {
   border-color: var(--color-accent);
-  color: var(--color-text);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.shelf__add-mark {
+  font-size: 20px;
+  line-height: 1;
 }
 
 .shelf__add-label {

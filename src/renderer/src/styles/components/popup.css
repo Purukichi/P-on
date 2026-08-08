@@ -1,0 +1,118 @@
+/*
+ * カードにマウスを乗せたときに出るすりガラスのポップアップ。
+ * 収録曲が並び、クリックするとその曲から再生が始まる。
+ * 位置は JS が left / top を書き込む。
+ */
+.popup {
+  position: fixed;
+  z-index: 70;
+  width: 300px;
+  max-height: 340px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  box-shadow: var(--glass-shadow);
+  animation: popup-in 140ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.popup[hidden] {
+  display: none;
+}
+
+@keyframes popup-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.popup__head {
+  display: grid;
+  gap: 1px;
+  padding: var(--space-1) var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.popup__type {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--color-accent-contrast);
+  background: var(--color-accent);
+  justify-self: start;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.popup__name {
+  margin-top: var(--space-1);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popup__sub {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popup__list {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.popup__row {
+  display: grid;
+  grid-template-columns: 2.2em minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.popup__row:hover {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.popup__index,
+.popup__time {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.popup__row:hover .popup__index,
+.popup__row:hover .popup__time {
+  color: inherit;
+}
+
+.popup__title {
+  font-size: var(--font-size-md);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popup__empty {
+  padding: var(--space-3);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-faint);
+  text-align: center;
+}

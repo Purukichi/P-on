@@ -6,8 +6,8 @@
   background: transparent;
   color: var(--color-text);
   font: inherit;
-  font-size: var(--font-size-sm);
-  padding: 6px var(--space-4);
+  font-size: var(--font-size-xs);
+  padding: 5px var(--space-4);
   cursor: pointer;
   white-space: nowrap;
   transition:
@@ -31,6 +31,7 @@
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: var(--color-accent-contrast);
+  font-weight: 700;
 }
 
 .button--primary:hover:not(:disabled) {
@@ -43,6 +44,12 @@
   color: var(--color-text-muted);
 }
 
+.button--quiet:hover:not(:disabled) {
+  background: var(--color-sunken);
+  border-color: transparent;
+  color: var(--color-text);
+}
+
 .button--small {
   font-size: var(--font-size-xs);
   padding: 4px var(--space-3);
@@ -53,8 +60,8 @@
   appearance: none;
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
@@ -67,7 +74,7 @@
 }
 
 .iconbutton:hover {
-  background: var(--color-surface-sunken);
+  background: var(--color-sunken);
   color: var(--color-text);
 }
 

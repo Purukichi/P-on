@@ -1,11 +1,18 @@
-/* 右カラム：ライブラリ / プレイリスト収録曲の一覧。 */
+/*
+ * 右カラム：いま鳴らしているアルバム / プレイリストの収録曲。
+ * 既定では隠れていて、アルバムやプレイリストを再生したときだけ開く。
+ */
 .tracklist {
-  display: flex;
+  display: none;
   flex-direction: column;
   min-height: 0;
   background: var(--color-panel);
   border-left: 1px solid var(--color-border);
   transition: background var(--transition-theme);
+}
+
+.app[data-list='visible'] .tracklist {
+  display: flex;
 }
 
 .tracklist__head {
@@ -20,7 +27,7 @@
   margin: 0;
   font-size: var(--font-size-sm);
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -35,15 +42,12 @@
 .tracklist__items {
   flex: 1;
   min-height: 0;
-  /* 曲が無いときは伸ばさない（下の案内文が底に落ちないように） */
-  &:empty {
-    flex: none;
-  }
   margin: 0;
   padding: 0 var(--space-3) var(--space-5);
   list-style: none;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 .tracklist__empty {
@@ -52,6 +56,10 @@
   font-size: var(--font-size-xs);
   color: var(--color-text-faint);
   line-height: 1.8;
+}
+
+.tracklist__empty[hidden] {
+  display: none;
 }
 
 /* ---- 1 行 ---- */
@@ -68,7 +76,7 @@
 }
 
 .track:hover {
-  background: var(--color-surface-sunken);
+  background: var(--color-sunken);
 }
 
 .track[data-active='true'] {
@@ -91,7 +99,7 @@
 .track[data-active='true'] .track__meta,
 .track[data-active='true'] .track__duration {
   color: inherit;
-  opacity: 0.75;
+  opacity: 0.7;
 }
 
 .track__main {
@@ -154,9 +162,9 @@
 }
 
 .track__action:hover {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-accent-contrast);
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-ink-contrast);
 }
 
 .track[data-active='true'] .track__action:hover {

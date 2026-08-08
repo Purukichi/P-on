@@ -21,7 +21,24 @@ export const IPC = {
   PLAYLIST_REMOVE_TRACK: 'playlist:remove-track',
 
   // 確認ダイアログ
-  CONFIRM: 'app:confirm'
+  CONFIRM: 'app:confirm',
+
+  /*
+   * ミニプレイヤー。
+   * 音を出しているのは常にメインウィンドウ側の <audio> ひとつだけで、
+   * ミニウィンドウは表示と操作だけを担当するリモコン。
+   * main プロセスは両者の間を中継するだけなので、
+   * ウィンドウを切り替えても再生が途切れない。
+   */
+  PLAYER_STATE: 'player:state', // メインウィンドウ -> main -> ミニ
+  PLAYER_COMMAND: 'player:command', // ミニ -> main -> メインウィンドウ
+  PLAYER_REQUEST_STATE: 'player:request-state', // ミニ -> main -> メインウィンドウ
+
+  // ウィンドウの切り替え
+  WINDOW_OPEN_MINI: 'window:open-mini',
+  WINDOW_CLOSE_MINI: 'window:close-mini',
+  /** テーマ変更時に、OS が描くタイトルバーの色を本文と揃える */
+  WINDOW_SET_TITLEBAR: 'window:set-titlebar'
 }
 
 /** 再生対象として扱う拡張子 (Chromium が標準でデコードできるもの) */

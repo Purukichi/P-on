@@ -17,7 +17,6 @@ body {
   font-size: var(--font-size-md);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  /* デスクトップアプリらしく、本文のテキスト選択とドラッグを抑える */
   user-select: none;
   overflow: hidden;
   transition:
@@ -37,8 +36,8 @@ textarea {
 }
 
 .icon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   flex: none;
 }
 
@@ -46,22 +45,31 @@ textarea {
 
 .app {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: var(--titlebar-height) minmax(0, 1fr) auto;
   height: 100%;
 }
 
 /*
- * 参考画像に合わせた 3 カラム。
- * 左 = ジャケット / 中央 = 再生中の情報と操作 / 右 = 一覧
+ * 既定は 2 カラム（ジャケット + 再生中の情報）。
+ * アルバム / プレイリストを鳴らしているときだけ右にリストが開く。
  */
 .stage {
   display: grid;
-  grid-template-columns: minmax(240px, 320px) minmax(300px, 1fr) minmax(280px, 360px);
+  grid-template-columns: minmax(260px, 420px) minmax(320px, 1fr);
   min-height: 0;
+  transition: grid-template-columns var(--transition-theme);
 }
 
-@media (width < 1080px) {
+.app[data-list='visible'] .stage {
+  grid-template-columns: minmax(260px, 400px) minmax(300px, 1fr) minmax(280px, 350px);
+}
+
+@media (width < 1120px) {
   .stage {
-    grid-template-columns: minmax(200px, 260px) minmax(260px, 1fr) minmax(240px, 300px);
+    grid-template-columns: minmax(200px, 270px) minmax(260px, 1fr);
+  }
+
+  .app[data-list='visible'] .stage {
+    grid-template-columns: minmax(200px, 260px) minmax(240px, 1fr) minmax(240px, 300px);
   }
 }

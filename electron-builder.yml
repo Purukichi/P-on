@@ -15,8 +15,8 @@ files:
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml,yarn.lock}'
 
 win:
-  # build/icon.ico を置くとアイコンが差し替わる (無ければ Electron 既定アイコン)
-  # icon: build/icon.ico
+  # build/icon.svg を元に生成したもの (scripts/make-icon は scratchpad 側)
+  icon: build/icon.ico
   target:
     - target: nsis
       arch:

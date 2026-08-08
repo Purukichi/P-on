@@ -2,37 +2,49 @@
  * 配色はすべてここの変数で決まる。
  * 通常（ライト）は :root、ナイトモードは [data-theme='night'] を上書きするだけ。
  * Theme クラスが <html data-theme="..."> を書き換える。
+ *
+ * 白をベースに、黒と蛍光グリーンの 3 色で組み立てている。
  */
 :root {
-  /* --- 色: ライト --- */
-  --color-bg: #f7edf0;
-  --color-panel: #f0e0e6;
-  --color-surface: #ffffff;
-  --color-surface-sunken: #ebdce2;
-  --color-border: rgb(24 22 28 / 12%);
-  --color-border-strong: rgb(24 22 28 / 26%);
+  /* --- 面 --- */
+  --color-bg: #ffffff;
+  --color-panel: #f4f4f5;
+  --color-sunken: #ececee;
+  --color-border: rgb(10 10 12 / 10%);
+  --color-border-strong: rgb(10 10 12 / 22%);
 
-  --color-text: #18161c;
-  --color-text-muted: #7a7280;
-  --color-text-faint: #a9a1ae;
+  /* --- 文字 --- */
+  --color-text: #0a0a0c;
+  --color-text-muted: #6e6e76;
+  --color-text-faint: #a8a8b0;
 
-  --color-accent: #18161c;
-  --color-accent-hover: #3a3542;
-  --color-accent-contrast: #fdf7f9;
+  /* --- 黒の面（塗りつぶしボタンなど） --- */
+  --color-ink: #0a0a0c;
+  --color-ink-contrast: #ffffff;
 
-  --color-track: rgb(24 22 28 / 14%);
-  --color-danger: #c0392b;
-  --color-success: #2d7a4f;
+  /* --- 蛍光グリーン --- */
+  --color-accent: #ccff00;
+  --color-accent-hover: #d8ff3d;
+  --color-accent-contrast: #0a0a0c;
 
-  --shadow-cover: 0 18px 40px rgb(24 22 28 / 18%);
-  --shadow-panel: 0 2px 12px rgb(24 22 28 / 6%);
-  --shadow-dialog: 0 24px 60px rgb(24 22 28 / 30%);
-  --disc-color: #1a1a1c;
+  --color-track: rgb(10 10 12 / 12%);
+  --color-danger: #e5484d;
+
+  /* --- すりガラス --- */
+  --glass-bg: rgb(255 255 255 / 62%);
+  --glass-border: rgb(255 255 255 / 80%);
+  --glass-blur: 22px;
+  --glass-shadow: 0 20px 50px rgb(10 10 12 / 16%);
+
+  --shadow-cover: 0 24px 60px rgb(10 10 12 / 14%);
+  --shadow-soft: 0 2px 10px rgb(10 10 12 / 6%);
+  --shadow-dialog: 0 32px 80px rgb(10 10 12 / 28%);
 
   /* --- かたち --- */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 14px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
   --radius-pill: 999px;
 
   /* --- 余白 --- */
@@ -44,7 +56,7 @@
   --space-6: 32px;
   --space-7: 48px;
 
-  /* --- 文字 --- */
+  /* --- 文字サイズ --- */
   --font-sans:
     '游ゴシック体', YuGothic, '游ゴシック Medium', 'Yu Gothic Medium', '游ゴシック', 'Yu Gothic',
     'Segoe UI', system-ui, sans-serif;
@@ -53,36 +65,37 @@
   --font-size-sm: 12px;
   --font-size-md: 13px;
   --font-size-lg: 15px;
-  --font-size-title: 30px;
+  --font-size-title: 32px;
 
   /* --- その他 --- */
-  --transition-fast: 120ms ease;
-  --transition-theme: 220ms ease;
+  --titlebar-height: 48px;
+  /* タイトルバー右端の最小化 / 最大化 / 閉じるボタンを避ける幅 */
+  --caption-width: 146px;
+  --transition-fast: 130ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  --transition-theme: 240ms ease;
 }
 
 [data-theme='night'] {
-  --color-bg: #100f14;
-  --color-panel: #16161d;
-  --color-surface: #1d1c25;
-  --color-surface-sunken: #131319;
-  --color-border: rgb(255 255 255 / 12%);
-  --color-border-strong: rgb(255 255 255 / 28%);
+  --color-bg: #0b0b0d;
+  --color-panel: #131316;
+  --color-sunken: #1b1b1f;
+  --color-border: rgb(255 255 255 / 10%);
+  --color-border-strong: rgb(255 255 255 / 24%);
 
-  --color-text: #eceaf2;
-  --color-text-muted: #8c8a9b;
-  --color-text-faint: #5d5b6b;
+  --color-text: #f4f4f6;
+  --color-text-muted: #8d8d97;
+  --color-text-faint: #5a5a63;
 
-  --color-accent: #eceaf2;
-  --color-accent-hover: #ffffff;
-  --color-accent-contrast: #100f14;
+  --color-ink: #f4f4f6;
+  --color-ink-contrast: #0b0b0d;
 
   --color-track: rgb(255 255 255 / 14%);
-  --color-danger: #ff7a6b;
-  --color-success: #6dd39b;
 
-  --shadow-cover: 0 18px 44px rgb(0 0 0 / 55%);
-  --shadow-panel: 0 2px 12px rgb(0 0 0 / 30%);
-  --shadow-dialog: 0 24px 60px rgb(0 0 0 / 60%);
-  /* 背景が暗いので、盤面は少し明るくしないと輪郭が消えてしまう */
-  --disc-color: #2a2a31;
+  --glass-bg: rgb(20 20 23 / 62%);
+  --glass-border: rgb(255 255 255 / 12%);
+  --glass-shadow: 0 20px 50px rgb(0 0 0 / 50%);
+
+  --shadow-cover: 0 24px 60px rgb(0 0 0 / 55%);
+  --shadow-soft: 0 2px 10px rgb(0 0 0 / 35%);
+  --shadow-dialog: 0 32px 80px rgb(0 0 0 / 65%);
 }

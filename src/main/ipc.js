@@ -2,10 +2,13 @@ import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { AUDIO_EXTENSIONS, IMAGE_EXTENSIONS, IPC } from '../shared/ipc-channels.js'
 import * as library from './library-service.js'
 import { ensureDirectories, libraryRoot } from './library-store.js'
+import { closeMiniPlayer, getMainWindow, getMiniWindow, openMiniPlayer } from './windows.js'
 
 export function registerIpcHandlers() {
   const handle = (channel, fn) => ipcMain.handle(channel, fn)
   const windowOf = (event) => BrowserWindow.fromWebContents(event.sender)
+
+  registerPlayerRelay()
 
   // ---- ライブラリ --------------------------------------------------------
 
@@ -76,6 +79,39 @@ export function registerIpcHandlers() {
       detail
     })
     return response === 0
+  })
+}
+
+/**
+ * メインウィンドウ（音を鳴らしている側）とミニプレイヤーの中継。
+ * main プロセスは再生状態を持たず、素通しするだけ。
+ */
+function registerPlayerRelay() {
+  ipcMain.on(IPC.PLAYER_STATE, (_event, state) => {
+    getMiniWindow()?.webContents.send(IPC.PLAYER_STATE, state)
+  })
+
+  ipcMain.on(IPC.PLAYER_COMMAND, (_event, command) => {
+    getMainWindow()?.webContents.send(IPC.PLAYER_COMMAND, command)
+  })
+
+  // ミニ側が開いた直後に、今の状態をもう一度送ってもらう
+  ipcMain.on(IPC.PLAYER_REQUEST_STATE, () => {
+    getMainWindow()?.webContents.send(IPC.PLAYER_REQUEST_STATE)
+  })
+
+  ipcMain.on(IPC.WINDOW_OPEN_MINI, () => openMiniPlayer())
+  ipcMain.on(IPC.WINDOW_CLOSE_MINI, () => closeMiniPlayer())
+
+  ipcMain.on(IPC.WINDOW_SET_TITLEBAR, (_event, { color, symbolColor } = {}) => {
+    const main = getMainWindow()
+    if (!main || !color || !symbolColor) return
+    try {
+      main.setTitleBarOverlay({ color, symbolColor, height: 48 })
+    } catch (error) {
+      // titleBarOverlay に対応していないプラットフォームでは何もしない
+      console.warn('[window] タイトルバーの色を変更できませんでした:', error.message)
+    }
   })
 }
 

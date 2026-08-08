@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- HAMON = 波紋。白地に蛍光グリーンの波を三本重ねたマーク。 -->
+  <rect width="512" height="512" rx="112" fill="#ffffff" />
+  <g fill="none" stroke="#c2f000" stroke-linecap="round">
+    <path
+      d="M116 180c23.3-46 46.7-46 70 0s46.7 46 70 0 46.7-46 70 0 46.7 46 70 0"
+      stroke-width="30"
+      opacity="0.42"
+    />
+    <path
+      d="M116 256c23.3-52 46.7-52 70 0s46.7 52 70 0 46.7-52 70 0 46.7 52 70 0"
+      stroke-width="40"
+      opacity="1"
+    />
+    <path
+      d="M116 332c23.3-46 46.7-46 70 0s46.7 46 70 0 46.7-46 70 0 46.7 46 70 0"
+      stroke-width="30"
+      opacity="0.42"
+    />
+  </g>
+</svg>

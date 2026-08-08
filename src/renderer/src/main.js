@@ -3,10 +3,11 @@ import { AudioEngine } from './core/AudioEngine.js'
 import { Library } from './core/Library.js'
 import { PlayQueue } from './core/PlayQueue.js'
 import { Theme } from './core/Theme.js'
+import { CollectionType, buildCollections, findCollection } from './core/Collections.js'
+import { CollectionShelf } from './ui/CollectionShelf.js'
 import { DropZones } from './ui/DropZones.js'
 import { NameDialog } from './ui/NameDialog.js'
 import { NowPlaying } from './ui/NowPlaying.js'
-import { PlaylistShelf } from './ui/PlaylistShelf.js'
 import { TrackEditor } from './ui/TrackEditor.js'
 import { TrackList } from './ui/TrackList.js'
 import { pick } from './ui/dom.js'
@@ -20,53 +21,56 @@ const queue = new PlayQueue()
 
 const nowPlaying = new NowPlaying(root, { engine }).mount()
 const trackList = new TrackList(root).mount()
-const shelf = new PlaylistShelf(root).mount()
+const shelf = new CollectionShelf(root).mount()
 const editor = new TrackEditor(root).mount()
 const nameDialog = new NameDialog(root).mount()
 const dropZones = new DropZones(root).mount()
 
-/** 右カラムに何を出しているか @type {{type: 'library'} | {type: 'playlist', id: string}} */
-let view = { type: 'library' }
+/** @type {import('./core/Collections.js').Collection[]} */
+let collections = []
+/** いま再生している単位（アルバム / プレイリスト / シングル） */
+let activeCollectionId = null
 
 // ---- 表示 ----------------------------------------------------------------
 
-/** 今の view に対応する曲の並びを返す */
-function tracksForView() {
-  return view.type === 'library' ? library.tracks : library.tracksOfPlaylist(view.id)
+function activeCollection() {
+  return findCollection(collections, activeCollectionId)
 }
 
-function currentViewName() {
-  if (view.type === 'library') return 'ライブラリ'
-  return library.getPlaylist(view.id)?.name ?? 'プレイリスト'
+/**
+ * リストのプレビューは既定では出さない。
+ * アルバム / プレイリストを鳴らしているとき、
+ * あるいはドロップで複数曲がキューに入っているときだけ開く。
+ */
+function shouldShowList() {
+  return Boolean(activeCollection()?.showsTrackList) || queue.tracks.length > 1
 }
 
 function render() {
-  // 選択中のプレイリストが消えていたらライブラリへ戻す
-  if (view.type === 'playlist' && !library.getPlaylist(view.id)) view = { type: 'library' }
+  collections = buildCollections(library)
 
-  const tracks = tracksForView()
+  if (activeCollectionId && !activeCollection()) activeCollectionId = null
 
-  pick(root, 'context-label').textContent = currentViewName()
+  const current = activeCollection()
+  const listVisible = shouldShowList()
 
-  trackList.render({
-    title: currentViewName(),
-    mode: view.type,
-    tracks,
-    emptyMessage:
-      view.type === 'library'
-        ? '音源ファイルをウィンドウにドラッグすると取り込めます'
-        : '曲をこのプレイリストにドラッグすると追加されます'
-  })
-  trackList.setActive(queue.current?.id ?? null)
+  root.dataset.list = listVisible ? 'visible' : 'hidden'
+  pick(root, 'context-label').textContent = current ? current.name : ''
+  pick(root, 'shelf-empty').hidden = collections.length > 0
 
-  shelf.render(library.playlists, {
-    view,
-    libraryCount: library.tracks.length,
-    coverOf: (playlistId) =>
-      library.tracksOfPlaylist(playlistId).find((track) => track.hasCover)?.coverUrl ?? null
-  })
+  if (listVisible) {
+    trackList.render({
+      title: current?.name ?? '再生キュー',
+      mode: current?.type === CollectionType.PLAYLIST ? 'playlist' : 'library',
+      tracks: queue.tracks,
+      emptyMessage: ''
+    })
+    trackList.setActive(queue.current?.id ?? null)
+  }
 
+  shelf.render(collections, { activeCollectionId })
   nowPlaying.setNavigation({ hasPrevious: queue.hasPrevious, hasNext: queue.hasNext })
+  publishPlayerState()
 }
 
 let statusTimer = null
@@ -92,16 +96,66 @@ function playTrack(track, { autoplay = true } = {}) {
   if (!track) return
   engine.load(track, { autoplay })
   trackList.setActive(track.id)
-  nowPlaying.setNavigation({ hasPrevious: queue.hasPrevious, hasNext: queue.hasNext })
+  render()
 }
 
-/** リストの曲をクリックしたとき：その一覧をまるごとキューにして、そこから再生する */
-function playFromView(trackId) {
-  const tracks = tracksForView()
-  const index = tracks.findIndex((track) => track.id === trackId)
-  if (index < 0) return
-  playTrack(queue.replace(tracks, index))
+/** 棚のカード（またはポップアップの曲）から再生を始める */
+function playCollection(collectionId, trackId = null) {
+  const collection = findCollection(collections, collectionId)
+  if (!collection || collection.tracks.length === 0) return
+
+  const index = trackId ? collection.tracks.findIndex((track) => track.id === trackId) : 0
+  activeCollectionId = collectionId
+  playTrack(queue.replace(collection.tracks, Math.max(index, 0)))
 }
+
+// ---- ミニプレイヤーとの同期 ------------------------------------------------
+
+/** 音を鳴らしているのはこの画面だけ。状態をミニプレイヤーへ流す */
+function publishPlayerState() {
+  const track = engine.track
+  window.hamon.player.publishState({
+    trackId: track?.id ?? null,
+    title: track?.displayTitle ?? '',
+    artist: track?.displayArtist ?? '',
+    coverUrl: track?.coverUrl ?? null,
+    isPlaying: engine.isPlaying,
+    currentTime: engine.currentTime,
+    duration: engine.duration,
+    progress: engine.progress,
+    volume: engine.volume,
+    hasNext: queue.hasNext,
+    hasPrevious: queue.hasPrevious
+  })
+}
+
+window.hamon.player.onCommand(({ type, value } = {}) => {
+  switch (type) {
+    case 'toggle':
+      engine.toggle()
+      break
+    case 'next':
+      playTrack(queue.next())
+      break
+    case 'previous':
+      if (engine.currentTime > 3) engine.seek(0)
+      else playTrack(queue.previous())
+      break
+    case 'seek-progress':
+      engine.seekToProgress(value)
+      break
+    case 'volume':
+      engine.volume = value
+      break
+  }
+})
+
+window.hamon.player.onStateRequested(() => publishPlayerState())
+
+pick(root, 'open-mini').addEventListener('click', () => {
+  publishPlayerState()
+  window.hamon.windows.openMini()
+})
 
 // ---- 配線: トランスポート ------------------------------------------------
 
@@ -121,6 +175,9 @@ engine.on('ended', () => {
 })
 
 engine.on('error', (error) => setStatus(error.message, { tone: 'error' }))
+engine.on('state-change', () => publishPlayerState())
+engine.on('time-update', () => publishPlayerState())
+engine.on('volume-change', () => publishPlayerState())
 
 // タグに長さが入っていなかった曲は、再生時に判明した値を library.json へ書き戻す
 engine.on('duration-change', ({ track, duration }) => {
@@ -133,9 +190,9 @@ queue.on('change', () => {
   nowPlaying.setNavigation({ hasPrevious: queue.hasPrevious, hasNext: queue.hasNext })
 })
 
-// ---- 配線: リスト / プレイリスト ------------------------------------------
+// ---- 配線: リスト / 棚 ---------------------------------------------------
 
-trackList.on('play', (trackId) => playFromView(trackId))
+trackList.on('play', (trackId) => playTrack(queue.jumpTo(trackId)))
 
 trackList.on('edit', (trackId) => {
   const track = library.getTrack(trackId)
@@ -143,26 +200,20 @@ trackList.on('edit', (trackId) => {
 })
 
 trackList.on('detach', async (trackId) => {
-  if (view.type !== 'playlist') return
-  await library.removeFromPlaylist(view.id, trackId)
+  const collection = activeCollection()
+  if (collection?.type !== CollectionType.PLAYLIST) return
+  await library.removeFromPlaylist(collection.sourceId, trackId)
 })
 
-shelf.on('select', (next) => {
-  view = next
-  render()
-})
+shelf.on('play-collection', ({ collectionId, trackId }) => playCollection(collectionId, trackId))
 
-shelf.on('create', async () => {
+shelf.on('create-playlist', async () => {
   const name = await nameDialog.ask({ heading: '新しいプレイリスト', confirmLabel: '作成' })
   if (!name) return
-  const id = await library.createPlaylist(name)
-  if (id) {
-    view = { type: 'playlist', id }
-    render()
-  }
+  await library.createPlaylist(name)
 })
 
-shelf.on('rename', async (playlistId) => {
+shelf.on('rename-playlist', async (playlistId) => {
   const playlist = library.getPlaylist(playlistId)
   if (!playlist) return
   const name = await nameDialog.ask({
@@ -173,7 +224,7 @@ shelf.on('rename', async (playlistId) => {
   if (name) await library.renamePlaylist(playlistId, name)
 })
 
-shelf.on('delete', async (playlistId) => {
+shelf.on('delete-playlist', async (playlistId) => {
   const playlist = library.getPlaylist(playlistId)
   if (!playlist) return
   const ok = await window.hamon.confirm({
@@ -218,7 +269,13 @@ function handleImported({ added, skipped }) {
   }
 
   const startedTrack = queue.enqueue(added)
-  if (startedTrack) playTrack(startedTrack)
+  if (startedTrack) {
+    // ドロップで始まった再生は特定のコレクションに属さない
+    activeCollectionId = null
+    playTrack(startedTrack)
+  } else {
+    render()
+  }
 
   const skippedNote = skipped.length > 0 ? `（${skipped.length}件はスキップ）` : ''
   setStatus(`${added.length}曲をキューに追加しました${skippedNote}`)
@@ -284,6 +341,30 @@ const themeButton = pick(root, 'theme-toggle')
 function renderTheme() {
   themeButton.setAttribute('aria-pressed', String(theme.isNight))
   themeButton.title = theme.isNight ? 'ライトモードに戻す' : 'ナイトモードにする'
+
+  // OS が描くタイトルバーのボタン area も本文と同じ色にする
+  const styles = getComputedStyle(document.documentElement)
+  window.hamon.windows.setTitleBar({
+    color: toHex(styles.getPropertyValue('--color-bg')),
+    symbolColor: toHex(styles.getPropertyValue('--color-text'))
+  })
+}
+
+/** setTitleBarOverlay は #rrggbb しか受け付けないので変換する */
+function toHex(cssColor) {
+  const value = cssColor.trim()
+  if (value.startsWith('#')) return value.length === 4 ? expandShortHex(value) : value.slice(0, 7)
+
+  const match = value.match(/-?\d+(\.\d+)?/g)
+  if (!match || match.length < 3) return '#ffffff'
+  return `#${match
+    .slice(0, 3)
+    .map((n) => Math.round(Number(n)).toString(16).padStart(2, '0'))
+    .join('')}`
+}
+
+function expandShortHex(value) {
+  return `#${[...value.slice(1)].map((c) => c + c).join('')}`
 }
 themeButton.addEventListener('click', () => theme.toggle())
 theme.on('change', renderTheme)
@@ -291,7 +372,6 @@ renderTheme()
 
 window.addEventListener('keydown', (event) => {
   if (event.code !== 'Space') return
-  // 入力中やダイアログ操作中は邪魔しない
   if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return
   if (document.querySelector('dialog[open]')) return
   event.preventDefault()
@@ -327,6 +407,10 @@ if (import.meta.env.DEV) {
     queue,
     theme,
     dropZones,
+    get collections() {
+      return collections
+    },
+    playCollection,
     views: { nowPlaying, trackList, shelf, editor, nameDialog }
   }
 }

@@ -22,7 +22,11 @@ export default defineConfig({
     },
     build: {
       rollupOptions: {
-        input: r('./src/renderer/index.html')
+        input: {
+          index: r('./src/renderer/index.html'),
+          // ミニプレイヤーは別ウィンドウなので、エントリも分けている
+          mini: r('./src/renderer/mini.html')
+        }
       }
     }
   }

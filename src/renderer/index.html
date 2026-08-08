@@ -13,13 +13,34 @@
       JS が参照するのは data-el 属性だけ。
       class は見た目のためだけに使っているので、自由に付け替えて構わない。
     -->
-    <div class="app" id="app" data-state="idle">
+    <div class="app" id="app" data-state="idle" data-list="hidden">
       <header class="topbar">
-        <h1 class="topbar__brand">HAMON</h1>
-        <p class="topbar__context" data-el="context-label">ライブラリ</p>
+        <div class="topbar__lead">
+          <span class="topbar__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M2 12c1.6-3.2 3.2-3.2 4.8 0s3.2 3.2 4.8 0 3.2-3.2 4.8 0 3.2 3.2 4.8 0" />
+            </svg>
+          </span>
+          <h1 class="topbar__brand">HAMON</h1>
+        </div>
+
+        <p class="topbar__context" data-el="context-label"></p>
 
         <div class="topbar__actions">
           <button class="button" type="button" data-el="add-tracks">音源を追加</button>
+
+          <button
+            class="iconbutton"
+            type="button"
+            data-el="open-mini"
+            title="ミニプレイヤーに切り替え"
+            aria-label="ミニプレイヤーに切り替え"
+          >
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1m1 2v10h14V7z" />
+              <rect x="12" y="12" width="6" height="4" rx="1" />
+            </svg>
+          </button>
 
           <button
             class="iconbutton"
@@ -66,14 +87,13 @@
 
       <main class="stage">
         <section class="cover">
-          <div class="cover__disc" aria-hidden="true"></div>
           <div class="cover__frame" data-el="cover-frame" data-empty="true" data-dropping="false">
             <img class="cover__image" data-el="cover-image" alt="" />
             <div class="cover__placeholder" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-                <path d="M9 18V5l10-2v13" stroke-linecap="round" stroke-linejoin="round" />
-                <circle cx="6.5" cy="18" r="2.5" />
-                <circle cx="16.5" cy="16" r="2.5" />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+                <path d="M2 12c1.6-4 3.2-4 4.8 0s3.2 4 4.8 0 3.2-4 4.8 0 3.2 4 4.8 0" />
+                <path d="M2 17c1.6-2.6 3.2-2.6 4.8 0s3.2 2.6 4.8 0 3.2-2.6 4.8 0 3.2 2.6 4.8 0" opacity=".45" />
+                <path d="M2 7c1.6-2.6 3.2-2.6 4.8 0s3.2 2.6 4.8 0 3.2-2.6 4.8 0 3.2 2.6 4.8 0" opacity=".45" />
               </svg>
             </div>
             <p class="cover__hint">画像をドロップしてジャケットに設定</p>
@@ -104,14 +124,7 @@
           </div>
 
           <div class="transport">
-            <button
-              class="transport__button"
-              type="button"
-              data-el="prev"
-              title="前の曲"
-              aria-label="前の曲"
-              disabled
-            >
+            <button class="transport__button" type="button" data-el="prev" title="前の曲" aria-label="前の曲" disabled>
               <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M7 6h2v12H7zm11 0v12l-8-6z" />
               </svg>
@@ -133,27 +146,13 @@
               </svg>
             </button>
 
-            <button
-              class="transport__button"
-              type="button"
-              data-el="stop"
-              title="停止"
-              aria-label="停止"
-              disabled
-            >
+            <button class="transport__button" type="button" data-el="stop" title="停止" aria-label="停止" disabled>
               <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <rect x="7" y="7" width="10" height="10" rx="1.5" />
               </svg>
             </button>
 
-            <button
-              class="transport__button"
-              type="button"
-              data-el="next"
-              title="次の曲"
-              aria-label="次の曲"
-              disabled
-            >
+            <button class="transport__button" type="button" data-el="next" title="次の曲" aria-label="次の曲" disabled>
               <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M15 6h2v12h-2zM6 6l8 6-8 6z" />
               </svg>
@@ -163,59 +162,37 @@
           <div class="volume">
             <svg class="volume__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M4 9.5h3.5L12 5.5v13L7.5 14.5H4z" />
-              <path
-                d="M15.5 9a4 4 0 0 1 0 6"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.6"
-                stroke-linecap="round"
-              />
+              <path d="M15.5 9a4 4 0 0 1 0 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
             </svg>
-            <input
-              class="volume__input"
-              type="range"
-              data-el="volume"
-              min="0"
-              max="1"
-              step="0.01"
-              value="0.8"
-              aria-label="音量"
-            />
+            <input class="volume__input" type="range" data-el="volume" min="0" max="1" step="0.01" value="0.8" aria-label="音量" />
             <span class="volume__value" data-el="volume-value">80</span>
           </div>
         </section>
 
+        <!-- アルバム / プレイリストを再生しているときだけ出る -->
         <aside class="tracklist">
           <header class="tracklist__head">
-            <h3 class="tracklist__title" data-el="list-title">ライブラリ</h3>
+            <h3 class="tracklist__title" data-el="list-title">リスト</h3>
             <span class="tracklist__count" data-el="list-count">0曲</span>
           </header>
           <ol class="tracklist__items" data-el="list"></ol>
-          <p class="tracklist__empty" data-el="list-empty">
-            音源ファイルをウィンドウにドラッグすると取り込めます
-          </p>
+          <p class="tracklist__empty" data-el="list-empty" hidden></p>
         </aside>
       </main>
 
       <footer class="shelf">
-        <div class="shelf__card shelf__card--library" data-el="shelf-library" data-active="true" role="button" tabindex="0">
-          <span class="shelf__art shelf__art--library" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
-              <path d="M4 5h16v14H4z" stroke-linejoin="round" />
-              <path d="M8 5v14M16 5v14" />
-            </svg>
-          </span>
-          <span class="shelf__name">ライブラリ</span>
-          <span class="shelf__count" data-el="shelf-library-count">0曲</span>
-        </div>
-
         <div class="shelf__list" data-el="shelf-list"></div>
-
-        <button class="shelf__add" type="button" data-el="playlist-new" title="プレイリストを作成">
-          <span aria-hidden="true">＋</span>
+        <button class="shelf__add" type="button" data-el="shelf-add" title="プレイリストを作成">
+          <span class="shelf__add-mark" aria-hidden="true">＋</span>
           <span class="shelf__add-label">プレイリスト</span>
         </button>
+        <p class="shelf__empty" data-el="shelf-empty">
+          音源ファイルをウィンドウにドラッグすると取り込めます
+        </p>
       </footer>
+
+      <!-- カードにマウスを乗せたときに出るすりガラスのポップアップ -->
+      <div class="popup" data-el="shelf-popup" hidden></div>
 
       <div class="dropveil" data-el="dropveil" hidden>
         <div class="dropveil__inner">
@@ -237,9 +214,7 @@
                 <img class="editor__thumb-image" data-el="editor-thumb-image" alt="" />
                 <span class="editor__thumb-hint">画像をドロップ</span>
               </div>
-              <button class="button button--small" type="button" data-el="editor-pick-cover">
-                ジャケットを選ぶ
-              </button>
+              <button class="button button--small" type="button" data-el="editor-pick-cover">ジャケットを選ぶ</button>
               <button class="button button--small button--quiet" type="button" data-el="editor-clear-cover">
                 ジャケットを外す
               </button>
@@ -260,7 +235,7 @@
                   class="field__input"
                   type="text"
                   data-el="editor-album"
-                  placeholder="未設定のときは「シングル」と表示されます"
+                  placeholder="未設定のときはシングルとして扱われます"
                 />
               </label>
             </div>

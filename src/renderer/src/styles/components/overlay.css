@@ -2,11 +2,13 @@
 .dropveil {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 80;
   display: grid;
   place-items: center;
   padding: var(--space-6);
-  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
   pointer-events: none;
 }
 
@@ -20,7 +22,7 @@
   justify-items: center;
   padding: var(--space-7);
   border: 2px dashed var(--color-accent);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   text-align: center;
 }
 
@@ -40,8 +42,9 @@
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 150px;
-  z-index: 60;
+  /* 下のコレクション棚に被らない高さに置く */
+  bottom: 215px;
+  z-index: 90;
   transform: translateX(-50%);
   margin: 0;
   padding: var(--space-2) var(--space-5);
@@ -49,7 +52,8 @@
   background: var(--color-accent);
   color: var(--color-accent-contrast);
   font-size: var(--font-size-sm);
-  box-shadow: var(--shadow-panel);
+  font-weight: 700;
+  box-shadow: var(--shadow-soft);
   max-width: calc(100vw - 96px);
   text-align: center;
 }

@@ -1,23 +1,61 @@
+/*
+ * タイトルバーを兼ねた上部バー。
+ * OS のフレームは隠してあり、ここが白い面としてそのまま窓の縁までつながる。
+ * 右端は最小化 / 最大化 / 閉じるボタンのぶんを空けてある。
+ */
 .topbar {
   display: flex;
   align-items: center;
-  gap: var(--space-5);
-  padding: var(--space-4) var(--space-6);
+  gap: var(--space-4);
+  height: var(--titlebar-height);
+  padding: 0 var(--caption-width) 0 var(--space-5);
+  background: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
+  transition: background var(--transition-theme);
+  /* 空いている部分はウィンドウのドラッグに使う */
+  -webkit-app-region: drag;
+}
+
+.topbar button,
+.topbar input,
+.topbar a {
+  -webkit-app-region: no-drag;
+}
+
+.topbar__lead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.topbar__mark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.topbar__mark svg {
+  width: 15px;
+  height: 15px;
 }
 
 .topbar__brand {
   margin: 0;
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-sm);
   font-weight: 700;
-  letter-spacing: 0.28em;
+  letter-spacing: 0.24em;
 }
 
 .topbar__context {
   margin: 0;
   flex: 1;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   color: var(--color-text-muted);
+  letter-spacing: 0.08em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -26,7 +64,7 @@
 .topbar__actions {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 /* ---- ゴミ箱 ---- */
@@ -35,8 +73,8 @@
   appearance: none;
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
+  width: 32px;
+  height: 32px;
   margin-left: var(--space-2);
   padding: 0;
   border: 1px dashed var(--color-border-strong);
@@ -56,6 +94,6 @@
   border-style: solid;
   border-color: var(--color-danger);
   background: var(--color-danger);
-  color: var(--color-accent-contrast);
-  transform: scale(1.1);
+  color: #fff;
+  transform: scale(1.12);
 }

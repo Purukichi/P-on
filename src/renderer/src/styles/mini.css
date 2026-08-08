@@ -1,0 +1,298 @@
+/*
+ * ミニプレイヤー専用のスタイル。
+ * ウィンドウ自体が Windows 11 のアクリル素材なので、
+ * html / body は塗らずに透過させたままにしている。
+ */
+@import './theme.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: transparent;
+}
+
+.mini-body {
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  overflow: hidden;
+}
+
+.mini {
+  position: relative;
+  height: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  /* アクリルの上に薄く白（ナイトなら黒）を重ねて、文字が読める濃さにする */
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+}
+
+.mini__art,
+.mini__placeholder {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.mini__art {
+  object-fit: cover;
+  display: block;
+}
+
+.mini__art[hidden] {
+  display: none;
+}
+
+.mini__placeholder {
+  display: none;
+  place-items: center;
+  color: var(--color-text-faint);
+}
+
+.mini[data-has-track='false'] .mini__placeholder {
+  display: grid;
+}
+
+.mini__placeholder svg {
+  width: 56px;
+  height: 56px;
+}
+
+/* ウィンドウを掴んで動かすための面 */
+.mini__grip {
+  position: absolute;
+  inset: 0;
+  -webkit-app-region: drag;
+}
+
+/* ---- マウスを乗せたときだけ出る操作面 ---- */
+
+.mini__panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-3);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+}
+
+.mini:hover .mini__panel,
+.mini:focus-within .mini__panel {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mini__panel button,
+.mini__panel input {
+  -webkit-app-region: no-drag;
+}
+
+.mini__head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.mini__meta {
+  min-width: 0;
+  flex: 1;
+}
+
+.mini__title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini__artist {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini__iconbutton {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.mini__iconbutton:hover {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.mini__iconbutton svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---- シークと音量 ---- */
+
+.mini__seek {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mini__range {
+  --fill: 0;
+
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  margin: 0;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(
+    to right,
+    var(--color-accent) calc(var(--fill) * 100%),
+    var(--color-track) calc(var(--fill) * 100%)
+  );
+  cursor: pointer;
+}
+
+.mini__range::-webkit-slider-thumb {
+  appearance: none;
+  width: 11px;
+  height: 11px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-text);
+  transition: transform var(--transition-fast);
+}
+
+.mini__range:hover::-webkit-slider-thumb {
+  transform: scale(1.2);
+}
+
+.mini__range:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.mini__times {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.mini__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.mini__button {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.mini__button:hover:not(:disabled) {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-ink-contrast);
+}
+
+.mini__button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.mini__button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.mini__button--play {
+  width: 38px;
+  height: 38px;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.mini__button--play:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  color: var(--color-accent-contrast);
+}
+
+.mini__button--play svg {
+  width: 18px;
+  height: 18px;
+}
+
+.mini__button--play .icon--pause,
+.mini[data-playing='true'] .mini__button--play .icon--play {
+  display: none;
+}
+
+.mini[data-playing='true'] .mini__button--play .icon--pause {
+  display: block;
+}
+
+.mini__volume {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: 1;
+  min-width: 0;
+  color: var(--color-text-muted);
+}
+
+.mini__volume svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}

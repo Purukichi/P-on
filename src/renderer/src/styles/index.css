@@ -1,5 +1,5 @@
 /*
- * スタイルの入口。
+ * メインウィンドウのスタイルの入口。
  * 色・角丸・フォントは theme.css の変数に集約してあるので、
  * 全体の印象を変えたいときはまず theme.css を触るのが早い。
  * 個別パーツを作り込みたいときは components/*.css を編集する。
@@ -16,5 +16,6 @@
 @import './components/volume.css';
 @import './components/tracklist.css';
 @import './components/shelf.css';
+@import './components/popup.css';
 @import './components/dialog.css';
 @import './components/overlay.css';

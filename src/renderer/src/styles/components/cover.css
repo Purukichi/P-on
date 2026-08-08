@@ -1,26 +1,25 @@
-/* 左カラム：ジャケットと、その裏から覗くレコード盤。 */
+/* 左カラム：再生中のジャケット。 */
 .cover {
-  position: relative;
   display: grid;
   place-items: center;
-  padding: var(--space-6) 0 var(--space-6) var(--space-6);
+  padding: var(--space-6) var(--space-5) var(--space-6) var(--space-6);
 }
 
 .cover__frame {
   position: relative;
-  z-index: 1;
   width: 100%;
   aspect-ratio: 1;
   display: grid;
   place-items: center;
-  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  background: var(--color-panel);
   box-shadow: var(--shadow-cover);
   overflow: hidden;
-  transition:
-    outline-color var(--transition-fast),
-    transform var(--transition-fast);
   outline: 2px solid transparent;
   outline-offset: 4px;
+  transition:
+    outline-color var(--transition-fast),
+    background var(--transition-theme);
 }
 
 .cover__image {
@@ -44,8 +43,8 @@
 }
 
 .cover__placeholder svg {
-  width: 72px;
-  height: 72px;
+  width: 96px;
+  height: 96px;
 }
 
 /* 画像をドラッグしてきたときだけヒントを出す */
@@ -57,6 +56,7 @@
   background: var(--color-accent);
   color: var(--color-accent-contrast);
   font-size: var(--font-size-xs);
+  font-weight: 700;
   text-align: center;
   opacity: 0;
   transform: translateY(100%);
@@ -72,45 +72,4 @@
 .cover__frame[data-dropping='true'] .cover__hint {
   opacity: 1;
   transform: translateY(0);
-}
-
-/* 参考画像のように、ジャケットの右奥からレコードが覗く */
-.cover__disc {
-  position: absolute;
-  z-index: 0;
-  top: 50%;
-  right: calc(var(--space-6) * -1);
-  width: 62%;
-  aspect-ratio: 1;
-  transform: translateY(-50%);
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at center, var(--color-bg) 0 8%, transparent 8.5%),
-    repeating-radial-gradient(
-      circle at center,
-      var(--disc-color) 0 3px,
-      rgb(255 255 255 / 6%) 3px 4px
-    );
-  box-shadow: var(--shadow-cover);
-  transition: transform 600ms ease;
-}
-
-/* 再生中はゆっくり回す */
-.app[data-state='playing'] .cover__disc {
-  animation: disc-spin 8s linear infinite;
-}
-
-@keyframes disc-spin {
-  from {
-    transform: translateY(-50%) rotate(0deg);
-  }
-  to {
-    transform: translateY(-50%) rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app[data-state='playing'] .cover__disc {
-    animation: none;
-  }
 }
