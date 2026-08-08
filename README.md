@@ -20,19 +20,37 @@ npm run dev
 
 ## ビルド
 
-```bash
-npm run build
-```
-
-Windows 用 exe（NSIS インストーラ + portable）:
+Windows 用 exe を作る:
 
 ```bash
 npm run build:win
 ```
 
-出力先は `release/`。設定は [electron-builder.yml](electron-builder.yml)。
+`release/` に 3 種類できる。
+
+| 出力 | 用途 |
+| --- | --- |
+| `HAMON-0.1.0-x64.exe` | インストーラ。実行するとインストール先を選べて、デスクトップにショートカットができる |
+| `HAMON-0.1.0-portable.exe` | インストール不要。ダブルクリックでそのまま起動する |
+| `win-unpacked/HAMON.exe` | 展開済みフォルダ。起動が一番速い。ショートカットを自分で作って使う |
+
+設定は [electron-builder.yml](electron-builder.yml)。
 アイコンを変えたいときは `build/icon.ico`（256x256 以上）を置いて、
 `electron-builder.yml` の `win.icon` のコメントを外す。
+
+コード署名をしていないので、初回起動時に Windows SmartScreen の警告が出る。
+「詳細情報」→「実行」で進める。自分で作った exe なので想定どおりの挙動。
+
+レンダラーだけをビルドし直したいときは `npm run build`。
+
+### ビルドが `EXDEV: cross-device link not permitted` で失敗する場合
+
+electron-builder のキャッシュ（`%LOCALAPPDATA%\electron-builder\Cache`）でフォルダの
+rename が拒否される環境がある。キャッシュ先をプロジェクト内に移すと通る。
+
+```bash
+$env:ELECTRON_BUILDER_CACHE = "$PWD\.builder-cache"; npm run build:win
+```
 
 ## 使い方
 

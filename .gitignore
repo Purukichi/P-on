@@ -8,6 +8,7 @@ release/
 
 # vite / tooling caches
 .vite/
+.builder-cache/
 *.tsbuildinfo
 
 # logs
