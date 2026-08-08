@@ -5,7 +5,9 @@ const r = (path) => fileURLToPath(new URL(path, import.meta.url))
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()]
+    // music-metadata は ESM 専用パッケージ。CJS で出力する main から require できないので、
+    // 外部化せずにバンドルへ取り込む。
+    plugins: [externalizeDepsPlugin({ exclude: ['music-metadata'] })]
   },
   preload: {
     plugins: [externalizeDepsPlugin()]

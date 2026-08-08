@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="ja" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -14,102 +14,279 @@
       class は見た目のためだけに使っているので、自由に付け替えて構わない。
     -->
     <div class="app" id="app" data-state="idle">
-      <header class="app__header">
-        <h1 class="app__brand">HAMON</h1>
-        <button class="button button--ghost" type="button" data-el="open">ファイルを開く</button>
+      <header class="topbar">
+        <h1 class="topbar__brand">HAMON</h1>
+        <p class="topbar__context" data-el="context-label">ライブラリ</p>
+
+        <div class="topbar__actions">
+          <button class="button" type="button" data-el="add-tracks">音源を追加</button>
+
+          <button
+            class="iconbutton"
+            type="button"
+            data-el="open-folder"
+            title="保存フォルダを開く"
+            aria-label="保存フォルダを開く"
+          >
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4l2 2h9A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z" />
+            </svg>
+          </button>
+
+          <button
+            class="iconbutton"
+            type="button"
+            data-el="theme-toggle"
+            title="ナイトモード切替"
+            aria-label="ナイトモード切替"
+            aria-pressed="false"
+          >
+            <svg class="icon icon--moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5" />
+            </svg>
+            <svg class="icon icon--sun" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10m0-5 1.5 3h-3zm0 20-1.5-3h3zM2 12l3-1.5v3zm20 0-3 1.5v-3zM5 5l3.2 1-2.2 2.2zm14 14-3.2-1 2.2-2.2zM19 5l-1 3.2-2.2-2.2zM5 19l1-3.2 2.2 2.2z" />
+            </svg>
+          </button>
+
+          <button
+            class="trashcan"
+            type="button"
+            data-el="trash"
+            data-dropping="false"
+            title="曲をここにドラッグすると音源とジャケットを削除します"
+            aria-label="ゴミ箱"
+          >
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M9 3h6l1 2h4v2H4V5h4zM6 8h12l-1 12.2A2 2 0 0 1 15 22H9a2 2 0 0 1-2-1.8zm3.5 2.5v9h1.5v-9zm3.5 0v9h1.5v-9z" />
+            </svg>
+          </button>
+        </div>
       </header>
 
-      <main class="player">
-        <section class="artwork" data-el="artwork" data-empty="true" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M9 18V5l10-2v13" stroke-linecap="round" stroke-linejoin="round" />
-            <circle cx="6.5" cy="18" r="2.5" />
-            <circle cx="16.5" cy="16" r="2.5" />
-          </svg>
-        </section>
-
-        <section class="track-info">
-          <p class="track-info__title" data-el="title">ファイルが選択されていません</p>
-          <p class="track-info__subtitle" data-el="subtitle">
-            「ファイルを開く」から mp3 / wav / flac を選択
-          </p>
-        </section>
-
-        <section class="seekbar">
-          <input
-            class="seekbar__input"
-            type="range"
-            data-el="seek"
-            min="0"
-            max="1"
-            step="0.0001"
-            value="0"
-            aria-label="再生位置"
-            disabled
-          />
-          <div class="seekbar__times">
-            <span class="seekbar__time seekbar__time--current" data-el="current-time">0:00</span>
-            <span class="seekbar__time seekbar__time--total" data-el="duration">0:00</span>
+      <main class="stage">
+        <section class="cover">
+          <div class="cover__disc" aria-hidden="true"></div>
+          <div class="cover__frame" data-el="cover-frame" data-empty="true" data-dropping="false">
+            <img class="cover__image" data-el="cover-image" alt="" />
+            <div class="cover__placeholder" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+                <path d="M9 18V5l10-2v13" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="6.5" cy="18" r="2.5" />
+                <circle cx="16.5" cy="16" r="2.5" />
+              </svg>
+            </div>
+            <p class="cover__hint">画像をドロップしてジャケットに設定</p>
           </div>
         </section>
 
-        <section class="transport">
-          <button
-            class="transport__button transport__button--play"
-            type="button"
-            data-el="play-toggle"
-            data-playing="false"
-            aria-label="再生"
-            disabled
-          >
-            <svg class="icon icon--play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M8 5.5v13l11-6.5z" />
-            </svg>
-            <svg class="icon icon--pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M8 5h3v14H8zm5 0h3v14h-3z" />
-            </svg>
-          </button>
+        <section class="nowplaying">
+          <p class="nowplaying__album" data-el="np-album">HAMON</p>
+          <h2 class="nowplaying__title" data-el="np-title">曲を選んでください</h2>
+          <p class="nowplaying__artist" data-el="np-artist">—</p>
 
-          <button
-            class="transport__button transport__button--stop"
-            type="button"
-            data-el="stop"
-            aria-label="停止"
-            title="停止"
-            disabled
-          >
-            <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <rect x="7" y="7" width="10" height="10" rx="1.5" />
-            </svg>
-          </button>
-        </section>
-
-        <section class="volume">
-          <svg class="volume__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M4 9.5h3.5L12 5.5v13L7.5 14.5H4z" />
-            <path
-              d="M15.5 9a4 4 0 0 1 0 6"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linecap="round"
+          <div class="seekbar">
+            <input
+              class="seekbar__input"
+              type="range"
+              data-el="seek"
+              min="0"
+              max="1"
+              step="0.0001"
+              value="0"
+              aria-label="再生位置"
+              disabled
             />
-          </svg>
-          <input
-            class="volume__input"
-            type="range"
-            data-el="volume"
-            min="0"
-            max="1"
-            step="0.01"
-            value="0.8"
-            aria-label="音量"
-          />
-          <span class="volume__value" data-el="volume-value">80</span>
+            <div class="seekbar__times">
+              <span class="seekbar__time seekbar__time--current" data-el="current-time">0:00</span>
+              <span class="seekbar__time" data-el="duration">0:00</span>
+            </div>
+          </div>
+
+          <div class="transport">
+            <button
+              class="transport__button"
+              type="button"
+              data-el="prev"
+              title="前の曲"
+              aria-label="前の曲"
+              disabled
+            >
+              <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M7 6h2v12H7zm11 0v12l-8-6z" />
+              </svg>
+            </button>
+
+            <button
+              class="transport__button transport__button--play"
+              type="button"
+              data-el="play-toggle"
+              data-playing="false"
+              aria-label="再生"
+              disabled
+            >
+              <svg class="icon icon--play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M8 5.5v13l11-6.5z" />
+              </svg>
+              <svg class="icon icon--pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M8 5h3v14H8zm5 0h3v14h-3z" />
+              </svg>
+            </button>
+
+            <button
+              class="transport__button"
+              type="button"
+              data-el="stop"
+              title="停止"
+              aria-label="停止"
+              disabled
+            >
+              <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <rect x="7" y="7" width="10" height="10" rx="1.5" />
+              </svg>
+            </button>
+
+            <button
+              class="transport__button"
+              type="button"
+              data-el="next"
+              title="次の曲"
+              aria-label="次の曲"
+              disabled
+            >
+              <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M15 6h2v12h-2zM6 6l8 6-8 6z" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="volume">
+            <svg class="volume__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M4 9.5h3.5L12 5.5v13L7.5 14.5H4z" />
+              <path
+                d="M15.5 9a4 4 0 0 1 0 6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+              />
+            </svg>
+            <input
+              class="volume__input"
+              type="range"
+              data-el="volume"
+              min="0"
+              max="1"
+              step="0.01"
+              value="0.8"
+              aria-label="音量"
+            />
+            <span class="volume__value" data-el="volume-value">80</span>
+          </div>
         </section>
+
+        <aside class="tracklist">
+          <header class="tracklist__head">
+            <h3 class="tracklist__title" data-el="list-title">ライブラリ</h3>
+            <span class="tracklist__count" data-el="list-count">0曲</span>
+          </header>
+          <ol class="tracklist__items" data-el="list"></ol>
+          <p class="tracklist__empty" data-el="list-empty">
+            音源ファイルをウィンドウにドラッグすると取り込めます
+          </p>
+        </aside>
       </main>
 
-      <footer class="app__status" data-el="status" data-tone="info" role="status"></footer>
+      <footer class="shelf">
+        <div class="shelf__card shelf__card--library" data-el="shelf-library" data-active="true" role="button" tabindex="0">
+          <span class="shelf__art shelf__art--library" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4">
+              <path d="M4 5h16v14H4z" stroke-linejoin="round" />
+              <path d="M8 5v14M16 5v14" />
+            </svg>
+          </span>
+          <span class="shelf__name">ライブラリ</span>
+          <span class="shelf__count" data-el="shelf-library-count">0曲</span>
+        </div>
+
+        <div class="shelf__list" data-el="shelf-list"></div>
+
+        <button class="shelf__add" type="button" data-el="playlist-new" title="プレイリストを作成">
+          <span aria-hidden="true">＋</span>
+          <span class="shelf__add-label">プレイリスト</span>
+        </button>
+      </footer>
+
+      <div class="dropveil" data-el="dropveil" hidden>
+        <div class="dropveil__inner">
+          <p class="dropveil__title">ドロップして取り込む</p>
+          <p class="dropveil__note">mp3 / wav / flac などをライブラリに保存して再生キューに追加します</p>
+        </div>
+      </div>
+
+      <p class="toast" data-el="status" data-tone="info" hidden></p>
+
+      <!-- 楽曲情報の編集 -->
+      <dialog class="dialog" data-el="editor">
+        <form class="dialog__form" data-el="editor-form">
+          <h3 class="dialog__heading">楽曲情報</h3>
+
+          <div class="dialog__body">
+            <div class="editor__cover">
+              <div class="editor__thumb" data-el="editor-thumb" data-empty="true" data-dropping="false">
+                <img class="editor__thumb-image" data-el="editor-thumb-image" alt="" />
+                <span class="editor__thumb-hint">画像をドロップ</span>
+              </div>
+              <button class="button button--small" type="button" data-el="editor-pick-cover">
+                ジャケットを選ぶ
+              </button>
+              <button class="button button--small button--quiet" type="button" data-el="editor-clear-cover">
+                ジャケットを外す
+              </button>
+            </div>
+
+            <div class="editor__fields">
+              <label class="field">
+                <span class="field__label">タイトル</span>
+                <input class="field__input" type="text" data-el="editor-title" required />
+              </label>
+              <label class="field">
+                <span class="field__label">アーティスト</span>
+                <input class="field__input" type="text" data-el="editor-artist" placeholder="未設定" />
+              </label>
+              <label class="field">
+                <span class="field__label">アルバム</span>
+                <input
+                  class="field__input"
+                  type="text"
+                  data-el="editor-album"
+                  placeholder="未設定のときは「シングル」と表示されます"
+                />
+              </label>
+            </div>
+          </div>
+
+          <footer class="dialog__actions">
+            <button class="button button--quiet" type="button" data-el="editor-cancel">キャンセル</button>
+            <button class="button button--primary" type="submit">保存</button>
+          </footer>
+        </form>
+      </dialog>
+
+      <!-- プレイリスト名の入力 -->
+      <dialog class="dialog dialog--compact" data-el="name-dialog">
+        <form class="dialog__form" data-el="name-form">
+          <h3 class="dialog__heading" data-el="name-heading">プレイリスト名</h3>
+          <label class="field">
+            <span class="field__label">名前</span>
+            <input class="field__input" type="text" data-el="name-input" required />
+          </label>
+          <footer class="dialog__actions">
+            <button class="button button--quiet" type="button" data-el="name-cancel">キャンセル</button>
+            <button class="button button--primary" type="submit" data-el="name-submit">決定</button>
+          </footer>
+        </form>
+      </dialog>
     </div>
 
     <script type="module" src="./src/main.js"></script>

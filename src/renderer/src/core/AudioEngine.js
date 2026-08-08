@@ -80,7 +80,7 @@ export class AudioEngine extends Emitter {
    */
   load(track, { autoplay = false } = {}) {
     this.#track = track
-    this.#audio.src = track.url
+    this.#audio.src = track.audioUrl
     this.#audio.load()
     this.#setState('loading')
     this.emit('track-change', track)
@@ -147,8 +147,11 @@ export class AudioEngine extends Emitter {
     const audio = this.#audio
 
     audio.addEventListener('loadedmetadata', () => {
-      this.#track?.setDuration(audio.duration)
-      this.emit('duration-change', this.duration)
+      if (this.#track && !Number.isFinite(this.#track.duration)) {
+        this.#track.duration = this.duration
+      }
+      // タグから長さを取れなかった曲は、ここで判明した値を library.json に書き戻す
+      this.emit('duration-change', { track: this.#track, duration: this.duration })
       this.#emitTime()
     })
 

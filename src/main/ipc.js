@@ -1,50 +1,85 @@
-import { basename, extname, isAbsolute } from 'node:path'
-import { BrowserWindow, dialog, ipcMain } from 'electron'
-import { AUDIO_EXTENSIONS, IPC } from '../shared/ipc-channels.js'
-import { createMediaUrl } from './media-protocol.js'
+import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { AUDIO_EXTENSIONS, IMAGE_EXTENSIONS, IPC } from '../shared/ipc-channels.js'
+import * as library from './library-service.js'
+import { ensureDirectories, libraryRoot } from './library-store.js'
 
 export function registerIpcHandlers() {
-  ipcMain.handle(IPC.OPEN_AUDIO_FILE, async (event) => {
-    const window = BrowserWindow.fromWebContents(event.sender)
+  const handle = (channel, fn) => ipcMain.handle(channel, fn)
+  const windowOf = (event) => BrowserWindow.fromWebContents(event.sender)
 
-    const { canceled, filePaths } = await dialog.showOpenDialog(window, {
-      title: '音声ファイルを選択',
-      buttonLabel: '再生',
-      // 複数選択やフォルダ読み込みに広げるときはここを増やす
-      // (例: properties: ['openFile', 'multiSelections'])
-      properties: ['openFile'],
+  // ---- ライブラリ --------------------------------------------------------
+
+  handle(IPC.LIBRARY_SNAPSHOT, () => library.snapshot())
+
+  handle(IPC.LIBRARY_IMPORT, (_event, filePaths) => library.importFiles(asArray(filePaths)))
+
+  handle(IPC.LIBRARY_PICK_FILES, async (event) => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(windowOf(event), {
+      title: '音源を取り込む',
+      buttonLabel: '取り込む',
+      properties: ['openFile', 'multiSelections'],
       filters: [
-        { name: '音声ファイル', extensions: ['mp3', 'wav', 'flac'] },
-        { name: 'その他の音声', extensions: ['m4a', 'aac', 'ogg', 'opus', 'webm'] },
+        { name: '音声ファイル', extensions: AUDIO_EXTENSIONS },
         { name: 'すべてのファイル', extensions: ['*'] }
       ]
     })
-
-    if (canceled) return []
-    return filePaths.map(toFileRef)
+    if (canceled) return { snapshot: await library.snapshot(), added: [], skipped: [] }
+    return library.importFiles(filePaths)
   })
 
-  // 保存済みプレイリストの復元などで、パスから再生 URL を作り直すための入口
-  ipcMain.handle(IPC.RESOLVE_AUDIO_FILE, (_event, filePath) => {
-    if (typeof filePath !== 'string' || !isAbsolute(filePath)) {
-      throw new Error('絶対パスを指定してください')
-    }
-    if (!AUDIO_EXTENSIONS.includes(extensionOf(filePath))) {
-      throw new Error(`対応していない拡張子です: ${filePath}`)
-    }
-    return toFileRef(filePath)
+  handle(IPC.LIBRARY_UPDATE_TRACK, (_event, trackId, patch) =>
+    library.updateTrack(trackId, patch ?? {})
+  )
+
+  handle(IPC.LIBRARY_SET_COVER, (_event, trackId, imagePath) =>
+    library.setCover(trackId, imagePath ?? null)
+  )
+
+  handle(IPC.LIBRARY_PICK_COVER, async (event, trackId) => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(windowOf(event), {
+      title: 'ジャケット画像を選択',
+      buttonLabel: '設定',
+      properties: ['openFile'],
+      filters: [{ name: '画像ファイル', extensions: IMAGE_EXTENSIONS }]
+    })
+    if (canceled) return library.snapshot()
+    return library.setCover(trackId, filePaths[0])
+  })
+
+  handle(IPC.LIBRARY_DELETE_TRACK, (_event, trackId) => library.deleteTrack(trackId))
+
+  handle(IPC.LIBRARY_OPEN_FOLDER, async () => {
+    await ensureDirectories()
+    await shell.openPath(libraryRoot())
+  })
+
+  // ---- プレイリスト ------------------------------------------------------
+
+  handle(IPC.PLAYLIST_CREATE, (_event, name) => library.createPlaylist(name))
+  handle(IPC.PLAYLIST_RENAME, (_event, id, name) => library.renamePlaylist(id, name))
+  handle(IPC.PLAYLIST_DELETE, (_event, id) => library.deletePlaylist(id))
+  handle(IPC.PLAYLIST_ADD_TRACKS, (_event, id, trackIds) =>
+    library.addToPlaylist(id, asArray(trackIds))
+  )
+  handle(IPC.PLAYLIST_REMOVE_TRACK, (_event, id, trackId) => library.removeFromPlaylist(id, trackId))
+
+  // ---- 共通 --------------------------------------------------------------
+
+  // 削除のような取り消せない操作の前に、OS 標準のダイアログで確認を取る
+  handle(IPC.CONFIRM, async (event, { message, detail, confirmLabel = 'OK' } = {}) => {
+    const { response } = await dialog.showMessageBox(windowOf(event), {
+      type: 'warning',
+      buttons: [confirmLabel, 'キャンセル'],
+      defaultId: 1,
+      cancelId: 1,
+      message: message ?? '実行しますか？',
+      detail
+    })
+    return response === 0
   })
 }
 
-function toFileRef(filePath) {
-  return {
-    path: filePath,
-    fileName: basename(filePath),
-    extension: extensionOf(filePath),
-    url: createMediaUrl(filePath)
-  }
-}
-
-function extensionOf(filePath) {
-  return extname(filePath).slice(1).toLowerCase()
+function asArray(value) {
+  if (Array.isArray(value)) return value
+  return value == null ? [] : [value]
 }

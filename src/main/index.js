@@ -8,13 +8,13 @@ registerMediaScheme()
 
 function createWindow() {
   const window = new BrowserWindow({
-    width: 520,
-    height: 620,
-    minWidth: 420,
-    minHeight: 480,
+    width: 1180,
+    height: 760,
+    minWidth: 900,
+    minHeight: 620,
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: '#101014',
+    backgroundColor: '#f6eef0',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,

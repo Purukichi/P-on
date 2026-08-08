@@ -1,17 +1,16 @@
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { extname } from 'node:path'
-import { randomUUID } from 'node:crypto'
 import { Readable } from 'node:stream'
 import { protocol } from 'electron'
+import { resolveInLibrary } from './library-store.js'
 
 /**
- * ローカルの音声ファイルをレンダラーへ配信するための独自スキーム。
+ * ライブラリ内のファイルをレンダラーへ配信するための独自スキーム。
  *
  * dev サーバー (http://localhost) 上のページからは file:// を直接読めないため、
- * `hamon-media://stream/<token>` という URL でストリーム配信する。
- * token はセッション内だけ有効な使い捨ての ID なので、
- * レンダラー側に生のファイルパスを URL として渡さずに済む。
+ * `hamon-media://library/audio/xxx.mp3` のような URL でストリーム配信する。
+ * 配信できるのはライブラリフォルダ配下だけで、外を指す URL は 403 で弾く。
  */
 export const MEDIA_SCHEME = 'hamon-media'
 
@@ -23,18 +22,27 @@ const MIME_TYPES = {
   '.aac': 'audio/aac',
   '.ogg': 'audio/ogg',
   '.opus': 'audio/ogg',
-  '.webm': 'audio/webm'
+  '.webm': 'audio/webm',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.bmp': 'image/bmp'
 }
 
-/** token -> 絶対パス */
-const tokenToPath = new Map()
-/** 絶対パス -> token (同じファイルに毎回別の URL を振らないため) */
-const pathToToken = new Map()
-
 /**
- * app.whenReady() より前に呼ぶ必要がある。
- * stream: true が無いと <audio> のシーク (Range リクエスト) が動かない。
+ * ライブラリ相対パスを再生 / 表示用の URL に変換する。
+ * @param {string|null|undefined} relativePath 例: 'audio/foo.mp3'
  */
+export function toMediaUrl(relativePath) {
+  if (!relativePath) return null
+  const encoded = relativePath.split(/[\\/]/).map(encodeURIComponent).join('/')
+  // 差し替え後もキャッシュが残らないよう、更新時に変わるクエリを足せるようにしてある
+  return `${MEDIA_SCHEME}://library/${encoded}`
+}
+
+/** app.whenReady() より前に呼ぶ必要がある */
 export function registerMediaScheme() {
   protocol.registerSchemesAsPrivileged([
     {
@@ -43,6 +51,7 @@ export function registerMediaScheme() {
         standard: true,
         secure: true,
         supportFetchAPI: true,
+        // これが無いと <audio> のシーク (Range リクエスト) が動かない
         stream: true,
         corsEnabled: true
       }
@@ -50,39 +59,24 @@ export function registerMediaScheme() {
   ])
 }
 
-/** 絶対パスを再生可能な URL に変換する */
-export function createMediaUrl(filePath) {
-  const cached = pathToToken.get(filePath)
-  if (cached) return toUrl(cached)
-
-  const token = randomUUID()
-  tokenToPath.set(token, filePath)
-  pathToToken.set(filePath, token)
-  return toUrl(token)
-}
-
 /** app.whenReady() の後に一度だけ呼ぶ */
 export function registerMediaProtocol() {
   protocol.handle(MEDIA_SCHEME, handleMediaRequest)
 }
 
-function toUrl(token) {
-  return `${MEDIA_SCHEME}://stream/${token}`
-}
-
 async function handleMediaRequest(request) {
-  const token = new URL(request.url).pathname.replace(/^\/+/, '')
-  const filePath = tokenToPath.get(token)
+  const url = new URL(request.url)
+  const relativePath = decodeURIComponent(url.pathname).replace(/^\/+/, '')
+  const filePath = resolveInLibrary(relativePath)
 
   if (!filePath) {
-    return new Response('Unknown media token', { status: 404 })
+    return new Response('Outside of library', { status: 403 })
   }
 
   let size
   try {
     ;({ size } = await stat(filePath))
-  } catch (error) {
-    console.error(`[media] cannot stat ${filePath}:`, error)
+  } catch {
     return new Response('File not found', { status: 404 })
   }
 
@@ -95,7 +89,10 @@ async function handleMediaRequest(request) {
   const range = parseRangeHeader(request.headers.get('range'), size)
 
   if (range === 'unsatisfiable') {
-    return new Response(null, { status: 416, headers: { ...headers, 'Content-Range': `bytes */${size}` } })
+    return new Response(null, {
+      status: 416,
+      headers: { ...headers, 'Content-Range': `bytes */${size}` }
+    })
   }
 
   if (!range) {

@@ -1,29 +1,85 @@
-/* 汎用ボタン。トランスポート系のボタンは transport.css を参照。 */
+/* 汎用ボタン。再生系のボタンは transport.css を参照。 */
 .button {
   appearance: none;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-pill);
-  background: var(--color-surface-raised);
+  background: transparent;
   color: var(--color-text);
   font: inherit;
   font-size: var(--font-size-sm);
-  padding: var(--space-2) var(--space-4);
+  padding: 6px var(--space-4);
   cursor: pointer;
+  white-space: nowrap;
   transition:
     background var(--transition-fast),
     border-color var(--transition-fast),
     color var(--transition-fast);
 }
 
-.button:hover {
+.button:hover:not(:disabled) {
+  background: var(--color-accent);
   border-color: var(--color-accent);
-  color: var(--color-accent-hover);
+  color: var(--color-accent-contrast);
 }
 
-.button:active {
-  transform: translateY(1px);
+.button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
-.button--ghost {
+.button--primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.button--primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.button--quiet {
+  border-color: transparent;
+  color: var(--color-text-muted);
+}
+
+.button--small {
+  font-size: var(--font-size-xs);
+  padding: 4px var(--space-3);
+}
+
+/* アイコンだけのボタン */
+.iconbutton {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
   background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.iconbutton:hover {
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+}
+
+/* ナイトモードの切り替えに応じて太陽 / 月を出し分ける */
+.icon--sun {
+  display: none;
+}
+
+[data-theme='night'] .icon--moon {
+  display: none;
+}
+
+[data-theme='night'] .icon--sun {
+  display: block;
 }

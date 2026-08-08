@@ -1,0 +1,165 @@
+/* 右カラム：ライブラリ / プレイリスト収録曲の一覧。 */
+.tracklist {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--color-panel);
+  border-left: 1px solid var(--color-border);
+  transition: background var(--transition-theme);
+}
+
+.tracklist__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-5) var(--space-3);
+}
+
+.tracklist__title {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tracklist__count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  flex: none;
+}
+
+.tracklist__items {
+  flex: 1;
+  min-height: 0;
+  /* 曲が無いときは伸ばさない（下の案内文が底に落ちないように） */
+  &:empty {
+    flex: none;
+  }
+  margin: 0;
+  padding: 0 var(--space-3) var(--space-5);
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.tracklist__empty {
+  padding: 0 var(--space-5) var(--space-6);
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-faint);
+  line-height: 1.8;
+}
+
+/* ---- 1 行 ---- */
+
+.track {
+  display: grid;
+  grid-template-columns: 2.2em minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.track:hover {
+  background: var(--color-surface-sunken);
+}
+
+.track[data-active='true'] {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.track[data-dragging='true'] {
+  opacity: 0.4;
+}
+
+.track__index {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.track[data-active='true'] .track__index,
+.track[data-active='true'] .track__meta,
+.track[data-active='true'] .track__duration {
+  color: inherit;
+  opacity: 0.75;
+}
+
+.track__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.track__title {
+  font-size: var(--font-size-md);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track__meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track__duration {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+/* 操作ボタンはホバー時だけ、再生時間と入れ替わりで出す（行がうるさくならないように） */
+.track__actions {
+  display: none;
+  gap: var(--space-1);
+}
+
+.track:hover .track__actions,
+.track:focus-within .track__actions {
+  display: flex;
+}
+
+.track:hover .track__duration,
+.track:focus-within .track__duration {
+  display: none;
+}
+
+.track__action {
+  appearance: none;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--font-size-xs);
+  padding: 1px var(--space-2);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.track__action:hover {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.track[data-active='true'] .track__action:hover {
+  background: var(--color-accent-contrast);
+  color: var(--color-accent);
+}

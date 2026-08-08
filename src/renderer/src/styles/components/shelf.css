@@ -1,0 +1,151 @@
+/* 画面下のプレイリスト棚。参考画像のアルバム一覧にあたる部分。 */
+.shelf {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-border);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.shelf__list {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.shelf__card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto auto;
+  justify-items: start;
+  gap: 2px;
+  width: 108px;
+  flex: none;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.shelf__art {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-faint);
+  overflow: hidden;
+  transition:
+    outline-color var(--transition-fast),
+    transform var(--transition-fast);
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+}
+
+.shelf__art svg {
+  width: 32px;
+  height: 32px;
+}
+
+.shelf__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.shelf__card:hover .shelf__art {
+  transform: translateY(-2px);
+}
+
+.shelf__card[data-active='true'] .shelf__art {
+  outline-color: var(--color-accent);
+}
+
+/* 曲をドラッグしてきたときに受け皿だと分かるように */
+.shelf__card[data-dropping='true'] .shelf__art {
+  outline-color: var(--color-success);
+  transform: translateY(-4px);
+}
+
+.shelf__name {
+  margin-top: var(--space-1);
+  font-size: var(--font-size-xs);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shelf__count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* カードのツール（名前変更 / 削除）はホバー時だけ */
+.shelf__tools {
+  position: absolute;
+  inset: auto 0 auto auto;
+  top: 0;
+  display: none;
+  gap: 2px;
+  padding: 2px;
+}
+
+.shelf__card:hover .shelf__tools,
+.shelf__card:focus-within .shelf__tools {
+  display: flex;
+}
+
+.shelf__tool {
+  appearance: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  font: inherit;
+  font-size: 10px;
+  padding: 1px 5px;
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.shelf__tool:hover {
+  opacity: 1;
+}
+
+/* 「＋ プレイリスト」 */
+.shelf__add {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: var(--space-1);
+  width: 108px;
+  flex: none;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 20px;
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.shelf__add:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.shelf__add-label {
+  font-size: var(--font-size-xs);
+}

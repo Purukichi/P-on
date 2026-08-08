@@ -1,0 +1,116 @@
+/* 左カラム：ジャケットと、その裏から覗くレコード盤。 */
+.cover {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6) 0 var(--space-6) var(--space-6);
+}
+
+.cover__frame {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-cover);
+  overflow: hidden;
+  transition:
+    outline-color var(--transition-fast),
+    transform var(--transition-fast);
+  outline: 2px solid transparent;
+  outline-offset: 4px;
+}
+
+.cover__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cover__frame[data-empty='true'] .cover__image {
+  display: none;
+}
+
+.cover__placeholder {
+  display: none;
+  color: var(--color-text-faint);
+}
+
+.cover__frame[data-empty='true'] .cover__placeholder {
+  display: block;
+}
+
+.cover__placeholder svg {
+  width: 72px;
+  height: 72px;
+}
+
+/* 画像をドラッグしてきたときだけヒントを出す */
+.cover__hint {
+  position: absolute;
+  inset: auto 0 0;
+  margin: 0;
+  padding: var(--space-2);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  font-size: var(--font-size-xs);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(100%);
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.cover__frame[data-dropping='true'] {
+  outline-color: var(--color-accent);
+}
+
+.cover__frame[data-dropping='true'] .cover__hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 参考画像のように、ジャケットの右奥からレコードが覗く */
+.cover__disc {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  right: calc(var(--space-6) * -1);
+  width: 62%;
+  aspect-ratio: 1;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, var(--color-bg) 0 8%, transparent 8.5%),
+    repeating-radial-gradient(
+      circle at center,
+      var(--disc-color) 0 3px,
+      rgb(255 255 255 / 6%) 3px 4px
+    );
+  box-shadow: var(--shadow-cover);
+  transition: transform 600ms ease;
+}
+
+/* 再生中はゆっくり回す */
+.app[data-state='playing'] .cover__disc {
+  animation: disc-spin 8s linear infinite;
+}
+
+@keyframes disc-spin {
+  from {
+    transform: translateY(-50%) rotate(0deg);
+  }
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app[data-state='playing'] .cover__disc {
+    animation: none;
+  }
+}
