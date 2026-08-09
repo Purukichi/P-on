@@ -99,10 +99,11 @@ export function closeMiniPlayer() {
 
 function createMiniWindow() {
   miniWindow = new BrowserWindow({
-    width: 320,
-    height: 320,
-    minWidth: 200,
-    minHeight: 180,
+    // ジャケットの下に操作面を常時出すぶん、既定を縦長にしている
+    width: 300,
+    height: 420,
+    minWidth: 240,
+    minHeight: 260,
     show: false,
     frame: false,
     // 自由にリサイズできる。ジャケットで埋まらない余白はレンダラー側が

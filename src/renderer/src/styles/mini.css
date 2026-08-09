@@ -27,32 +27,39 @@ body {
   overflow: hidden;
 }
 
+/*
+ * 上がジャケット、下が操作面。
+ * 操作面はジャケットに重ねず場所を取り、常に出しておく。
+ */
 .mini {
-  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
   height: 100%;
   border-radius: var(--radius-lg);
   overflow: hidden;
   /*
-   * ウィンドウは自由にリサイズできるので、ジャケットで埋まらない余白ができる。
-   * その余白は「ジャケットの主要色 + アクリル」で塗る。
+   * ジャケットで埋まらない余白は「ジャケットの主要色 + アクリル」で塗る。
    * --mini-tint は mini.js がジャケットから抽出して書き込む。
-   * 半透明なので、下のアクリル越しにデスクトップが透けて見える。
    */
   background: var(--mini-tint, var(--glass-bg));
   border: 1px solid var(--glass-border);
   transition: background 400ms ease;
 }
 
-.mini__art,
-.mini__placeholder {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+/* ---- ジャケット ---- */
+
+.mini__stage {
+  position: relative;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  /* ここを掴んでウィンドウを動かす */
+  -webkit-app-region: drag;
 }
 
 .mini__art {
-  /* ジャケットは切り抜かず全体を見せ、余白は主要色に任せる */
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   display: block;
 }
@@ -63,47 +70,29 @@ body {
 
 .mini__placeholder {
   display: none;
-  place-items: center;
   color: var(--color-text-faint);
 }
 
 .mini[data-has-track='false'] .mini__placeholder {
-  display: grid;
+  display: block;
 }
 
 .mini__placeholder svg {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
 }
 
-/* ウィンドウを掴んで動かすための面 */
-.mini__grip {
-  position: absolute;
-  inset: 0;
-  -webkit-app-region: drag;
-}
-
-/* ---- マウスを乗せたときだけ出る操作面 ---- */
+/* ---- 操作面 ---- */
 
 .mini__panel {
-  position: absolute;
-  inset: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: var(--space-2);
   padding: var(--space-3);
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
   -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--transition-fast);
-}
-
-.mini:hover .mini__panel,
-.mini:focus-within .mini__panel {
-  opacity: 1;
-  pointer-events: auto;
+  border-top: 1px solid var(--color-border);
 }
 
 .mini__panel button,
@@ -200,7 +189,7 @@ body {
 
   appearance: none;
   width: 100%;
-  height: 3px;
+  height: 4px;
   margin: 0;
   border-radius: var(--radius-pill);
   background: linear-gradient(
@@ -249,8 +238,8 @@ body {
   appearance: none;
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   flex: none;
   padding: 0;
   border: 1px solid var(--color-border-strong);
@@ -276,13 +265,13 @@ body {
 }
 
 .mini__button svg {
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
 }
 
 .mini__button--play {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: var(--color-accent-contrast);
@@ -295,8 +284,8 @@ body {
 }
 
 .mini__button--play svg {
-  width: 18px;
-  height: 18px;
+  width: 17px;
+  height: 17px;
 }
 
 .mini__button--play .icon--pause,

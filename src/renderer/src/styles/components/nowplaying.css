@@ -1,7 +1,6 @@
 /*
  * 中央カラム：再生中の曲情報と操作系。
- * タイトル・シークバー・音量の幅は --np-measure で揃える。
- * 音量バーはそれより少し短くして、シークバーが主役に見えるようにしている。
+ * タイトル・シークバー・音量バーの幅は --np-measure で揃える。
  */
 .nowplaying {
   --np-measure: 340px;
@@ -31,23 +30,18 @@
   max-width: var(--np-measure);
 }
 
-.nowplaying .volume {
-  max-width: calc(var(--np-measure) - 40px);
-}
-
 .nowplaying__album {
   margin: 0;
-  justify-self: start;
   align-self: flex-start;
-  max-width: 100%;
-  padding: 1px 8px;
+  padding: 2px 8px;
   border-radius: var(--radius-sm);
   background: var(--color-accent);
   color: var(--color-accent-contrast);
-  font-size: 10px;
+  font-size: var(--font-size-xs);
   font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  /* アルバム名は入力どおりに出す（大文字化しない） */
+  text-transform: none;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

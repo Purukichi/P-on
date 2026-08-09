@@ -117,8 +117,8 @@ export class DropZones extends Emitter {
         this.emit('trash-track', trackId)
         return
       }
-      const collectionId = getCollectionDragData(event)
-      if (collectionId) this.emit('trash-collection', collectionId)
+      const collectionIds = getCollectionDragData(event)
+      if (collectionIds.length > 0) this.emit('trash-collection', collectionIds)
     })
   }
 }

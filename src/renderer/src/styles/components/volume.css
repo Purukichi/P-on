@@ -1,23 +1,41 @@
+/*
+ * 音量。バーの幅をシークバーと揃えたいので、
+ * アイコンと数値はバーの外（左右の余白）へ逃がしている。
+ */
 .volume {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: var(--space-3);
   margin-top: var(--space-4);
 }
 
 .volume__icon {
+  position: absolute;
+  left: -26px;
   width: 16px;
   height: 16px;
-  flex: none;
   color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.volume__value {
+  position: absolute;
+  right: -32px;
+  width: 3ch;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  pointer-events: none;
 }
 
 .volume__input {
   --fill: 0.8;
 
   appearance: none;
-  flex: 1;
-  height: 3px;
+  width: 100%;
+  height: 4px;
   margin: 0;
   border-radius: var(--radius-pill);
   background: linear-gradient(
@@ -30,8 +48,8 @@
 
 .volume__input::-webkit-slider-thumb {
   appearance: none;
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
   border: none;
   border-radius: 50%;
   background: var(--color-text);
@@ -40,14 +58,4 @@
 
 .volume__input:hover::-webkit-slider-thumb {
   transform: scale(1.25);
-}
-
-.volume__value {
-  width: 3ch;
-  flex: none;
-  text-align: right;
-  font-family: var(--font-mono);
-  font-size: var(--font-size-xs);
-  font-variant-numeric: tabular-nums;
-  color: var(--color-text-muted);
 }

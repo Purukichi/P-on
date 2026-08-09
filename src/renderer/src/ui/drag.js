@@ -25,13 +25,20 @@ export function getTrackDragData(event) {
   return event.dataTransfer.getData(TRACK_MIME) || null
 }
 
-export function setCollectionDragData(event, collectionId) {
-  event.dataTransfer.setData(COLLECTION_MIME, collectionId)
+/**
+ * コレクションのドラッグ。複数選択したままでも掴めるよう、
+ * 中身は常に id の配列（改行区切り）として持つ。
+ */
+export function setCollectionDragData(event, collectionIds) {
+  const ids = Array.isArray(collectionIds) ? collectionIds : [collectionIds]
+  event.dataTransfer.setData(COLLECTION_MIME, ids.join('\n'))
   event.dataTransfer.effectAllowed = 'copy'
 }
 
+/** @returns {string[]} */
 export function getCollectionDragData(event) {
-  return event.dataTransfer.getData(COLLECTION_MIME) || null
+  const raw = event.dataTransfer.getData(COLLECTION_MIME)
+  return raw ? raw.split('\n').filter(Boolean) : []
 }
 
 /**

@@ -9,7 +9,6 @@ import { CollectionShelf } from './ui/CollectionShelf.js'
 import { DropZones } from './ui/DropZones.js'
 import { NameDialog } from './ui/NameDialog.js'
 import { NowPlaying } from './ui/NowPlaying.js'
-import { SettingsDialog } from './ui/SettingsDialog.js'
 import { TrackEditor } from './ui/TrackEditor.js'
 import { TrackList } from './ui/TrackList.js'
 import { pick } from './ui/dom.js'
@@ -27,7 +26,6 @@ const trackList = new TrackList(root).mount()
 const shelf = new CollectionShelf(root).mount()
 const editor = new TrackEditor(root).mount()
 const nameDialog = new NameDialog(root).mount()
-const settingsDialog = new SettingsDialog(root, { theme }).mount()
 const dropZones = new DropZones(root).mount()
 
 /** @type {import('./core/Collections.js').Collection[]} */
@@ -62,7 +60,8 @@ function render() {
   pick(root, 'context-label').textContent = current ? current.name : ''
   pick(root, 'shelf-empty').hidden = collections.length > 0
 
-  if (listVisible) {
+  // 編集中に作り直すと入力欄からフォーカスが外れてしまうので、そのときは触らない
+  if (listVisible && !trackList.isEditing) {
     trackList.render({
       title: current?.name ?? '再生キュー',
       mode: current?.type === CollectionType.PLAYLIST ? 'playlist' : 'library',
@@ -328,15 +327,15 @@ shelf.on('add-track', async ({ playlistId, trackId }) => {
   setStatus(`「${playlist?.name ?? 'プレイリスト'}」に追加しました`)
 })
 
-// アルバム / シングルを別のアルバム / シングルに重ねる -> 2 つでプレイリストを作る
-shelf.on('merge-collections', async ({ sourceId, targetId }) => {
-  const source = findCollection(collections, sourceId)
+// アルバム / シングルを別のアルバム / シングルに重ねる -> まとめてプレイリストを作る
+shelf.on('merge-collections', async ({ sourceIds, targetId }) => {
   const target = findCollection(collections, targetId)
-  if (!source || !target) return
+  const sources = sourceIds.map((id) => findCollection(collections, id)).filter(Boolean)
+  if (!target || sources.length === 0) return
 
   const name = await nameDialog.ask({
-    heading: 'この 2 つでプレイリストを作る',
-    value: `${target.name} + ${source.name}`,
+    heading: 'まとめてプレイリストを作る',
+    value: sources.length === 1 ? `${target.name} + ${sources[0].name}` : target.name,
     confirmLabel: '作成'
   })
   if (!name) return
@@ -345,9 +344,10 @@ shelf.on('merge-collections', async ({ sourceId, targetId }) => {
   if (!playlistId) return
 
   // 落とされた側を先頭に、掴んできた側を後ろに並べる
-  const trackIds = [...target.tracks, ...source.tracks].map((track) => track.id)
+  const trackIds = [...new Set([target, ...sources].flatMap((c) => c.tracks.map((t) => t.id)))]
   await library.addToPlaylist(playlistId, trackIds)
 
+  shelf.clearSelection()
   activeCollectionId = `playlist:${playlistId}`
   render()
   setStatus(`「${name}」を作成しました（${trackIds.length}曲）`)
@@ -377,11 +377,6 @@ pick(root, 'add-tracks').addEventListener('click', async () => {
 })
 
 pick(root, 'open-folder').addEventListener('click', () => library.openFolder())
-pick(root, 'open-settings').addEventListener('click', () =>
-  settingsDialog.open({ libraryPath: library.libraryPath })
-)
-settingsDialog.on('toggle-theme', () => theme.toggle())
-settingsDialog.on('open-folder', () => library.openFolder())
 
 dropZones.on('files-dropped', async (filePaths) => {
   setStatus(`${filePaths.length}件を取り込んでいます…`, { duration: 60000 })
@@ -413,8 +408,44 @@ function handleImported({ added, skipped }) {
 
 dropZones.on('trash-track', (trackId) => deleteTracks([trackId]))
 
-// 棚のカードをゴミ箱へ落としたとき
-dropZones.on('trash-collection', (collectionId) => deleteCollection(collectionId))
+// 棚のカードをゴミ箱へ落としたとき（選択中ならまとめて）
+dropZones.on('trash-collection', (collectionIds) => deleteCollections(collectionIds))
+
+/** 複数のコレクションをまとめて消す。確認は 1 回だけ取る */
+async function deleteCollections(collectionIds) {
+  const targets = collectionIds.map((id) => findCollection(collections, id)).filter(Boolean)
+  if (targets.length === 0) return
+  if (targets.length === 1) {
+    await deleteCollection(targets[0].id)
+    return
+  }
+
+  const playlists = targets.filter((c) => c.type === CollectionType.PLAYLIST)
+  const others = targets.filter((c) => c.type !== CollectionType.PLAYLIST)
+  const trackIds = [...new Set(others.flatMap((c) => c.tracks.map((t) => t.id)))]
+
+  const detail = [
+    trackIds.length > 0 ? `${trackIds.length}曲の音源ファイルとジャケット画像を完全に削除します。` : '',
+    playlists.length > 0 ? `プレイリスト${playlists.length}件を削除します（曲は残ります）。` : ''
+  ]
+    .filter(Boolean)
+    .join('\n')
+
+  const ok = await window.hamon.confirm({
+    message: `選択した${targets.length}件を削除しますか？`,
+    detail: `${detail}\n元に戻せません。`,
+    confirmLabel: '削除'
+  })
+  if (!ok) return
+
+  for (const playlist of playlists) await library.deletePlaylist(playlist.sourceId)
+  if (trackIds.length > 0) {
+    await deleteTracks(trackIds, { confirm: false, label: `${targets.length}件` })
+  } else {
+    setStatus(`${targets.length}件を削除しました`)
+  }
+  shelf.clearSelection()
+}
 
 /**
  * コレクション単位の削除。
@@ -628,6 +659,6 @@ if (import.meta.env.DEV) {
     playCollection,
     deleteTracks,
     deleteCollection,
-    views: { nowPlaying, trackList, shelf, editor, nameDialog, settingsDialog }
+    views: { nowPlaying, trackList, shelf, editor, nameDialog }
   }
 }
