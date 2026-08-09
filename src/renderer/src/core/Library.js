@@ -122,6 +122,11 @@ export class Library extends Emitter {
     return this.#run(() => this.#api.library.setAlbumCover(albumName, null))
   }
 
+  /** 複数の曲をひとつのアルバムにまとめる（null でシングルに戻す） */
+  async setAlbumForTracks(trackIds, albumName) {
+    return this.#run(() => this.#api.library.setAlbum(trackIds, albumName))
+  }
+
   async deleteTrack(trackId) {
     return this.#run(() => this.#api.library.deleteTrack(trackId))
   }

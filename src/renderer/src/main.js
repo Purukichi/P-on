@@ -3,7 +3,7 @@ import { AudioEngine } from './core/AudioEngine.js'
 import { Library } from './core/Library.js'
 import { PlayQueue } from './core/PlayQueue.js'
 import { Theme } from './core/Theme.js'
-import { Settings } from './core/Settings.js'
+import { applyAppearance } from './core/Settings.js'
 import { CollectionType, buildCollections, findCollection } from './core/Collections.js'
 import { CollectionShelf } from './ui/CollectionShelf.js'
 import { DropZones } from './ui/DropZones.js'
@@ -17,7 +17,7 @@ import { pick } from './ui/dom.js'
 const root = document.querySelector('#app')
 
 const theme = new Theme()
-const settings = new Settings()
+applyAppearance()
 const engine = new AudioEngine({ volume: 0.8 })
 const library = new Library()
 const queue = new PlayQueue()
@@ -27,7 +27,7 @@ const trackList = new TrackList(root).mount()
 const shelf = new CollectionShelf(root).mount()
 const editor = new TrackEditor(root).mount()
 const nameDialog = new NameDialog(root).mount()
-const settingsDialog = new SettingsDialog(root, { settings }).mount()
+const settingsDialog = new SettingsDialog(root, { theme }).mount()
 const dropZones = new DropZones(root).mount()
 
 /** @type {import('./core/Collections.js').Collection[]} */
@@ -42,12 +42,12 @@ function activeCollection() {
 }
 
 /**
- * リストのプレビューは既定では出さない。
- * アルバム / プレイリストを鳴らしているとき、
- * あるいはドロップで複数曲がキューに入っているときだけ開く。
+ * リストのプレビュー。
+ * キューに曲が入っていれば、シングル 1 曲でも開く。
+ * （1 曲のときも、そこから編集や削除ができたほうが都合がよい）
  */
 function shouldShowList() {
-  return Boolean(activeCollection()?.showsTrackList) || queue.tracks.length > 1
+  return queue.tracks.length > 0
 }
 
 function render() {
@@ -244,6 +244,75 @@ shelf.on('album-cover', async (albumName) => {
   await library.pickAlbumCover(albumName)
 })
 
+shelf.on('rename-album', async (albumName) => {
+  const collection = findCollection(collections, `album:${albumName}`)
+  if (!collection) return
+  const name = await nameDialog.ask({
+    heading: 'アルバム名を変更',
+    value: albumName,
+    confirmLabel: '変更'
+  })
+  if (!name || name === albumName) return
+  await library.setAlbumForTracks(
+    collection.tracks.map((track) => track.id),
+    name
+  )
+  activeCollectionId = `album:${name}`
+  setStatus(`「${name}」に変更しました`)
+})
+
+// 右クリックメニューの「編集」
+shelf.on('edit-collection', (collectionId) => {
+  const collection = findCollection(collections, collectionId)
+  const track = collection?.tracks[0]
+  if (track) editor.open(track)
+})
+
+// 右クリックメニュー / ゴミ箱からの削除
+shelf.on('delete-collection', (collectionId) => deleteCollection(collectionId))
+
+// 複数選択してアルバム化 / プレイリスト化
+shelf.on('group-selection', async ({ collectionIds, as }) => {
+  const chosen = collectionIds
+    .map((id) => findCollection(collections, id))
+    .filter((collection) => collection && collection.type !== CollectionType.PLAYLIST)
+  const trackIds = [...new Set(chosen.flatMap((c) => c.tracks.map((track) => track.id)))]
+
+  if (trackIds.length === 0) {
+    setStatus('まとめられる曲がありません', { tone: 'error' })
+    return
+  }
+
+  const suggestion = chosen[0]?.name ?? ''
+
+  if (as === 'album') {
+    const name = await nameDialog.ask({
+      heading: 'アルバムにまとめる',
+      value: suggestion,
+      confirmLabel: 'まとめる'
+    })
+    if (!name) return
+    await library.setAlbumForTracks(trackIds, name)
+    shelf.clearSelection()
+    activeCollectionId = `album:${name}`
+    setStatus(`「${name}」にまとめました（${trackIds.length}曲）`)
+    return
+  }
+
+  const name = await nameDialog.ask({
+    heading: 'プレイリストにする',
+    value: suggestion,
+    confirmLabel: '作成'
+  })
+  if (!name) return
+  const playlistId = await library.createPlaylist(name)
+  if (!playlistId) return
+  await library.addToPlaylist(playlistId, trackIds)
+  shelf.clearSelection()
+  activeCollectionId = `playlist:${playlistId}`
+  setStatus(`「${name}」を作成しました（${trackIds.length}曲）`)
+})
+
 shelf.on('add-track', async ({ playlistId, trackId }) => {
   const playlist = library.getPlaylist(playlistId)
   if (playlist?.includes(trackId)) {
@@ -303,7 +372,11 @@ pick(root, 'add-tracks').addEventListener('click', async () => {
 })
 
 pick(root, 'open-folder').addEventListener('click', () => library.openFolder())
-pick(root, 'open-settings').addEventListener('click', () => settingsDialog.open())
+pick(root, 'open-settings').addEventListener('click', () =>
+  settingsDialog.open({ libraryPath: library.libraryPath })
+)
+settingsDialog.on('toggle-theme', () => theme.toggle())
+settingsDialog.on('open-folder', () => library.openFolder())
 
 dropZones.on('files-dropped', async (filePaths) => {
   setStatus(`${filePaths.length}件を取り込んでいます…`, { duration: 60000 })
@@ -333,28 +406,75 @@ function handleImported({ added, skipped }) {
   setStatus(`${added.length}曲をキューに追加しました${skippedNote}`)
 }
 
-dropZones.on('trash-track', async (trackId) => {
-  const track = library.getTrack(trackId)
-  if (!track) return
+dropZones.on('trash-track', (trackId) => deleteTracks([trackId]))
 
+// 棚のカードをゴミ箱へ落としたとき
+dropZones.on('trash-collection', (collectionId) => deleteCollection(collectionId))
+
+/**
+ * コレクション単位の削除。
+ * プレイリストは入れ物だけを消し、曲そのものは残す。
+ * アルバム / シングルは収録曲の実ファイルごと消す。
+ */
+async function deleteCollection(collectionId) {
+  const collection = findCollection(collections, collectionId)
+  if (!collection) return
+
+  if (collection.type === CollectionType.PLAYLIST) {
+    const ok = await window.hamon.confirm({
+      message: `プレイリスト「${collection.name}」を削除しますか？`,
+      detail: '曲そのものはライブラリに残ります。',
+      confirmLabel: '削除'
+    })
+    if (ok) await library.deletePlaylist(collection.sourceId)
+    return
+  }
+
+  const label = collection.type === CollectionType.ALBUM ? 'アルバム' : '曲'
   const ok = await window.hamon.confirm({
-    message: `「${track.displayTitle}」を削除しますか？`,
-    detail: '音源ファイルとジャケット画像がライブラリから完全に削除されます。元に戻せません。',
+    message: `${label}「${collection.name}」を削除しますか？`,
+    detail: `${collection.size}曲の音源ファイルとジャケット画像がライブラリから完全に削除されます。元に戻せません。`,
     confirmLabel: '削除'
   })
   if (!ok) return
 
-  const wasPlaying = engine.track?.id === trackId
-  await library.deleteTrack(trackId)
-  queue.remove(trackId)
+  await deleteTracks(
+    collection.tracks.map((track) => track.id),
+    { confirm: false, label: collection.name }
+  )
+}
 
-  if (wasPlaying) {
-    engine.unload()
-    const next = queue.current
-    if (next) playTrack(next, { autoplay: false })
+/** 曲の実体を消す。再生中のものが含まれていたら空の状態に戻す */
+async function deleteTracks(trackIds, { confirm = true, label = null } = {}) {
+  const tracks = trackIds.map((id) => library.getTrack(id)).filter(Boolean)
+  if (tracks.length === 0) return
+
+  if (confirm) {
+    const ok = await window.hamon.confirm({
+      message: `「${tracks[0].displayTitle}」を削除しますか？`,
+      detail: '音源ファイルとジャケット画像がライブラリから完全に削除されます。元に戻せません。',
+      confirmLabel: '削除'
+    })
+    if (!ok) return
   }
-  setStatus(`「${track.displayTitle}」を削除しました`)
-})
+
+  const hitPlaying = tracks.some((track) => track.id === engine.track?.id)
+
+  for (const track of tracks) {
+    await library.deleteTrack(track.id)
+    queue.remove(track.id)
+  }
+
+  // 再生していたものを消したら、既定の空の状態に戻す
+  if (hitPlaying) {
+    engine.unload()
+    queue.clear()
+    activeCollectionId = null
+    render()
+  }
+
+  setStatus(`「${label ?? tracks[0].displayTitle}」を削除しました`)
+}
 
 // ---- 配線: 楽曲情報の編集 -------------------------------------------------
 
@@ -396,7 +516,19 @@ dropZones.on('images-dropped', async (imagePaths) => {
   await setCoverOfCurrentTrack(imagePaths[0])
 })
 
+/**
+ * ジャケット枠へのドロップ。
+ * アルバムを鳴らしているときはアルバム共通のジャケットとして登録し、
+ * それ以外はその曲だけのジャケットにする。
+ */
 async function setCoverOfCurrentTrack(imagePath) {
+  const current = activeCollection()
+  if (current?.type === CollectionType.ALBUM) {
+    await library.setAlbumCoverFromPath(current.name, imagePath)
+    setStatus(`「${current.name}」のジャケットを設定しました`)
+    return
+  }
+
   const trackId = engine.track?.id
   if (!trackId) {
     setStatus('先に曲を再生してから、ジャケットをドロップしてください', { tone: 'error' })
@@ -484,12 +616,13 @@ if (import.meta.env.DEV) {
     library,
     queue,
     theme,
-    settings,
     dropZones,
     get collections() {
       return collections
     },
     playCollection,
+    deleteTracks,
+    deleteCollection,
     views: { nowPlaying, trackList, shelf, editor, nameDialog, settingsDialog }
   }
 }

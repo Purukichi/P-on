@@ -238,6 +238,27 @@ export async function setCover(trackId, imagePath) {
 }
 
 /**
+ * 複数の曲にまとめて同じアルバム名を書き込む。
+ * タグが入っていない音源はシングル扱いになるので、
+ * 後から選んでアルバムにまとめ直すための入口。
+ *
+ * @param {string[]} trackIds
+ * @param {string|null} albumName null を渡すとアルバムから外してシングルに戻す
+ */
+export async function setAlbumForTracks(trackIds, albumName) {
+  const album = normalize(albumName)
+  const ids = new Set(trackIds)
+
+  await update((data) => {
+    for (const track of data.tracks) {
+      if (ids.has(track.id)) track.album = album
+    }
+  })
+
+  return snapshot()
+}
+
+/**
  * アルバムのジャケットを差し替える。imagePath が null なら削除。
  * 曲ごとの coverFile とは独立しているので、
  * アルバムに入っている曲がシングルとしても出ている場合は

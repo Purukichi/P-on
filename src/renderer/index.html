@@ -197,18 +197,37 @@
       </main>
 
       <footer class="shelf">
-        <div class="shelf__list" data-el="shelf-list"></div>
-        <button class="shelf__add" type="button" data-el="shelf-add" title="プレイリストを作成">
-          <span class="shelf__add-mark" aria-hidden="true">＋</span>
-          <span class="shelf__add-label">プレイリスト</span>
-        </button>
-        <p class="shelf__empty" data-el="shelf-empty">
-          音源ファイルをウィンドウにドラッグすると取り込めます
-        </p>
+        <!-- Ctrl / Shift クリックで複数選んだときだけ出る -->
+        <div class="selectionbar" data-el="shelf-selection" hidden>
+          <span class="selectionbar__count" data-el="shelf-selection-count">0件を選択中</span>
+          <button class="button button--small" type="button" data-el="shelf-make-album">
+            アルバムにまとめる
+          </button>
+          <button class="button button--small" type="button" data-el="shelf-make-playlist">
+            プレイリストにする
+          </button>
+          <button class="button button--small button--quiet" type="button" data-el="shelf-clear-selection">
+            選択を解除
+          </button>
+        </div>
+
+        <div class="shelf__row">
+          <div class="shelf__list" data-el="shelf-list"></div>
+          <button class="shelf__add" type="button" data-el="shelf-add" title="プレイリストを作成">
+            <span class="shelf__add-mark" aria-hidden="true">＋</span>
+            <span class="shelf__add-label">プレイリスト</span>
+          </button>
+          <p class="shelf__empty" data-el="shelf-empty">
+            音源ファイルをウィンドウにドラッグすると取り込めます
+          </p>
+        </div>
       </footer>
 
       <!-- カードにマウスを乗せたときに出るすりガラスのポップアップ -->
       <div class="popup" data-el="shelf-popup" hidden></div>
+
+      <!-- カードを右クリックしたときのメニュー -->
+      <div class="menu" data-el="shelf-menu" hidden></div>
 
       <div class="dropveil" data-el="dropveil" hidden>
         <div class="dropveil__inner">
@@ -273,44 +292,31 @@
           <h3 class="dialog__heading">設定</h3>
 
           <div class="settings">
-            <label class="setting">
-              <span class="setting__head">
-                <span class="setting__label">背景の不透明度</span>
-                <span class="setting__value" data-el="settings-alpha-value">38%</span>
-              </span>
-              <input
-                class="setting__range"
-                type="range"
-                data-el="settings-alpha"
-                min="0.1"
-                max="0.95"
-                step="0.01"
-              />
+            <div class="setting">
+              <span class="setting__label">配色</span>
+              <div class="setting__row">
+                <button class="button button--small" type="button" data-el="settings-theme">
+                  ナイトモードにする
+                </button>
+              </div>
+              <span class="setting__note">上部の月 / 太陽アイコンからも切り替えられる。</span>
+            </div>
+
+            <div class="setting">
+              <span class="setting__label">ライブラリの保存先</span>
+              <code class="setting__path" data-el="settings-library-path"></code>
+              <div class="setting__row">
+                <button class="button button--small" type="button" data-el="settings-open-folder">
+                  フォルダを開く
+                </button>
+              </div>
               <span class="setting__note">
-                下げるほどデスクトップが透ける。上げるほど曇って、背後の文字が読めなくなる。
+                取り込んだ音源とジャケットはここに保存される。アプリを更新しても消えない。
               </span>
-            </label>
-
-            <label class="setting">
-              <span class="setting__head">
-                <span class="setting__label">アクセントカラー</span>
-                <span class="setting__value" data-el="settings-hue-value">151</span>
-              </span>
-              <input
-                class="setting__range setting__range--hue"
-                type="range"
-                data-el="settings-hue"
-                min="0"
-                max="359"
-                step="1"
-              />
-              <span class="setting__note">左から右へ 赤 → 黄 → 緑 → 水 → 青 → 紫 と一周する。</span>
-            </label>
-
+            </div>
           </div>
 
           <footer class="dialog__actions">
-            <button class="button button--quiet" type="button" data-el="settings-reset">既定に戻す</button>
             <button class="button button--primary" type="button" data-el="settings-close">閉じる</button>
           </footer>
         </div>

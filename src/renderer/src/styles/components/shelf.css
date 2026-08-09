@@ -5,15 +5,24 @@
 .shelf {
   position: relative;
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-6) var(--space-5);
+  /* 選択中の枠線が上で切れないよう、上側に余白を確保する */
+  padding: var(--space-4) var(--space-6);
   /* 面は body（アクリル + 半透明）に任せる */
   background: transparent;
   border-top: 1px solid var(--color-border);
   /* カードが増えてもウィンドウ幅を押し広げない */
   min-width: 0;
   overflow: hidden;
+}
+
+/* カードの並びと「＋ プレイリスト」を横に置く行 */
+.shelf__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
 }
 
 /*
@@ -29,8 +38,26 @@
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
-  padding-bottom: var(--space-2);
-  scrollbar-width: thin;
+  /* 上は選択枠のぶん、下はスクロールバーのぶんを空ける */
+  padding: 4px 0 var(--space-3);
+}
+
+/* スクロールバーも UI に馴染ませる */
+.shelf__list::-webkit-scrollbar {
+  height: 6px;
+}
+
+.shelf__list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.shelf__list::-webkit-scrollbar-thumb {
+  border-radius: var(--radius-pill);
+  background: var(--color-border-strong);
+}
+
+.shelf__list::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent);
 }
 
 .shelf__empty {
@@ -62,8 +89,9 @@
   border-radius: var(--radius-md);
   background: var(--color-panel);
   overflow: hidden;
-  outline: 2px solid transparent;
-  outline-offset: 3px;
+  /* 細い線で囲む。offset は上の余白（.shelf の padding-top）に収まる範囲に留める */
+  outline: 1px solid transparent;
+  outline-offset: 2px;
   box-shadow: var(--shadow-soft);
   transition:
     outline-color var(--transition-fast),
@@ -78,11 +106,16 @@
   outline-color: var(--color-accent);
 }
 
+.card[data-selected='true'] .card__art {
+  outline-color: var(--color-ink);
+  outline-style: dashed;
+}
+
 /* 重ねられようとしているカード */
 .card[data-dropping='true'] .card__art {
   outline-color: var(--color-accent);
-  outline-width: 3px;
-  transform: translateY(-6px) scale(1.04);
+  outline-width: 2px;
+  transform: translateY(-5px) scale(1.03);
 }
 
 /* 掴まれているカード自身は薄くする */
@@ -226,4 +259,29 @@
 
 .shelf__add-label {
   font-size: var(--font-size-xs);
+}
+
+/* ---- 複数選択したときに出る操作バー ---- */
+
+.selectionbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-pill);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
+  box-shadow: var(--glass-shadow);
+}
+
+.selectionbar[hidden] {
+  display: none;
+}
+
+.selectionbar__count {
+  flex: 1;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
 }

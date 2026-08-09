@@ -1,0 +1,61 @@
+/*
+ * カードを右クリックしたときのメニュー。
+ * 位置は JS が left / top を書き込む。
+ */
+.menu {
+  position: fixed;
+  z-index: 85;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-1);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
+  box-shadow: var(--glass-shadow);
+  animation: menu-in 110ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.menu[hidden] {
+  display: none;
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.menu__item {
+  appearance: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.menu__item:hover {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.menu__item--danger {
+  color: var(--color-danger);
+}
+
+.menu__item--danger:hover {
+  background: var(--color-danger);
+  color: #fff;
+}

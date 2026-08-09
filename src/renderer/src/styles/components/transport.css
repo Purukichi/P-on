@@ -1,8 +1,11 @@
-/* 前へ / 再生・一時停止 / 停止 / 次へ */
+/*
+ * 前へ / 再生・一時停止 / 停止 / 次へ。
+ * シークバーと同じ幅の中に均等に配置する（幅は .nowplaying が渡す）。
+ */
 .transport {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  justify-content: space-between;
   margin-top: var(--space-2);
 }
 

@@ -6,7 +6,11 @@
   display: grid;
   place-items: center;
   padding: var(--space-6);
-  background: var(--glass-bg);
+  /*
+   * ドロップ先の案内は真っ先に読めてほしいので、ここだけはほぼ不透明にする。
+   * 本体の透過率（--surface-alpha）には連動させない。
+   */
+  background: var(--color-veil);
   backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
   -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
   pointer-events: none;

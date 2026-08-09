@@ -23,6 +23,8 @@ const api = {
     setAlbumCover: (albumName, imagePath) =>
       ipcRenderer.invoke(IPC.LIBRARY_SET_ALBUM_COVER, albumName, imagePath),
     pickAlbumCover: (albumName) => ipcRenderer.invoke(IPC.LIBRARY_PICK_ALBUM_COVER, albumName),
+    /** 複数の曲にまとめてアルバム名を書き込む。null でシングルに戻す */
+    setAlbum: (trackIds, albumName) => ipcRenderer.invoke(IPC.LIBRARY_SET_ALBUM, trackIds, albumName),
     deleteTrack: (trackId) => ipcRenderer.invoke(IPC.LIBRARY_DELETE_TRACK, trackId),
     openFolder: () => ipcRenderer.invoke(IPC.LIBRARY_OPEN_FOLDER),
     /** フォーマット表示を後から足したので、既存レコードにも埋めて回る */

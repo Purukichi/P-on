@@ -12,6 +12,8 @@ export const IPC = {
   LIBRARY_PICK_COVER: 'library:pick-cover',
   LIBRARY_SET_ALBUM_COVER: 'library:set-album-cover',
   LIBRARY_PICK_ALBUM_COVER: 'library:pick-album-cover',
+  /** 複数の曲にまとめてアルバム名を書き込む（シングルをアルバムにまとめ直す） */
+  LIBRARY_SET_ALBUM: 'library:set-album',
   LIBRARY_DELETE_TRACK: 'library:delete-track',
   LIBRARY_OPEN_FOLDER: 'library:open-folder',
   /** format を持っていない既存レコードにフォーマット情報を埋める */

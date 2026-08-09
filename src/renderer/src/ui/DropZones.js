@@ -1,7 +1,15 @@
 import { Emitter } from '../core/Emitter.js'
 import { AUDIO_EXTENSIONS, IMAGE_EXTENSIONS } from '@shared/ipc-channels.js'
 import { collect } from './dom.js'
-import { filePathsFrom, getTrackDragData, isFileDrag, isTrackDrag, splitByExtension } from './drag.js'
+import {
+  filePathsFrom,
+  getCollectionDragData,
+  getTrackDragData,
+  isCollectionDrag,
+  isFileDrag,
+  isTrackDrag,
+  splitByExtension
+} from './drag.js'
 
 /**
  * ウィンドウ全体への音源ドロップと、ゴミ箱へのドロップを受け持つ。
@@ -81,11 +89,13 @@ export class DropZones extends Emitter {
     })
   }
 
+  /** 曲の行も、棚のカードもゴミ箱で受ける */
   #bindTrash() {
     const trash = this.#el.trash
+    const accepts = (event) => isTrackDrag(event) || isCollectionDrag(event)
 
     trash.addEventListener('dragover', (event) => {
-      if (!isTrackDrag(event)) return
+      if (!accepts(event)) return
       event.preventDefault()
       event.stopPropagation()
       event.dataTransfer.dropEffect = 'move'
@@ -97,12 +107,18 @@ export class DropZones extends Emitter {
     })
 
     trash.addEventListener('drop', (event) => {
-      if (!isTrackDrag(event)) return
+      if (!accepts(event)) return
       event.preventDefault()
       event.stopPropagation()
       trash.dataset.dropping = 'false'
+
       const trackId = getTrackDragData(event)
-      if (trackId) this.emit('trash-track', trackId)
+      if (trackId) {
+        this.emit('trash-track', trackId)
+        return
+      }
+      const collectionId = getCollectionDragData(event)
+      if (collectionId) this.emit('trash-collection', collectionId)
     })
   }
 }

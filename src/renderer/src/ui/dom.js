@@ -40,6 +40,15 @@ export function icon(pathData, { className = 'icon', viewBox = '0 0 24 24' } = {
 }
 
 /**
+ * event.target から祖先を探す。
+ * window / document レベルのリスナーでは target が Element とは限らないので、
+ * closest() を直接呼ぶと落ちることがある。
+ */
+export function closestFrom(target, selector) {
+  return target instanceof Element ? target.closest(selector) : null
+}
+
+/**
  * 長いテキストを「…」で切らず、収まらないときだけ自動で往復スクロールさせる。
  * 距離と時間は CSS 変数で渡し、アニメーション自体は CSS 側（.marquee）が持つ。
  */

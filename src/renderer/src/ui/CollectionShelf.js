@@ -1,7 +1,7 @@
 import { Emitter } from '../core/Emitter.js'
 import { CollectionType } from '../core/Collections.js'
 import { formatTime } from '../utils/time.js'
-import { collect, create } from './dom.js'
+import { closestFrom, collect, create } from './dom.js'
 import {
   attachDragThumbnail,
   getCollectionDragData,
@@ -22,7 +22,10 @@ const HOVER_CLOSE_DELAY = 220
  *         'create-playlist', 'rename-playlist' (playlistId), 'delete-playlist' (playlistId),
  *         'add-track' ({playlistId, trackId}), 'album-cover' (albumName),
  *         'merge-collections' ({sourceId, targetId})  カード同士を重ねたとき,
- *         'add-collection' ({playlistId, collectionId}) プレイリストへ束ごと追加
+ *         'add-collection' ({playlistId, collectionId}) プレイリストへ束ごと追加,
+ *         'edit-collection' (collectionId), 'delete-collection' (collectionId),
+ *         'rename-album' (albumName),
+ *         'group-selection' ({collectionIds, as: 'album'|'playlist'})
  */
 export class CollectionShelf extends Emitter {
   #root
@@ -31,14 +34,39 @@ export class CollectionShelf extends Emitter {
   #collections = []
   #openId = null
   #closeTimer = null
+  /** Ctrl / Shift クリックで選んだカード @type {Set<string>} */
+  #selected = new Set()
 
   constructor(root) {
     super()
     this.#root = root
   }
 
+  get selectedIds() {
+    return [...this.#selected]
+  }
+
+  clearSelection() {
+    if (this.#selected.size === 0) return
+    this.#selected.clear()
+    this.#renderSelection()
+  }
+
   mount() {
-    this.#el = collect(this.#root, ['shelf-list', 'shelf-add', 'shelf-popup'])
+    this.#el = collect(this.#root, [
+      'shelf-list',
+      'shelf-add',
+      'shelf-popup',
+      'shelf-menu',
+      'shelf-selection',
+      'shelf-selection-count',
+      'shelf-make-album',
+      'shelf-make-playlist',
+      'shelf-clear-selection'
+    ])
+
+    this.#bindContextMenu()
+    this.#bindSelectionBar()
 
     this.#bindCards()
     this.#bindPopup()
@@ -48,7 +76,7 @@ export class CollectionShelf extends Emitter {
 
     // 棚の外に出たら閉じる
     window.addEventListener('pointerdown', (event) => {
-      if (!event.target.closest('[data-el="shelf-popup"], [data-collection-id]')) this.#closeNow()
+      if (!closestFrom(event.target, '[data-el="shelf-popup"], [data-collection-id]')) this.#closeNow()
     })
     this.#el.shelfList.addEventListener('scroll', () => this.#closeNow())
 
@@ -79,6 +107,13 @@ export class CollectionShelf extends Emitter {
         this.#renderCard(collection, collection.id === activeCollectionId)
       )
     )
+
+    // 無くなったカードの選択は落とす
+    for (const id of [...this.#selected]) {
+      if (!collections.some((c) => c.id === id)) this.#selected.delete(id)
+    }
+    this.#renderSelection()
+    this.#closeMenu()
 
     // 開いていたポップアップの中身が消えたら閉じる
     if (this.#openId && !collections.some((c) => c.id === this.#openId)) this.#closeNow()
@@ -150,9 +185,18 @@ export class CollectionShelf extends Emitter {
       const collection = this.#find(card.dataset.collectionId)
       if (!collection) return
 
+      // Ctrl / Shift クリックは再生ではなく選択の切り替え
+      if (event.ctrlKey || event.metaKey || event.shiftKey) {
+        this.#toggleSelection(collection.id)
+        return
+      }
+
       if (action === 'rename') this.emit('rename-playlist', collection.sourceId)
       else if (action === 'delete') this.emit('delete-playlist', collection.sourceId)
-      else this.emit('play-collection', { collectionId: collection.id })
+      else {
+        this.clearSelection()
+        this.emit('play-collection', { collectionId: collection.id })
+      }
     })
 
     list.addEventListener('keydown', (event) => {
@@ -374,6 +418,126 @@ export class CollectionShelf extends Emitter {
     return null
   }
 
+  // ---- 右クリックメニュー ---------------------------------------------------
+
+  #bindContextMenu() {
+    const menu = this.#el.shelfMenu
+
+    this.#el.shelfList.addEventListener('contextmenu', (event) => {
+      const card = event.target.closest('[data-collection-id]')
+      if (!card) return
+      event.preventDefault()
+      const collection = this.#find(card.dataset.collectionId)
+      if (collection) this.#openMenu(collection, event.clientX, event.clientY)
+    })
+
+    menu.addEventListener('click', (event) => {
+      const item = event.target.closest('[data-menu-action]')
+      if (!item) return
+      const collectionId = menu.dataset.collectionId
+      const collection = this.#find(collectionId)
+      this.#closeMenu()
+      if (!collection) return
+
+      switch (item.dataset.menuAction) {
+        case 'play':
+          this.emit('play-collection', { collectionId })
+          break
+        case 'edit':
+          this.emit('edit-collection', collectionId)
+          break
+        case 'album-cover':
+          this.emit('album-cover', collection.name)
+          break
+        case 'rename-album':
+          this.emit('rename-album', collection.name)
+          break
+        case 'rename-playlist':
+          this.emit('rename-playlist', collection.sourceId)
+          break
+        case 'delete':
+          this.emit('delete-collection', collectionId)
+          break
+      }
+    })
+
+    window.addEventListener('pointerdown', (event) => {
+      if (!closestFrom(event.target, '[data-el="shelf-menu"]')) this.#closeMenu()
+    })
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') this.#closeMenu()
+    })
+  }
+
+  #openMenu(collection, x, y) {
+    const menu = this.#el.shelfMenu
+    menu.dataset.collectionId = collection.id
+    menu.replaceChildren(...this.#menuItemsFor(collection))
+    menu.hidden = false
+
+    // 画面外へはみ出さないよう寄せる
+    const rect = menu.getBoundingClientRect()
+    menu.style.left = `${Math.min(x, window.innerWidth - rect.width - 8)}px`
+    menu.style.top = `${Math.min(y, window.innerHeight - rect.height - 8) - rect.height / 2}px`
+  }
+
+  #menuItemsFor(collection) {
+    const item = (action, text, variant) =>
+      create('button', {
+        className: variant ? `menu__item menu__item--${variant}` : 'menu__item',
+        text,
+        attrs: { type: 'button', 'data-menu-action': action }
+      })
+
+    const items = [item('play', '再生')]
+
+    if (collection.type === CollectionType.PLAYLIST) {
+      items.push(item('rename-playlist', '名前を変更'), item('delete', 'プレイリストを削除', 'danger'))
+    } else if (collection.type === CollectionType.ALBUM) {
+      items.push(
+        item('album-cover', 'アルバムのジャケットを変更'),
+        item('rename-album', 'アルバム名を変更'),
+        item('delete', 'アルバムごと削除', 'danger')
+      )
+    } else {
+      items.push(item('edit', '楽曲情報を編集'), item('delete', 'この曲を削除', 'danger'))
+    }
+    return items
+  }
+
+  #closeMenu() {
+    this.#el.shelfMenu.hidden = true
+  }
+
+  // ---- 複数選択 -------------------------------------------------------------
+
+  #bindSelectionBar() {
+    this.#el.shelfMakeAlbum.addEventListener('click', () => {
+      this.emit('group-selection', { collectionIds: this.selectedIds, as: 'album' })
+    })
+    this.#el.shelfMakePlaylist.addEventListener('click', () => {
+      this.emit('group-selection', { collectionIds: this.selectedIds, as: 'playlist' })
+    })
+    this.#el.shelfClearSelection.addEventListener('click', () => this.clearSelection())
+  }
+
+  #toggleSelection(collectionId) {
+    if (this.#selected.has(collectionId)) this.#selected.delete(collectionId)
+    else this.#selected.add(collectionId)
+    this.#renderSelection()
+  }
+
+  #renderSelection() {
+    for (const card of this.#el.shelfList.children) {
+      card.dataset.selected = String(this.#selected.has(card.dataset.collectionId))
+    }
+    this.#el.shelfSelection.hidden = this.#selected.size === 0
+    this.#el.shelfSelectionCount.textContent = `${this.#selected.size}件を選択中`
+    // アルバムにまとめられるのは 1 件以上のとき
+    this.#el.shelfMakeAlbum.disabled = this.#selected.size === 0
+    this.#el.shelfMakePlaylist.disabled = this.#selected.size === 0
+  }
+
   #find(collectionId) {
     return this.#collections.find((collection) => collection.id === collectionId) ?? null
   }
@@ -385,7 +549,12 @@ function typeLabel(type) {
   return 'SINGLE'
 }
 
-/** アルバム / シングルは CD、プレイリストはリストの印 */
+/**
+ * 種類ごとの印。ひと目で見分けられるよう形を変えてある。
+ *   アルバム   … ケースから覗く盤（重なり）
+ *   シングル   … 一枚の盤
+ *   プレイリスト … リストと再生記号
+ */
 function badgeIcon(type) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
   svg.setAttribute('viewBox', '0 0 24 24')
@@ -393,33 +562,40 @@ function badgeIcon(type) {
 
   if (type === CollectionType.PLAYLIST) {
     svg.append(
-      pathEl('M4 6h11v2H4zM4 11h11v2H4zM4 16h7v2H4z', 'currentColor'),
-      pathEl('M17.5 12.5v5.2a2 2 0 1 1-1.5-1.94V11z', 'currentColor')
+      pathEl('M3 6h12v2.2H3zM3 10.9h12v2.2H3zM3 15.8h7.5V18H3z'),
+      pathEl('M17.4 10v6.1a2.3 2.3 0 1 1-1.7-2.2V8.2l5.3-1.2v5.9a2.3 2.3 0 1 1-1.7-2.2V9z')
     )
+  } else if (type === CollectionType.ALBUM) {
+    // 盤が 2 枚重なった形（右奥にもう 1 枚覗く）
+    const back = circle(15.6, 12, 6.6, { fill: 'none', stroke: 'currentColor', width: 1.6, opacity: 0.55 })
+    const front = circle(9.2, 12, 7, { fill: 'none', stroke: 'currentColor', width: 1.8 })
+    const hole = circle(9.2, 12, 2.1, { fill: 'currentColor' })
+    svg.append(back, front, hole)
   } else {
-    // CD
-    const outer = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
-    outer.setAttribute('cx', '12')
-    outer.setAttribute('cy', '12')
-    outer.setAttribute('r', '8.4')
-    outer.setAttribute('fill', 'none')
-    outer.setAttribute('stroke', 'currentColor')
-    outer.setAttribute('stroke-width', '1.8')
-
-    const hole = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
-    hole.setAttribute('cx', '12')
-    hole.setAttribute('cy', '12')
-    hole.setAttribute('r', '2.6')
-    hole.setAttribute('fill', 'currentColor')
-
-    svg.append(outer, hole)
+    // 一枚の盤
+    svg.append(
+      circle(12, 12, 8.2, { fill: 'none', stroke: 'currentColor', width: 1.8 }),
+      circle(12, 12, 2.4, { fill: 'currentColor' })
+    )
   }
   return svg
 }
 
-function pathEl(d, fill) {
+function circle(cx, cy, r, { fill = 'none', stroke, width, opacity } = {}) {
+  const element = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+  element.setAttribute('cx', String(cx))
+  element.setAttribute('cy', String(cy))
+  element.setAttribute('r', String(r))
+  element.setAttribute('fill', fill)
+  if (stroke) element.setAttribute('stroke', stroke)
+  if (width) element.setAttribute('stroke-width', String(width))
+  if (opacity != null) element.setAttribute('opacity', String(opacity))
+  return element
+}
+
+function pathEl(d) {
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
   path.setAttribute('d', d)
-  path.setAttribute('fill', fill)
+  path.setAttribute('fill', 'currentColor')
   return path
 }
