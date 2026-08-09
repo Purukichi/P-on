@@ -16,6 +16,7 @@
 @import './components/volume.css';
 @import './components/tracklist.css';
 @import './components/shelf.css';
+@import './components/compact.css';
 @import './components/menu.css';
 @import './components/dialog.css';
 @import './components/draghost.css';

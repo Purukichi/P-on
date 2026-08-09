@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog, ipcMain, nativeTheme, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme, shell } from 'electron'
 import { AUDIO_EXTENSIONS, IMAGE_EXTENSIONS, IPC } from '../shared/ipc-channels.js'
 import * as library from './library-service.js'
 import { ensureDirectories, libraryRoot } from './library-store.js'
@@ -123,6 +123,7 @@ function registerPlayerRelay() {
 
   ipcMain.on(IPC.WINDOW_OPEN_MINI, () => openMiniPlayer())
   ipcMain.on(IPC.WINDOW_CLOSE_MINI, () => closeMiniPlayer())
+  ipcMain.on(IPC.WINDOW_QUIT, () => app.quit())
 
   ipcMain.on(IPC.WINDOW_SET_TITLEBAR, (_event, { color, symbolColor, theme } = {}) => {
     /*

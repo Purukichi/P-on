@@ -22,7 +22,8 @@ const el = {
   prev: pick(root, 'mini-prev'),
   next: pick(root, 'mini-next'),
   volume: pick(root, 'mini-volume'),
-  restore: pick(root, 'mini-restore')
+  restore: pick(root, 'mini-restore'),
+  close: pick(root, 'mini-close')
 }
 
 const send = (type, value) => window.hamon.player.sendCommand({ type, value })
@@ -36,6 +37,7 @@ el.toggle.addEventListener('click', () => send('toggle'))
 el.prev.addEventListener('click', () => send('previous'))
 el.next.addEventListener('click', () => send('next'))
 el.restore.addEventListener('click', () => window.hamon.windows.closeMini())
+el.close.addEventListener('click', () => window.hamon.windows.quit())
 
 el.seek.addEventListener('pointerdown', () => {
   isScrubbing = true

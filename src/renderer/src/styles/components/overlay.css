@@ -6,13 +6,8 @@
   display: grid;
   place-items: center;
   padding: var(--space-6);
-  /*
-   * ドロップ先の案内は真っ先に読めてほしいので、ここだけはほぼ不透明にする。
-   * 本体の透過率（--surface-alpha）には連動させない。
-   */
+  /* ドロップ先の案内は真っ先に読めてほしいので、不透明なパネルをそのまま重ねる */
   background: var(--color-veil);
-  backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
   pointer-events: none;
 }
 
@@ -57,7 +52,7 @@
   color: var(--color-accent-contrast);
   font-size: var(--font-size-sm);
   font-weight: 700;
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--panel-shadow);
   max-width: calc(100vw - 96px);
   text-align: center;
 }

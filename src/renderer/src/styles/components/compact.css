@@ -1,0 +1,120 @@
+/*
+ * 棚を展開したときの表示。
+ * メインの再生画面を上部の 1 行に畳んで、空いた分を棚に譲る。
+ * （畳まないと、棚とジャケットが同じ場所を取り合って重なってしまう）
+ */
+.app[data-shelf-expanded='true'] {
+  grid-template-rows: var(--titlebar-height) auto minmax(0, 1fr);
+}
+
+.app[data-shelf-expanded='true'] .stage {
+  grid-template-columns: auto minmax(0, 1fr);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* 右のリストは棚に場所を譲る */
+.app[data-shelf-expanded='true'] .tracklist {
+  display: none;
+}
+
+/* ジャケットは小さなサムネイルに */
+.app[data-shelf-expanded='true'] .cover {
+  padding: var(--space-3) 0 var(--space-3) var(--space-6);
+}
+
+.app[data-shelf-expanded='true'] .cover__frame {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+}
+
+.app[data-shelf-expanded='true'] .cover__placeholder svg {
+  width: 26px;
+  height: 26px;
+}
+
+.app[data-shelf-expanded='true'] .cover__hint {
+  display: none;
+}
+
+/* 曲情報と操作を横一列に並べ替える */
+.app[data-shelf-expanded='true'] .nowplaying {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-6);
+}
+
+.app[data-shelf-expanded='true'] .nowplaying__album,
+.app[data-shelf-expanded='true'] .nowplaying__format {
+  display: none;
+}
+
+.app[data-shelf-expanded='true'] .nowplaying__meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.app[data-shelf-expanded='true'] .nowplaying__title {
+  font-size: var(--font-size-lg);
+  max-width: none;
+}
+
+.app[data-shelf-expanded='true'] .nowplaying__artist {
+  font-size: var(--font-size-xs);
+  max-width: none;
+}
+
+.app[data-shelf-expanded='true'] .transport {
+  margin-top: 0;
+  gap: var(--space-2);
+  width: auto;
+  max-width: none;
+  flex: none;
+}
+
+.app[data-shelf-expanded='true'] .transport__button {
+  width: 30px;
+  height: 30px;
+}
+
+.app[data-shelf-expanded='true'] .transport__button--play {
+  width: 40px;
+  height: 40px;
+}
+
+.app[data-shelf-expanded='true'] .seekbar {
+  width: 200px;
+  max-width: none;
+  flex: none;
+}
+
+.app[data-shelf-expanded='true'] .volume {
+  margin-top: 0;
+  width: 110px;
+  max-width: none;
+  flex: none;
+  /* コンパクト時はアイコンと数値を並びの中に収める */
+  padding-left: 22px;
+}
+
+.app[data-shelf-expanded='true'] .volume__icon {
+  left: 0;
+}
+
+.app[data-shelf-expanded='true'] .volume__value {
+  display: none;
+}
+
+/* 展開中は棚が残りの高さいっぱいを使う */
+.app[data-shelf-expanded='true'] .shelf__body {
+  max-height: none;
+  height: 100%;
+}
+
+.app[data-shelf-expanded='true'] .shelf {
+  min-height: 0;
+}

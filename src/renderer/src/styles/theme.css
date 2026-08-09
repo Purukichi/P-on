@@ -58,14 +58,16 @@
   --color-track: rgb(10 10 12 / 14%);
   --color-danger: #e5484d;
 
-  /* --- すりガラス（重なる面。本体の透過率とは独立） --- */
-  --glass-bg: rgb(255 255 255 / 82%);
-  --glass-border: rgb(255 255 255 / 70%);
-  --glass-shadow: 0 20px 50px rgb(10 10 12 / 22%);
-  /* 背景の濁りを飛ばすための持ち上げ量。ガラス面の backdrop-filter で使う */
-  --glass-lift: brightness(1.1) saturate(1.4);
-  /* ドロップ時に画面全体へかぶせる面。案内が読めるようほぼ不透明 */
-  --color-veil: rgb(255 255 255 / 94%);
+  /*
+   * --- 重なる面（メニュー・ダイアログ・ドロップ時の覆い・ミニの操作面） ---
+   * 半透明のすりガラスは背景次第で読みづらくなるのでやめ、
+   * メインUIと同じ質感の不透明なパネルを重ねる方式にしている。
+   */
+  --panel-bg: #f6f6f8;
+  --panel-border: rgb(10 10 12 / 12%);
+  --panel-shadow: 0 18px 44px rgb(10 10 12 / 24%);
+  /* ドロップ時に画面全体へかぶせる面 */
+  --color-veil: #f6f6f8;
 
   --shadow-cover: 0 24px 60px rgb(10 10 12 / 14%);
   --shadow-soft: 0 2px 10px rgb(10 10 12 / 6%);
@@ -128,11 +130,10 @@
 
   --color-track: rgb(255 255 255 / 18%);
 
-  --glass-bg: rgb(16 16 19 / 85%);
-  --glass-border: rgb(255 255 255 / 16%);
-  --glass-shadow: 0 20px 50px rgb(0 0 0 / 55%);
-  --glass-lift: brightness(0.9) saturate(1.35);
-  --color-veil: rgb(11 11 13 / 94%);
+  --panel-bg: #17171b;
+  --panel-border: rgb(255 255 255 / 14%);
+  --panel-shadow: 0 18px 44px rgb(0 0 0 / 55%);
+  --color-veil: #17171b;
 
   --shadow-cover: 0 24px 60px rgb(0 0 0 / 55%);
   --shadow-soft: 0 2px 10px rgb(0 0 0 / 35%);

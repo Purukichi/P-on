@@ -118,6 +118,8 @@ export class CollectionShelf extends Emitter {
     this.#el.shelfExpand.addEventListener('click', () => {
       const expanded = this.#shelf.dataset.expanded !== 'true'
       this.#shelf.dataset.expanded = String(expanded)
+      // 展開中はメインUIをコンパクトな 1 行に切り替える（CSS 側が拾う）
+      this.#root.dataset.shelfExpanded = String(expanded)
       this.#el.shelfExpandLabel.textContent = expanded ? '折りたたむ' : 'もっと見る'
       this.#closeMenu()
     })
@@ -230,7 +232,11 @@ export class CollectionShelf extends Emitter {
         return
       }
 
-      this.clearSelection()
+      /*
+       * 再生しても選択は解除しない。
+       * 解除するのは「選択を解除」ボタンか、選択を使う操作が終わったときだけ。
+       * （途中で外れると、選び直しからやり直すことになって煩わしい）
+       */
       this.emit('play-collection', { collectionId: collection.id })
     })
 
@@ -256,17 +262,17 @@ export class CollectionShelf extends Emitter {
       if (event.button !== 0) return
 
       /*
-       * 空きスペースからは常に、カードの上からは Shift を押している間だけ始める。
-       * カードは掴んでドラッグ&ドロップにも使うので、修飾キーで意図を分けている。
+       * 矩形選択は Shift を押している間だけ。
+       * 何も押していないドラッグはカードの並べ替え / ゴミ箱行きに使うので、
+       * 意図をはっきり分けている。
        */
-      const onCard = Boolean(closestFrom(event.target, '[data-collection-id]'))
-      if (onCard && !event.shiftKey) return
+      if (!event.shiftKey) return
+      event.preventDefault()
 
       const rect = body.getBoundingClientRect()
       this.#marquee = {
         startX: event.clientX - rect.left + body.scrollLeft,
         startY: event.clientY - rect.top + body.scrollTop,
-        additive: event.ctrlKey || event.metaKey,
         active: false
       }
       // 実ポインタが無い（合成イベント等）場合は捕捉できないので握りつぶす
@@ -287,7 +293,7 @@ export class CollectionShelf extends Emitter {
       if (!this.#marquee.active) {
         if (Math.abs(x - startX) < MARQUEE_THRESHOLD && Math.abs(y - startY) < MARQUEE_THRESHOLD) return
         this.#marquee.active = true
-        if (!this.#marquee.additive) this.#selected.clear()
+        // すでに選んでいるものは残したまま、なぞったぶんを足していく
         box.hidden = false
         this.#closeMenu()
       }

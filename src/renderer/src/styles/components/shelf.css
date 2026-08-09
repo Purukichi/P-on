@@ -283,9 +283,7 @@
   height: 20px;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
-  background: var(--glass-bg);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: var(--panel-bg);
   color: transparent;
   cursor: pointer;
   opacity: 0;
@@ -424,12 +422,10 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--panel-border);
   border-radius: var(--radius-pill);
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
-  box-shadow: var(--glass-shadow);
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-soft);
 }
 
 .selectionbar[hidden] {

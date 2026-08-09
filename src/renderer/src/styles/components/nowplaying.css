@@ -14,8 +14,7 @@
   min-width: 0;
 }
 
-.nowplaying__title,
-.nowplaying__artist,
+.nowplaying__meta,
 .nowplaying .seekbar,
 .nowplaying .transport,
 .nowplaying .volume {
@@ -23,11 +22,25 @@
   max-width: var(--np-measure);
 }
 
+/* 曲名まわりの塊。展開時はここごと 1 行に畳まれる */
+.nowplaying__meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
 /* バッジ類は中身の幅に収める */
 .nowplaying__album,
 .nowplaying__format {
   width: auto;
-  max-width: var(--np-measure);
+  max-width: 100%;
+}
+
+.nowplaying__title,
+.nowplaying__artist {
+  width: 100%;
 }
 
 .nowplaying__album {

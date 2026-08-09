@@ -99,10 +99,13 @@
         </section>
 
         <section class="nowplaying">
-          <p class="nowplaying__album" data-el="np-album" hidden></p>
-          <h2 class="nowplaying__title" data-el="np-title">曲を選んでください</h2>
-          <p class="nowplaying__artist" data-el="np-artist">—</p>
-          <p class="nowplaying__format" data-el="np-format" hidden></p>
+          <!-- 棚を展開したときは、この塊がそのまま 1 行に畳まれる -->
+          <div class="nowplaying__meta">
+            <p class="nowplaying__album" data-el="np-album" hidden></p>
+            <h2 class="nowplaying__title" data-el="np-title">曲を選んでください</h2>
+            <p class="nowplaying__artist" data-el="np-artist">—</p>
+            <p class="nowplaying__format" data-el="np-format" hidden></p>
+          </div>
 
           <div class="seekbar">
             <input

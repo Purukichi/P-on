@@ -2,13 +2,11 @@
 .dialog {
   width: min(560px, calc(100vw - 64px));
   padding: 0;
-  border: 1px solid var(--glass-border);
+  border: 1px solid var(--panel-border);
   border-radius: var(--radius-xl);
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
+  background: var(--panel-bg);
   color: var(--color-text);
-  box-shadow: var(--shadow-dialog);
+  box-shadow: var(--panel-shadow);
 }
 
 .dialog--compact {
@@ -16,8 +14,7 @@
 }
 
 .dialog::backdrop {
-  background: rgb(0 0 0 / 35%);
-  backdrop-filter: blur(4px);
+  background: rgb(0 0 0 / 40%);
 }
 
 .dialog__form {

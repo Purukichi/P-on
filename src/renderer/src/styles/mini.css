@@ -41,8 +41,8 @@ body {
    * ジャケットで埋まらない余白は「ジャケットの主要色 + アクリル」で塗る。
    * --mini-tint は mini.js がジャケットから抽出して書き込む。
    */
-  background: var(--mini-tint, var(--glass-bg));
-  border: 1px solid var(--glass-border);
+  background: var(--mini-tint, var(--panel-bg));
+  border: 1px solid var(--panel-border);
   transition: background 400ms ease;
 }
 
@@ -89,10 +89,9 @@ body {
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-3);
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
-  border-top: 1px solid var(--color-border);
+  /* 半透明にせず、本体と同じパネルを敷く */
+  background: var(--panel-bg);
+  border-top: 1px solid var(--panel-border);
 }
 
 .mini__panel button,
@@ -169,6 +168,11 @@ body {
 .mini__iconbutton:hover {
   background: var(--color-accent);
   color: var(--color-accent-contrast);
+}
+
+.mini__iconbutton--close:hover {
+  background: var(--color-danger);
+  color: #fff;
 }
 
 .mini__iconbutton svg {
