@@ -3,7 +3,6 @@
   align-items: center;
   gap: var(--space-3);
   margin-top: var(--space-4);
-  max-width: 280px;
 }
 
 .volume__icon {

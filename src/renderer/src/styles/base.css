@@ -78,8 +78,16 @@ textarea {
 
 .app {
   display: grid;
+  /*
+   * 列に minmax(0, 1fr) を明示するのが要点。
+   * 既定の auto だと、下の棚がカードの数だけ横に伸びたときに
+   * グリッド全体がウィンドウより広くなり、右側（リストや操作ボタン）が
+   * 画面外へ押し出されてしまう。
+   */
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: var(--titlebar-height) minmax(0, 1fr) auto;
   height: 100%;
+  overflow: hidden;
 }
 
 /*
@@ -90,6 +98,7 @@ textarea {
   display: grid;
   grid-template-columns: minmax(260px, 420px) minmax(320px, 1fr);
   min-height: 0;
+  min-width: 0;
   transition: grid-template-columns var(--transition-theme);
 }
 

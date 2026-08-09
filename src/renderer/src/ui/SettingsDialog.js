@@ -22,8 +22,6 @@ export class SettingsDialog {
       'settings-alpha-value',
       'settings-hue',
       'settings-hue-value',
-      'settings-blur',
-      'settings-blur-value',
       'settings-reset',
       'settings-close'
     ])
@@ -34,9 +32,6 @@ export class SettingsDialog {
     })
     this.#el.settingsHue.addEventListener('input', () => {
       this.#settings.set('accentHue', Number(this.#el.settingsHue.value))
-    })
-    this.#el.settingsBlur.addEventListener('input', () => {
-      this.#settings.set('blur', Number(this.#el.settingsBlur.value))
     })
 
     this.#el.settingsReset.addEventListener('click', () => this.#settings.reset())
@@ -57,19 +52,15 @@ export class SettingsDialog {
   }
 
   render() {
-    const { surfaceAlpha, accentHue, blur } = this.#settings.values
+    const { surfaceAlpha, accentHue } = this.#settings.values
 
     this.#el.settingsAlpha.value = String(surfaceAlpha)
     this.#el.settingsAlphaValue.textContent = `${Math.round(surfaceAlpha * 100)}%`
-    this.#setFill(this.#el.settingsAlpha, surfaceAlpha, 0.1, 0.95)
+    this.#setFill(this.#el.settingsAlpha, surfaceAlpha, 0.25, 0.95)
 
     this.#el.settingsHue.value = String(accentHue)
     this.#el.settingsHueValue.textContent = String(Math.round(accentHue))
     this.#setFill(this.#el.settingsHue, accentHue, 0, 359)
-
-    this.#el.settingsBlur.value = String(blur)
-    this.#el.settingsBlurValue.textContent = `${Math.round(blur)}px`
-    this.#setFill(this.#el.settingsBlur, blur, 0, 60)
   }
 
   #setFill(element, value, min, max) {

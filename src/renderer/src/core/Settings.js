@@ -3,18 +3,20 @@ import { Emitter } from './Emitter.js'
 const STORAGE_KEY = 'hamon.settings'
 
 export const DEFAULTS = {
-  /** 面の不透明度 0.10〜0.95。小さいほど透ける */
-  surfaceAlpha: 0.38,
+  /**
+   * 面の不透明度 0.25〜0.95。小さいほど透ける。
+   * 背景のぼかしは OS のアクリルが担当していて強さを変えられないので、
+   * 「背後の文字が読めない曇りガラス」に見えるかどうかはここで決まる。
+   * 既定はしっかり曇る側に寄せてある。
+   */
+  surfaceAlpha: 0.62,
   /** アクセント色の色相 0〜359。既定の 151 は #00c853 相当 */
-  accentHue: 151,
-  /** 背景のぼかし量 (px) */
-  blur: 26
+  accentHue: 151
 }
 
 const RANGES = {
-  surfaceAlpha: [0.1, 0.95],
-  accentHue: [0, 359],
-  blur: [0, 60]
+  surfaceAlpha: [0.25, 0.95],
+  accentHue: [0, 359]
 }
 
 /**
@@ -64,7 +66,6 @@ export class Settings extends Emitter {
     const root = document.documentElement.style
     root.setProperty('--surface-alpha', String(this.#values.surfaceAlpha))
     root.setProperty('--accent-hue', String(this.#values.accentHue))
-    root.setProperty('--glass-blur', `${this.#values.blur}px`)
     // アクセント上の文字色は、明度から黒 / 白を選ぶ
     root.setProperty('--color-accent-contrast', accentContrast(this.#values.accentHue))
   }

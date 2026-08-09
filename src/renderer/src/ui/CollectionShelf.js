@@ -52,6 +52,21 @@ export class CollectionShelf extends Emitter {
     })
     this.#el.shelfList.addEventListener('scroll', () => this.#closeNow())
 
+    // 縦ホイールを横スクロールに振り替える（棚は一列なので縦に送れない）
+    this.#el.shelfList.addEventListener(
+      'wheel',
+      (event) => {
+        const list = this.#el.shelfList
+        if (list.scrollWidth <= list.clientWidth) return
+        // タッチパッドの横スワイプはそのまま活かす
+        const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY
+        if (delta === 0) return
+        event.preventDefault()
+        list.scrollLeft += delta
+      },
+      { passive: false }
+    )
+
     return this
   }
 

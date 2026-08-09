@@ -1,11 +1,38 @@
-/* 中央カラム：再生中の曲情報と操作系。 */
+/*
+ * 中央カラム：再生中の曲情報と操作系。
+ * タイトル・シークバー・音量の幅は --np-measure で揃える。
+ * 音量バーはそれより少し短くして、シークバーが主役に見えるようにしている。
+ */
 .nowplaying {
+  --np-measure: 340px;
+
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   justify-content: center;
   gap: var(--space-3);
   padding: var(--space-6) var(--space-7);
   min-width: 0;
+}
+
+.nowplaying__title,
+.nowplaying__artist,
+.nowplaying .seekbar,
+.nowplaying .transport,
+.nowplaying .volume {
+  width: 100%;
+  max-width: var(--np-measure);
+}
+
+/* バッジ類は中身の幅に収める */
+.nowplaying__album,
+.nowplaying__format {
+  width: auto;
+  max-width: var(--np-measure);
+}
+
+.nowplaying .volume {
+  max-width: calc(var(--np-measure) - 40px);
 }
 
 .nowplaying__album {
