@@ -203,6 +203,11 @@ trackList.on('edit', (trackId) => {
   if (track) editor.open(track)
 })
 
+// 編集モードで入力欄から離れたとき
+trackList.on('update', async ({ trackId, patch }) => {
+  await library.updateTrack(trackId, patch)
+})
+
 trackList.on('detach', async (trackId) => {
   const collection = activeCollection()
   if (collection?.type !== CollectionType.PLAYLIST) return

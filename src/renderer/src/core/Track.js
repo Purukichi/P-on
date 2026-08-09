@@ -64,6 +64,21 @@ export class Track {
     return this.artist || 'アーティスト未設定'
   }
 
+  /**
+   * アーティストの一覧。
+   * 「A, B, C」のようにカンマ + 空白で区切られていれば複数名として扱う。
+   * 検索でどの名前からでも引けるようにするための分解。
+   */
+  get artists() {
+    return splitArtists(this.artist)
+  }
+
+  /** 取り込んだときのファイル名（拡張子なし）。編集欄の既定値に使う */
+  get baseFileName() {
+    const name = String(this.audioFile ?? '').split(/[\\/]/).pop() ?? ''
+    return name.replace(/\.[^.]+$/, '')
+  }
+
   /** アルバム名が無い曲はシングル扱いで表示する */
   get displayAlbum() {
     return this.album || 'シングル'
@@ -72,6 +87,18 @@ export class Track {
   get hasCover() {
     return Boolean(this.coverUrl)
   }
+}
+
+/**
+ * 「A, B, C」を ['A', 'B', 'C'] にする。
+ * 区切りはカンマ（全角も可）。1 名なら 1 要素の配列。
+ */
+export function splitArtists(value) {
+  if (!value) return []
+  return String(value)
+    .split(/[,、／/]|\bfeat\.\s/i)
+    .map((name) => name.trim())
+    .filter(Boolean)
 }
 
 function round(value) {

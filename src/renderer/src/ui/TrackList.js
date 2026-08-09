@@ -4,11 +4,13 @@ import { collect, create } from './dom.js'
 import { attachDragThumbnail, setTrackDragData } from './drag.js'
 
 /**
- * 右カラムの一覧。ライブラリ全体とプレイリストの中身、どちらもここが描く。
+ * 右カラムの一覧。いま鳴らしているキューの中身を並べる。
  *
- * 行は draggable にしてあり、ゴミ箱やプレイリストへドラッグできる。
+ * 「編集」を押すと各行がタイトル / アーティスト / アルバムの入力欄に変わり、
+ * その場で直せる。入力欄から離れた時点で保存する。
  *
- * events: 'play' (trackId), 'edit' (trackId), 'detach' (trackId=プレイリストから外す)
+ * events: 'play' (trackId), 'edit' (trackId), 'detach' (trackId),
+ *         'update' ({trackId, patch})
  */
 export class TrackList extends Emitter {
   #root
@@ -17,35 +19,66 @@ export class TrackList extends Emitter {
   #tracks = []
   #activeTrackId = null
   #mode = 'library'
+  #editing = false
 
   constructor(root) {
     super()
     this.#root = root
   }
 
-  mount() {
-    this.#el = collect(this.#root, ['list-title', 'list-count', 'list', 'list-empty'])
+  get isEditing() {
+    return this.#editing
+  }
 
-    // 行ごとに listener を張らず、リスト全体で受ける（描画のたびに張り直さずに済む）
+  mount() {
+    this.#el = collect(this.#root, ['list-title', 'list-count', 'list', 'list-empty', 'list-edit'])
+
+    this.#el.listEdit.addEventListener('click', () => this.#setEditing(!this.#editing))
+
+    // 行ごとに listener を張らず、リスト全体で受ける
     this.#el.list.addEventListener('click', (event) => {
       const row = event.target.closest('[data-track-id]')
       if (!row) return
+      // 編集中は入力欄を触りたいので、行クリックでの再生はしない
+      if (event.target.closest('.track__field')) return
+
       const trackId = row.dataset.trackId
       const action = event.target.closest('[data-action]')?.dataset.action
 
       if (action === 'edit') this.emit('edit', trackId)
       else if (action === 'detach') this.emit('detach', trackId)
-      else this.emit('play', trackId)
+      else if (!this.#editing) this.emit('play', trackId)
+    })
+
+    // 入力欄から離れたら保存する
+    this.#el.list.addEventListener(
+      'blur',
+      (event) => {
+        const field = event.target.closest('.track__field')
+        if (!field) return
+        this.#commit(field)
+      },
+      true
+    )
+
+    this.#el.list.addEventListener('keydown', (event) => {
+      const field = event.target.closest('.track__field')
+      if (!field) return
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        field.blur()
+      } else if (event.key === 'Escape') {
+        field.value = field.dataset.original ?? ''
+        field.blur()
+      }
     })
 
     this.#el.list.addEventListener('dragstart', (event) => {
       const row = event.target.closest('[data-track-id]')
-      if (!row) return
+      if (!row || this.#editing) return
       const track = this.#tracks.find((t) => t.id === row.dataset.trackId)
       setTrackDragData(event, row.dataset.trackId)
-      if (track) {
-        attachDragThumbnail(event, { coverUrl: track.coverUrl, label: track.displayTitle })
-      }
+      if (track) attachDragThumbnail(event, { coverUrl: track.coverUrl, label: track.displayTitle })
       row.dataset.dragging = 'true'
     })
 
@@ -85,14 +118,55 @@ export class TrackList extends Emitter {
     }
   }
 
+  #setEditing(editing) {
+    this.#editing = editing
+    this.#root.dataset.listEdit = String(editing)
+    this.#el.listEdit.dataset.active = String(editing)
+    this.#el.listEdit.textContent = editing ? '完了' : '編集'
+    this.render({
+      title: this.#el.listTitle.textContent,
+      mode: this.#mode,
+      tracks: this.#tracks,
+      emptyMessage: this.#el.listEmpty.textContent
+    })
+  }
+
+  #commit(field) {
+    const row = field.closest('[data-track-id]')
+    if (!row) return
+    const value = field.value.trim()
+    if (value === (field.dataset.original ?? '')) return
+    field.dataset.original = value
+    this.emit('update', { trackId: row.dataset.trackId, patch: { [field.dataset.field]: value } })
+  }
+
   #renderRow(track, index) {
     const row = create('li', {
       className: 'track',
-      attrs: { 'data-track-id': track.id, draggable: 'true', 'data-active': 'false' }
+      attrs: {
+        'data-track-id': track.id,
+        draggable: String(!this.#editing),
+        'data-active': 'false'
+      }
     })
 
+    row.append(create('span', { className: 'track__index', text: `${index + 1}.` }))
+
+    if (this.#editing) {
+      row.append(
+        create('span', {
+          className: 'track__fields',
+          children: [
+            this.#field('title', track.title || track.baseFileName, track.baseFileName, 'タイトル'),
+            this.#field('artist', track.artist ?? '', '', 'アーティスト'),
+            this.#field('album', track.album ?? '', '', 'アルバム（空ならシングル）')
+          ]
+        })
+      )
+      return row
+    }
+
     row.append(
-      create('span', { className: 'track__index', text: `${index + 1}.` }),
       create('span', {
         className: 'track__main',
         children: [
@@ -129,5 +203,23 @@ export class TrackList extends Emitter {
     row.append(actions)
 
     return row
+  }
+
+  #field(name, value, placeholder, label) {
+    const input = create('input', {
+      className: 'track__field',
+      attrs: {
+        type: 'text',
+        value,
+        placeholder,
+        'data-field': name,
+        'data-original': value,
+        'aria-label': label,
+        title: label
+      }
+    })
+    // create() は属性で value を渡すため、実際の入力値も揃えておく
+    input.value = value
+    return input
   }
 }

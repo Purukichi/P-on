@@ -39,6 +39,36 @@
   flex: none;
 }
 
+/* 編集モードの切り替え */
+.tracklist__edit {
+  appearance: none;
+  flex: none;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  padding: 2px var(--space-3);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.tracklist__edit:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.tracklist__edit[data-active='true'] {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+  font-weight: 700;
+}
+
 .tracklist__items {
   flex: 1;
   min-height: 0;
@@ -170,4 +200,52 @@
 .track[data-active='true'] .track__action:hover {
   background: var(--color-accent-contrast);
   color: var(--color-accent);
+}
+
+/* ---- 編集モード ---- */
+
+.app[data-list-edit='true'] .track {
+  grid-template-columns: 2.2em minmax(0, 1fr);
+  align-items: start;
+  cursor: default;
+}
+
+.app[data-list-edit='true'] .track:hover {
+  background: transparent;
+}
+
+.track__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-1) 0;
+}
+
+.track__field {
+  width: 100%;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  padding: 3px var(--space-2);
+}
+
+/* 1 行目（タイトル）だけ少し強調しておく */
+.track__field[data-field='title'] {
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+.track__field::placeholder {
+  color: var(--color-text-faint);
+  font-weight: 400;
+}
+
+.track__field:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
+  border-color: transparent;
 }

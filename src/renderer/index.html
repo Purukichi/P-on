@@ -16,8 +16,9 @@
     <div class="app" id="app" data-state="idle" data-list="hidden">
       <header class="topbar">
         <span class="topbar__mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <path d="M2 12c1.6-3.2 3.2-3.2 4.8 0s3.2 3.2 4.8 0 3.2-3.2 4.8 0 3.2 3.2 4.8 0" />
+          <!-- 左右対称の波。山と谷を同じ半円で作っている -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M2 12a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 0 5 0" />
           </svg>
         </span>
 
@@ -190,14 +191,66 @@
           <header class="tracklist__head">
             <h3 class="tracklist__title" data-el="list-title">リスト</h3>
             <span class="tracklist__count" data-el="list-count">0曲</span>
+            <button
+              class="tracklist__edit"
+              type="button"
+              data-el="list-edit"
+              data-active="false"
+              title="タイトル・アーティスト・アルバムを直接編集する"
+            >
+              編集
+            </button>
           </header>
           <ol class="tracklist__items" data-el="list"></ol>
           <p class="tracklist__empty" data-el="list-empty" hidden></p>
         </aside>
       </main>
 
-      <footer class="shelf">
-        <!-- Ctrl / Shift クリックで複数選んだときだけ出る -->
+      <footer class="shelf" data-view="grid" data-expanded="false">
+        <div class="shelf__toolbar">
+          <label class="search">
+            <svg class="search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="10.5" cy="10.5" r="6.5" />
+              <path d="m15.5 15.5 4 4" stroke-linecap="round" />
+            </svg>
+            <input
+              class="search__input"
+              type="search"
+              data-el="shelf-search"
+              placeholder="アルバム・曲名・アーティストで検索"
+              aria-label="検索"
+            />
+          </label>
+
+          <div class="viewswitch" role="group" aria-label="表示の切り替え">
+            <button class="viewswitch__button" type="button" data-el="shelf-view-grid" data-active="true" title="グリッド表示">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />
+                <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" />
+                <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" />
+                <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" />
+              </svg>
+            </button>
+            <button class="viewswitch__button" type="button" data-el="shelf-view-list" data-active="false" title="リスト表示">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <rect x="3" y="4" width="4" height="4" rx="1" />
+                <rect x="9" y="5" width="12" height="2" rx="1" />
+                <rect x="3" y="10" width="4" height="4" rx="1" />
+                <rect x="9" y="11" width="12" height="2" rx="1" />
+                <rect x="3" y="16" width="4" height="4" rx="1" />
+                <rect x="9" y="17" width="12" height="2" rx="1" />
+              </svg>
+            </button>
+          </div>
+
+          <button class="button button--small" type="button" data-el="shelf-expand">
+            <span data-el="shelf-expand-label">もっと見る</span>
+          </button>
+
+          <button class="button button--small" type="button" data-el="shelf-add">＋ プレイリスト</button>
+        </div>
+
+        <!-- 選択中だけ出る -->
         <div class="selectionbar" data-el="shelf-selection" hidden>
           <span class="selectionbar__count" data-el="shelf-selection-count">0件を選択中</span>
           <button class="button button--small" type="button" data-el="shelf-make-album">
@@ -211,15 +264,13 @@
           </button>
         </div>
 
-        <div class="shelf__row">
+        <!-- 空きスペースをドラッグすると矩形選択になる -->
+        <div class="shelf__body" data-el="shelf-body">
           <div class="shelf__list" data-el="shelf-list"></div>
-          <button class="shelf__add" type="button" data-el="shelf-add" title="プレイリストを作成">
-            <span class="shelf__add-mark" aria-hidden="true">＋</span>
-            <span class="shelf__add-label">プレイリスト</span>
-          </button>
           <p class="shelf__empty" data-el="shelf-empty">
             音源ファイルをウィンドウにドラッグすると取り込めます
           </p>
+          <div class="marquee-select" data-el="shelf-marquee" hidden></div>
         </div>
       </footer>
 

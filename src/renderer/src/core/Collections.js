@@ -58,6 +58,27 @@ export function findCollection(collections, collectionId) {
   return collections.find((collection) => collection.id === collectionId) ?? null
 }
 
+/**
+ * 検索。アルバム名 / シングル名 / プレイリスト名 / 収録曲のタイトル / アーティスト名にあたる。
+ * アーティストが「A, B, C」のように連名で入っている場合は分解して個別に照合するので、
+ * 「B」だけでも引ける。
+ */
+export function filterCollections(collections, query) {
+  const needle = query.trim().toLowerCase()
+  if (!needle) return collections
+
+  return collections.filter((collection) => {
+    if (collection.name.toLowerCase().includes(needle)) return true
+    if (collection.subtitle.toLowerCase().includes(needle)) return true
+
+    return collection.tracks.some((track) => {
+      if (track.displayTitle.toLowerCase().includes(needle)) return true
+      if (track.album?.toLowerCase().includes(needle)) return true
+      return track.artists.some((artist) => artist.toLowerCase().includes(needle))
+    })
+  })
+}
+
 /** ある曲を含むコレクションのうち、再生の文脈として最も自然なものを返す */
 export function collectionContaining(collections, trackId, preferredId = null) {
   if (preferredId) {

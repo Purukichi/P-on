@@ -1,5 +1,5 @@
 import { Emitter } from '../core/Emitter.js'
-import { CollectionType } from '../core/Collections.js'
+import { CollectionType, filterCollections } from '../core/Collections.js'
 import { formatTime } from '../utils/time.js'
 import { closestFrom, collect, create } from './dom.js'
 import {
@@ -12,30 +12,40 @@ import {
 } from './drag.js'
 
 const HOVER_CLOSE_DELAY = 220
+/** これ以上動かしたら矩形選択とみなす */
+const MARQUEE_THRESHOLD = 6
 
 /**
  * 画面下のコレクション棚。
- * プレイリスト / アルバム / シングルのジャケットを並べ、
- * カードにマウスを乗せるとすりガラスのポップアップで収録曲を選べる。
+ *
+ * 表示はグリッドとリストの 2 通り。どちらも
+ *   - チェックボックスで複数選択
+ *   - 空きスペースのドラッグで矩形選択
+ *   - 検索での絞り込み
+ * ができる。
  *
  * events: 'play-collection' ({collectionId, trackId?}),
  *         'create-playlist', 'rename-playlist' (playlistId), 'delete-playlist' (playlistId),
- *         'add-track' ({playlistId, trackId}), 'album-cover' (albumName),
- *         'merge-collections' ({sourceId, targetId})  カード同士を重ねたとき,
- *         'add-collection' ({playlistId, collectionId}) プレイリストへ束ごと追加,
+ *         'add-track' ({playlistId, trackId}), 'album-cover' (albumName), 'rename-album' (albumName),
+ *         'merge-collections' ({sourceId, targetId}), 'add-collection' ({playlistId, collectionId}),
  *         'edit-collection' (collectionId), 'delete-collection' (collectionId),
- *         'rename-album' (albumName),
  *         'group-selection' ({collectionIds, as: 'album'|'playlist'})
  */
 export class CollectionShelf extends Emitter {
   #root
+  #shelf
   #el
-  /** @type {import('../core/Collections.js').Collection[]} */
-  #collections = []
+  /** 元データ（絞り込み前） @type {import('../core/Collections.js').Collection[]} */
+  #all = []
+  /** いま並べているもの @type {import('../core/Collections.js').Collection[]} */
+  #visible = []
+  #activeId = null
+  #query = ''
   #openId = null
   #closeTimer = null
-  /** Ctrl / Shift クリックで選んだカード @type {Set<string>} */
+  /** @type {Set<string>} */
   #selected = new Set()
+  #marquee = null
 
   constructor(root) {
     super()
@@ -53,11 +63,20 @@ export class CollectionShelf extends Emitter {
   }
 
   mount() {
+    this.#shelf = this.#root.querySelector('.shelf')
     this.#el = collect(this.#root, [
+      'shelf-body',
       'shelf-list',
+      'shelf-empty',
       'shelf-add',
       'shelf-popup',
       'shelf-menu',
+      'shelf-search',
+      'shelf-view-grid',
+      'shelf-view-list',
+      'shelf-expand',
+      'shelf-expand-label',
+      'shelf-marquee',
       'shelf-selection',
       'shelf-selection-count',
       'shelf-make-album',
@@ -65,70 +84,99 @@ export class CollectionShelf extends Emitter {
       'shelf-clear-selection'
     ])
 
-    this.#bindContextMenu()
-    this.#bindSelectionBar()
-
+    this.#bindToolbar()
     this.#bindCards()
     this.#bindPopup()
+    this.#bindContextMenu()
+    this.#bindSelectionBar()
+    this.#bindMarquee()
     this.#bindDropTargets()
 
-    this.#el.shelfAdd.addEventListener('click', () => this.emit('create-playlist'))
-
-    // 棚の外に出たら閉じる
     window.addEventListener('pointerdown', (event) => {
       if (!closestFrom(event.target, '[data-el="shelf-popup"], [data-collection-id]')) this.#closeNow()
     })
     this.#el.shelfList.addEventListener('scroll', () => this.#closeNow())
-
-    // 縦ホイールを横スクロールに振り替える（棚は一列なので縦に送れない）
-    this.#el.shelfList.addEventListener(
-      'wheel',
-      (event) => {
-        const list = this.#el.shelfList
-        if (list.scrollWidth <= list.clientWidth) return
-        // タッチパッドの横スワイプはそのまま活かす
-        const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY
-        if (delta === 0) return
-        event.preventDefault()
-        list.scrollLeft += delta
-      },
-      { passive: false }
-    )
 
     return this
   }
 
   /** @param {import('../core/Collections.js').Collection[]} collections */
   render(collections, { activeCollectionId = null } = {}) {
-    this.#collections = collections
+    this.#all = collections
+    this.#activeId = activeCollectionId
+    this.#renderList()
+  }
+
+  // ---- ツールバー ----------------------------------------------------------
+
+  #bindToolbar() {
+    this.#el.shelfAdd.addEventListener('click', () => this.emit('create-playlist'))
+
+    this.#el.shelfSearch.addEventListener('input', () => {
+      this.#query = this.#el.shelfSearch.value
+      this.#renderList()
+    })
+
+    this.#el.shelfViewGrid.addEventListener('click', () => this.#setView('grid'))
+    this.#el.shelfViewList.addEventListener('click', () => this.#setView('list'))
+
+    this.#el.shelfExpand.addEventListener('click', () => {
+      const expanded = this.#shelf.dataset.expanded !== 'true'
+      this.#shelf.dataset.expanded = String(expanded)
+      this.#el.shelfExpandLabel.textContent = expanded ? '折りたたむ' : 'もっと見る'
+      this.#closeNow()
+    })
+  }
+
+  #setView(view) {
+    this.#shelf.dataset.view = view
+    this.#el.shelfViewGrid.dataset.active = String(view === 'grid')
+    this.#el.shelfViewList.dataset.active = String(view === 'list')
+    this.#closeNow()
+    this.#renderList()
+  }
+
+  get #view() {
+    return this.#shelf.dataset.view === 'list' ? 'list' : 'grid'
+  }
+
+  // ---- 一覧の描画 ----------------------------------------------------------
+
+  #renderList() {
+    this.#visible = filterCollections(this.#all, this.#query)
 
     this.#el.shelfList.replaceChildren(
-      ...collections.map((collection) =>
-        this.#renderCard(collection, collection.id === activeCollectionId)
-      )
+      ...this.#visible.map((collection) => this.#renderCard(collection))
     )
 
-    // 無くなったカードの選択は落とす
+    const nothing = this.#visible.length === 0
+    this.#el.shelfEmpty.hidden = !nothing
+    this.#el.shelfEmpty.textContent =
+      this.#all.length === 0
+        ? '音源ファイルをウィンドウにドラッグすると取り込めます'
+        : '見つかりませんでした'
+
+    // 消えたカードの選択は落とす
     for (const id of [...this.#selected]) {
-      if (!collections.some((c) => c.id === id)) this.#selected.delete(id)
+      if (!this.#all.some((c) => c.id === id)) this.#selected.delete(id)
     }
     this.#renderSelection()
     this.#closeMenu()
 
-    // 開いていたポップアップの中身が消えたら閉じる
-    if (this.#openId && !collections.some((c) => c.id === this.#openId)) this.#closeNow()
+    if (this.#openId && !this.#visible.some((c) => c.id === this.#openId)) this.#closeNow()
     else if (this.#openId) this.#fillPopup(this.#openId)
   }
 
-  // ---- カード ------------------------------------------------------------
+  #renderCard(collection) {
+    const isActive = collection.id === this.#activeId
 
-  #renderCard(collection, isActive) {
     const card = create('div', {
       className: 'card',
       attrs: {
         'data-collection-id': collection.id,
         'data-type': collection.type,
         'data-active': String(isActive),
+        'data-selected': String(this.#selected.has(collection.id)),
         draggable: 'true',
         role: 'button',
         tabindex: '0',
@@ -143,31 +191,28 @@ export class CollectionShelf extends Emitter {
     if (collection.coverUrl) {
       art.append(create('img', { className: 'card__image', attrs: { src: collection.coverUrl, alt: '' } }))
     }
-    // 種類が一目で分かるよう、アルバム / シングルは CD、プレイリストはリストの印を出す
-    art.append(create('span', { className: 'card__badge' , children: [badgeIcon(collection.type)] }))
+    art.append(create('span', { className: 'card__badge', children: [badgeIcon(collection.type)] }))
+
+    // 選択用のチェックボックス。押し間違えたときはもう一度押せば外れる
+    const check = create('span', {
+      className: 'card__check',
+      attrs: { 'data-action': 'select', role: 'checkbox', tabindex: '0' }
+    })
+    check.setAttribute('aria-checked', String(this.#selected.has(collection.id)))
+    check.append(checkIcon())
 
     card.append(
       art,
+      check,
       create('span', { className: 'card__name', text: collection.name }),
       create('span', { className: 'card__sub', text: collection.subtitle })
     )
 
-    if (collection.type === CollectionType.PLAYLIST) {
+    if (this.#view === 'list') {
       card.append(
         create('span', {
-          className: 'card__tools',
-          children: [
-            create('button', {
-              className: 'card__tool',
-              text: '名前',
-              attrs: { type: 'button', 'data-action': 'rename', title: '名前を変更' }
-            }),
-            create('button', {
-              className: 'card__tool',
-              text: '削除',
-              attrs: { type: 'button', 'data-action': 'delete', title: 'プレイリストを削除' }
-            })
-          ]
+          className: 'card__meta',
+          text: `${typeLabel(collection.type)} · ${collection.size}曲`
         })
       )
     }
@@ -175,36 +220,35 @@ export class CollectionShelf extends Emitter {
     return card
   }
 
+  // ---- カードの操作 --------------------------------------------------------
+
   #bindCards() {
     const list = this.#el.shelfList
 
     list.addEventListener('click', (event) => {
       const card = event.target.closest('[data-collection-id]')
       if (!card) return
-      const action = event.target.closest('[data-action]')?.dataset.action
       const collection = this.#find(card.dataset.collectionId)
       if (!collection) return
 
-      // Ctrl / Shift クリックは再生ではなく選択の切り替え
-      if (event.ctrlKey || event.metaKey || event.shiftKey) {
+      // チェックボックス、または修飾キー付きクリックは選択の切り替え
+      if (event.target.closest('[data-action="select"]') || event.ctrlKey || event.metaKey || event.shiftKey) {
+        event.preventDefault()
         this.#toggleSelection(collection.id)
         return
       }
 
-      if (action === 'rename') this.emit('rename-playlist', collection.sourceId)
-      else if (action === 'delete') this.emit('delete-playlist', collection.sourceId)
-      else {
-        this.clearSelection()
-        this.emit('play-collection', { collectionId: collection.id })
-      }
+      this.clearSelection()
+      this.emit('play-collection', { collectionId: collection.id })
     })
 
     list.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter' && event.key !== ' ') return
       const card = event.target.closest('[data-collection-id]')
       if (!card) return
+      if (event.key !== 'Enter' && event.key !== ' ') return
       event.preventDefault()
-      this.emit('play-collection', { collectionId: card.dataset.collectionId })
+      if (event.target.closest('[data-action="select"]')) this.#toggleSelection(card.dataset.collectionId)
+      else this.emit('play-collection', { collectionId: card.dataset.collectionId })
     })
 
     list.addEventListener('pointerover', (event) => {
@@ -217,7 +261,84 @@ export class CollectionShelf extends Emitter {
     list.addEventListener('pointerleave', () => this.#scheduleClose())
   }
 
-  // ---- ポップアップ ------------------------------------------------------
+  // ---- 矩形選択 ------------------------------------------------------------
+
+  /** 空きスペースを押してドラッグすると、触れたカードを選択する */
+  #bindMarquee() {
+    const body = this.#el.shelfBody
+    const box = this.#el.shelfMarquee
+
+    body.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) return
+      // カードの上から始めたときは通常のドラッグ（並べ替え / ゴミ箱）に譲る
+      if (closestFrom(event.target, '[data-collection-id]')) return
+
+      const rect = body.getBoundingClientRect()
+      this.#marquee = {
+        startX: event.clientX - rect.left + body.scrollLeft,
+        startY: event.clientY - rect.top + body.scrollTop,
+        additive: event.ctrlKey || event.metaKey || event.shiftKey,
+        active: false
+      }
+      body.setPointerCapture(event.pointerId)
+    })
+
+    body.addEventListener('pointermove', (event) => {
+      if (!this.#marquee) return
+      const rect = body.getBoundingClientRect()
+      const x = event.clientX - rect.left + body.scrollLeft
+      const y = event.clientY - rect.top + body.scrollTop
+      const { startX, startY } = this.#marquee
+
+      if (!this.#marquee.active) {
+        if (Math.abs(x - startX) < MARQUEE_THRESHOLD && Math.abs(y - startY) < MARQUEE_THRESHOLD) return
+        this.#marquee.active = true
+        if (!this.#marquee.additive) this.#selected.clear()
+        box.hidden = false
+        this.#closeNow()
+      }
+
+      const left = Math.min(x, startX)
+      const top = Math.min(y, startY)
+      const width = Math.abs(x - startX)
+      const height = Math.abs(y - startY)
+      Object.assign(box.style, {
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${width}px`,
+        height: `${height}px`
+      })
+
+      this.#selectWithin({ left, top, right: left + width, bottom: top + height })
+    })
+
+    const finish = (event) => {
+      if (!this.#marquee) return
+      if (body.hasPointerCapture?.(event.pointerId)) body.releasePointerCapture(event.pointerId)
+      box.hidden = true
+      this.#marquee = null
+    }
+    body.addEventListener('pointerup', finish)
+    body.addEventListener('pointercancel', finish)
+  }
+
+  /** 矩形に重なっているカードを選択状態にする */
+  #selectWithin(area) {
+    const body = this.#el.shelfBody
+    const bodyRect = body.getBoundingClientRect()
+
+    for (const card of this.#el.shelfList.children) {
+      const rect = card.getBoundingClientRect()
+      const left = rect.left - bodyRect.left + body.scrollLeft
+      const top = rect.top - bodyRect.top + body.scrollTop
+      const hit =
+        left < area.right && left + rect.width > area.left && top < area.bottom && top + rect.height > area.top
+      if (hit) this.#selected.add(card.dataset.collectionId)
+    }
+    this.#renderSelection()
+  }
+
+  // ---- ポップアップ --------------------------------------------------------
 
   #bindPopup() {
     const popup = this.#el.shelfPopup
@@ -228,7 +349,6 @@ export class CollectionShelf extends Emitter {
     popup.addEventListener('click', (event) => {
       if (!this.#openId) return
 
-      // アルバムのジャケット設定
       if (event.target.closest('[data-action="album-cover"]')) {
         const collection = this.#find(this.#openId)
         if (collection?.type === CollectionType.ALBUM) this.emit('album-cover', collection.name)
@@ -238,10 +358,7 @@ export class CollectionShelf extends Emitter {
 
       const row = event.target.closest('[data-track-id]')
       if (!row) return
-      this.emit('play-collection', {
-        collectionId: this.#openId,
-        trackId: row.dataset.trackId
-      })
+      this.emit('play-collection', { collectionId: this.#openId, trackId: row.dataset.trackId })
       this.#closeNow()
     })
   }
@@ -270,7 +387,6 @@ export class CollectionShelf extends Emitter {
       ]
     })
 
-    // アルバムには共通ジャケットを設定できる（曲ごとの設定とは別枠）
     if (collection.type === CollectionType.ALBUM) {
       header.append(
         create('button', {
@@ -306,7 +422,7 @@ export class CollectionShelf extends Emitter {
     popup.replaceChildren(header, list)
   }
 
-  /** カードの真上に出す。画面からはみ出す場合は左右を寄せる */
+  /** カードの上に出す。画面からはみ出す場合は寄せる */
   #position(card) {
     const popup = this.#el.shelfPopup
     const cardRect = card.getBoundingClientRect()
@@ -317,13 +433,14 @@ export class CollectionShelf extends Emitter {
       Math.max(margin, cardRect.left + cardRect.width / 2 - popupRect.width / 2),
       window.innerWidth - popupRect.width - margin
     )
+    const above = cardRect.top - popupRect.height - 10
     popup.style.left = `${left}px`
-    popup.style.top = `${Math.max(margin, cardRect.top - popupRect.height - 10)}px`
+    // 上に入らなければ下へ回す
+    popup.style.top = `${above >= margin ? above : Math.min(cardRect.bottom + 10, window.innerHeight - popupRect.height - margin)}px`
   }
 
   #scheduleClose() {
     this.#cancelClose()
-    // カードからポップアップへマウスを移す間に閉じないよう、少し待つ
     this.#closeTimer = setTimeout(() => this.#closeNow(), HOVER_CLOSE_DELAY)
   }
 
@@ -340,16 +457,9 @@ export class CollectionShelf extends Emitter {
 
   // ---- ドラッグ&ドロップ ----------------------------------------------------
 
-  /**
-   * 受け付ける組み合わせは 3 つ。
-   *   曲         -> プレイリスト        : その曲を追加
-   *   コレクション -> プレイリスト        : 束ごと追加
-   *   コレクション -> アルバム / シングル : 2 つをまとめて新しいプレイリストを作る
-   */
   #bindDropTargets() {
     const list = this.#el.shelfList
 
-    // カード自体もドラッグできる。掴んだ絵がマウスに追随する
     list.addEventListener('dragstart', (event) => {
       const card = event.target.closest('[data-collection-id]')
       if (!card) return
@@ -406,14 +516,10 @@ export class CollectionShelf extends Emitter {
     })
   }
 
-  /** ドラッグ中の中身に応じて、受け入れられるカードを返す */
   #dropTargetFor(event) {
     const card = event.target.closest('[data-collection-id]')
     if (!card || card.dataset.dragging === 'true') return null
-
-    // 曲はプレイリストにしか落とせない
     if (isTrackDrag(event)) return card.dataset.type === 'playlist' ? card : null
-    // コレクションはどのカードにも落とせる
     if (isCollectionDrag(event)) return card
     return null
   }
@@ -475,10 +581,9 @@ export class CollectionShelf extends Emitter {
     menu.replaceChildren(...this.#menuItemsFor(collection))
     menu.hidden = false
 
-    // 画面外へはみ出さないよう寄せる
     const rect = menu.getBoundingClientRect()
     menu.style.left = `${Math.min(x, window.innerWidth - rect.width - 8)}px`
-    menu.style.top = `${Math.min(y, window.innerHeight - rect.height - 8) - rect.height / 2}px`
+    menu.style.top = `${Math.max(8, Math.min(y, window.innerHeight - rect.height - 8) - rect.height / 2)}px`
   }
 
   #menuItemsFor(collection) {
@@ -509,7 +614,7 @@ export class CollectionShelf extends Emitter {
     this.#el.shelfMenu.hidden = true
   }
 
-  // ---- 複数選択 -------------------------------------------------------------
+  // ---- 選択 ----------------------------------------------------------------
 
   #bindSelectionBar() {
     this.#el.shelfMakeAlbum.addEventListener('click', () => {
@@ -529,17 +634,18 @@ export class CollectionShelf extends Emitter {
 
   #renderSelection() {
     for (const card of this.#el.shelfList.children) {
-      card.dataset.selected = String(this.#selected.has(card.dataset.collectionId))
+      const on = this.#selected.has(card.dataset.collectionId)
+      card.dataset.selected = String(on)
+      card.querySelector('.card__check')?.setAttribute('aria-checked', String(on))
     }
     this.#el.shelfSelection.hidden = this.#selected.size === 0
     this.#el.shelfSelectionCount.textContent = `${this.#selected.size}件を選択中`
-    // アルバムにまとめられるのは 1 件以上のとき
     this.#el.shelfMakeAlbum.disabled = this.#selected.size === 0
     this.#el.shelfMakePlaylist.disabled = this.#selected.size === 0
   }
 
   #find(collectionId) {
-    return this.#collections.find((collection) => collection.id === collectionId) ?? null
+    return this.#all.find((collection) => collection.id === collectionId) ?? null
   }
 }
 
@@ -549,9 +655,17 @@ function typeLabel(type) {
   return 'SINGLE'
 }
 
+function checkIcon() {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('viewBox', '0 0 24 24')
+  svg.setAttribute('aria-hidden', 'true')
+  svg.append(pathEl('M9.6 16.2 5.4 12l-1.4 1.4 5.6 5.6 12-12L20.2 5.6z'))
+  return svg
+}
+
 /**
  * 種類ごとの印。ひと目で見分けられるよう形を変えてある。
- *   アルバム   … ケースから覗く盤（重なり）
+ *   アルバム   … 盤が 2 枚重なった形
  *   シングル   … 一枚の盤
  *   プレイリスト … リストと再生記号
  */
@@ -566,15 +680,14 @@ function badgeIcon(type) {
       pathEl('M17.4 10v6.1a2.3 2.3 0 1 1-1.7-2.2V8.2l5.3-1.2v5.9a2.3 2.3 0 1 1-1.7-2.2V9z')
     )
   } else if (type === CollectionType.ALBUM) {
-    // 盤が 2 枚重なった形（右奥にもう 1 枚覗く）
-    const back = circle(15.6, 12, 6.6, { fill: 'none', stroke: 'currentColor', width: 1.6, opacity: 0.55 })
-    const front = circle(9.2, 12, 7, { fill: 'none', stroke: 'currentColor', width: 1.8 })
-    const hole = circle(9.2, 12, 2.1, { fill: 'currentColor' })
-    svg.append(back, front, hole)
-  } else {
-    // 一枚の盤
     svg.append(
-      circle(12, 12, 8.2, { fill: 'none', stroke: 'currentColor', width: 1.8 }),
+      circle(15.6, 12, 6.6, { stroke: 'currentColor', width: 1.6, opacity: 0.55 }),
+      circle(9.2, 12, 7, { stroke: 'currentColor', width: 1.8 }),
+      circle(9.2, 12, 2.1, { fill: 'currentColor' })
+    )
+  } else {
+    svg.append(
+      circle(12, 12, 8.2, { stroke: 'currentColor', width: 1.8 }),
       circle(12, 12, 2.4, { fill: 'currentColor' })
     )
   }

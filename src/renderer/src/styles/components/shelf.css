@@ -1,14 +1,13 @@
 /*
  * 画面下のコレクション棚。
- * プレイリスト / アルバム / シングルのジャケットが並ぶ。
+ * グリッド表示とリスト表示を data-view で切り替える。
  */
 .shelf {
   position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  /* 選択中の枠線が上で切れないよう、上側に余白を確保する */
-  padding: var(--space-4) var(--space-6);
+  padding: var(--space-3) var(--space-6) var(--space-4);
   /* 面は body（アクリル + 半透明）に任せる */
   background: transparent;
   border-top: 1px solid var(--color-border);
@@ -17,57 +16,179 @@
   overflow: hidden;
 }
 
-/* カードの並びと「＋ プレイリスト」を横に置く行 */
-.shelf__row {
+/* ---- ツールバー ---- */
+
+.shelf__toolbar {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
 }
 
-/*
- * カードの並び。min-width: 0 が無いと中身の幅ぶんだけ伸びてしまい、
- * 横スクロールにならずにレイアウト全体をはみ出させる。
- * ホイールでの横スクロールは CollectionShelf が拾う。
- */
-.shelf__list {
+.search {
   display: flex;
+  align-items: center;
+  gap: var(--space-2);
   flex: 1;
   min-width: 0;
-  gap: var(--space-3);
-  overflow-x: auto;
-  overflow-y: hidden;
-  overscroll-behavior-x: contain;
-  /* 上は選択枠のぶん、下はスクロールバーのぶんを空ける */
-  padding: 4px 0 var(--space-3);
+  max-width: 360px;
+  padding: 4px var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-muted);
+  transition: border-color var(--transition-fast);
+}
+
+.search:focus-within {
+  border-color: var(--color-accent);
+}
+
+.search__icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.search__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  outline: none;
+}
+
+.search__input::placeholder {
+  color: var(--color-text-faint);
+}
+
+.search__input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.viewswitch {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+}
+
+.viewswitch__button {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.viewswitch__button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.viewswitch__button[data-active='true'] {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+/* ---- カードを並べる面 ---- */
+
+.shelf__body {
+  position: relative;
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  /* 既定は 1 段。「もっと見る」で下に伸びる */
+  max-height: 178px;
+  transition: max-height var(--transition-theme);
+}
+
+.shelf[data-expanded='true'] .shelf__body {
+  max-height: min(46vh, 460px);
+}
+
+.shelf[data-view='list'] .shelf__body {
+  max-height: 178px;
+}
+
+.shelf[data-view='list'][data-expanded='true'] .shelf__body {
+  max-height: min(46vh, 460px);
 }
 
 /* スクロールバーも UI に馴染ませる */
-.shelf__list::-webkit-scrollbar {
+.shelf__body::-webkit-scrollbar {
+  width: 6px;
   height: 6px;
 }
 
-.shelf__list::-webkit-scrollbar-track {
+.shelf__body::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.shelf__list::-webkit-scrollbar-thumb {
+.shelf__body::-webkit-scrollbar-thumb {
   border-radius: var(--radius-pill);
   background: var(--color-border-strong);
 }
 
-.shelf__list::-webkit-scrollbar-thumb:hover {
+.shelf__body::-webkit-scrollbar-thumb:hover {
   background: var(--color-accent);
+}
+
+/* 枠線とホバーの浮きが切れないよう、上下に少し余白を取る */
+.shelf__list {
+  padding: 6px 2px;
+}
+
+.shelf[data-view='grid'] .shelf__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: var(--space-3);
+}
+
+.shelf[data-view='list'] .shelf__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .shelf__empty {
   margin: 0;
-  align-self: center;
+  padding: var(--space-4) 2px;
   font-size: var(--font-size-xs);
   color: var(--color-text-faint);
 }
 
-/* ---- カード ---- */
+.shelf__empty[hidden] {
+  display: none;
+}
+
+/* ---- 矩形選択 ---- */
+
+.marquee-select {
+  position: absolute;
+  z-index: 5;
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  pointer-events: none;
+}
+
+.marquee-select[hidden] {
+  display: none;
+}
+
+/* ---- カード（グリッド） ---- */
 
 .card {
   position: relative;
@@ -75,8 +196,6 @@
   grid-template-rows: auto auto auto;
   justify-items: start;
   gap: 1px;
-  width: 104px;
-  flex: none;
   cursor: pointer;
 }
 
@@ -84,12 +203,12 @@
   position: relative;
   display: grid;
   place-items: center;
-  width: 104px;
-  height: 104px;
+  width: 100%;
+  aspect-ratio: 1;
   border-radius: var(--radius-md);
   background: var(--color-panel);
   overflow: hidden;
-  /* 細い線で囲む。offset は上の余白（.shelf の padding-top）に収まる範囲に留める */
+  /* 細い線で囲む。offset ぶんは .shelf__list の padding が受け止める */
   outline: 1px solid transparent;
   outline-offset: 2px;
   box-shadow: var(--shadow-soft);
@@ -99,7 +218,7 @@
 }
 
 .card:hover .card__art {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
 }
 
 .card[data-active='true'] .card__art {
@@ -111,33 +230,14 @@
   outline-style: dashed;
 }
 
-/* 重ねられようとしているカード */
 .card[data-dropping='true'] .card__art {
   outline-color: var(--color-accent);
   outline-width: 2px;
-  transform: translateY(-5px) scale(1.03);
+  transform: translateY(-4px) scale(1.03);
 }
 
-/* 掴まれているカード自身は薄くする */
 .card[data-dragging='true'] {
   opacity: 0.35;
-}
-
-/* プレイリスト以外に重ねると新しいプレイリストになる、と分かるヒント */
-.card[data-dropping='true']:not([data-type='playlist'])::after {
-  content: '＋ プレイリスト';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding: 2px 8px;
-  border-radius: var(--radius-pill);
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
-  font-size: 10px;
-  font-weight: 700;
-  white-space: nowrap;
-  pointer-events: none;
 }
 
 .card__image {
@@ -147,7 +247,7 @@
   display: block;
 }
 
-/* 種類の印。アルバム / シングルは CD、プレイリストはリスト */
+/* 種類の印 */
 .card__badge {
   position: absolute;
   left: 6px;
@@ -171,6 +271,47 @@
   color: var(--color-ink-contrast);
 }
 
+/* 選択用のチェックボックス */
+.card__check {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: transparent;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--transition-fast),
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.card:hover .card__check,
+.card:focus-within .card__check,
+.card[data-selected='true'] .card__check {
+  opacity: 1;
+}
+
+.card[data-selected='true'] .card__check {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.card__check svg {
+  width: 13px;
+  height: 13px;
+}
+
 .card__name {
   margin-top: var(--space-2);
   max-width: 100%;
@@ -190,75 +331,90 @@
   white-space: nowrap;
 }
 
-/* プレイリストだけ、ホバー時に名前変更 / 削除を出す */
-.card__tools {
-  position: absolute;
-  top: 4px;
-  right: 4px;
+.card__meta {
   display: none;
-  gap: 2px;
 }
 
-.card:hover .card__tools,
-.card:focus-within .card__tools {
-  display: flex;
-}
+/* ---- カード（リスト表示） ---- */
 
-.card__tool {
-  appearance: none;
-  border: none;
-  border-radius: var(--radius-sm);
-  background: var(--color-ink);
-  color: var(--color-ink-contrast);
-  font: inherit;
-  font-size: 10px;
-  padding: 2px 5px;
-  cursor: pointer;
-  opacity: 0.9;
-}
-
-.card__tool:hover {
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
-  opacity: 1;
-}
-
-/* ---- 「＋ プレイリスト」 ---- */
-
-.shelf__add {
-  appearance: none;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 2px;
-  width: 104px;
-  height: 104px;
-  flex: none;
-  border: 1px dashed var(--color-border-strong);
+.shelf[data-view='list'] .card {
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 0 var(--space-3);
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--color-text-muted);
-  font: inherit;
-  cursor: pointer;
-  transition:
-    border-color var(--transition-fast),
-    background var(--transition-fast),
-    color var(--transition-fast);
+  transition: background var(--transition-fast);
 }
 
-.shelf__add:hover {
-  border-color: var(--color-accent);
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
+.shelf[data-view='list'] .card:hover {
+  background: var(--color-sunken);
 }
 
-.shelf__add-mark {
-  font-size: 20px;
-  line-height: 1;
+.shelf[data-view='list'] .card__art {
+  grid-row: 1 / 3;
+  width: 44px;
+  height: 44px;
+  aspect-ratio: auto;
 }
 
-.shelf__add-label {
-  font-size: var(--font-size-xs);
+.shelf[data-view='list'] .card:hover .card__art {
+  transform: none;
+}
+
+.shelf[data-view='list'] .card__badge {
+  left: 2px;
+  bottom: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+}
+
+.shelf[data-view='list'] .card__badge svg {
+  width: 10px;
+  height: 10px;
+}
+
+.shelf[data-view='list'] .card__check {
+  position: static;
+  grid-row: 1 / 3;
+  grid-column: 1;
+  justify-self: center;
+  opacity: 1;
+  width: 18px;
+  height: 18px;
+}
+
+/* リストでは checkbox を左に置くので、ジャケットは 2 列目 */
+.shelf[data-view='list'] .card {
+  grid-template-columns: 24px 44px minmax(0, 1fr) auto;
+}
+
+.shelf[data-view='list'] .card__art {
+  grid-column: 2;
+}
+
+.shelf[data-view='list'] .card__name {
+  grid-column: 3;
+  grid-row: 1;
+  margin-top: 0;
+  font-size: var(--font-size-md);
+}
+
+.shelf[data-view='list'] .card__sub {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.shelf[data-view='list'] .card__meta {
+  display: block;
+  grid-column: 4;
+  grid-row: 1 / 3;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--color-text-faint);
+  white-space: nowrap;
 }
 
 /* ---- 複数選択したときに出る操作バー ---- */
