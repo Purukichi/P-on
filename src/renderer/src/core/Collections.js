@@ -113,17 +113,18 @@ function albumsOf(library) {
   }
 
   return [...grouped.entries()].map(([album, tracks]) => {
-    const artists = [...new Set(tracks.map((track) => track.artist).filter(Boolean))]
+    /*
+     * 収録曲のアーティストを全部ならべる。
+     * 「A, B」のような連名は分解したうえで、同じ名前は 1 度だけ出す。
+     * 「N組のアーティスト」と丸めると誰が入っているのか分からないため。
+     */
+    const artists = [...new Set(tracks.flatMap((track) => track.artists))]
+
     return new Collection({
       type: CollectionType.ALBUM,
       id: `album:${album}`,
       name: album,
-      subtitle:
-        artists.length === 0
-          ? 'アーティスト未設定'
-          : artists.length === 1
-            ? artists[0]
-            : `${artists.length}組のアーティスト`,
+      subtitle: artists.length === 0 ? 'アーティスト未設定' : artists.join(', '),
       tracks,
       ownCoverUrl: library.albumCoverUrl(album)
     })

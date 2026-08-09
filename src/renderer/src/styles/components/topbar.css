@@ -21,21 +21,6 @@
   -webkit-app-region: no-drag;
 }
 
-.topbar__mark {
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: var(--radius-sm);
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
-}
-
-.topbar__mark svg {
-  width: 15px;
-  height: 15px;
-}
-
 .topbar__context {
   margin: 0;
   flex: 1;

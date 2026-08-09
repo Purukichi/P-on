@@ -275,6 +275,9 @@ shelf.on('edit-collection', (collectionId) => {
 // 右クリックメニュー / ゴミ箱からの削除
 shelf.on('delete-collection', (collectionId) => deleteCollection(collectionId))
 
+// 選択バーの「削除」。ゴミ箱まで運ばなくても消せる経路
+shelf.on('delete-selection', (collectionIds) => deleteCollections(collectionIds))
+
 // 複数選択してアルバム化 / プレイリスト化
 shelf.on('group-selection', async ({ collectionIds, as }) => {
   const chosen = collectionIds

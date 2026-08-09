@@ -109,10 +109,16 @@
   display: none;
 }
 
-/* 展開中は棚が残りの高さいっぱいを使う */
+/*
+ * 展開中は棚が残りの高さいっぱいを使う。
+ * height: 100% だと親（flex コンテナ）の高さを超えてしまい、
+ * はみ出した分が .shelf の overflow: hidden で切り落とされる。
+ * flex で余りを受け取り、min-height: 0 で縮めるようにする。
+ */
 .app[data-shelf-expanded='true'] .shelf__body {
   max-height: none;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .app[data-shelf-expanded='true'] .shelf {

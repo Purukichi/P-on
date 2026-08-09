@@ -31,7 +31,8 @@ const MARQUEE_THRESHOLD = 6
  *         'add-track' ({playlistId, trackId}), 'album-cover' (albumName), 'rename-album' (albumName),
  *         'merge-collections' ({sourceId, targetId}), 'add-collection' ({playlistId, collectionId}),
  *         'edit-collection' (collectionId), 'delete-collection' (collectionId),
- *         'group-selection' ({collectionIds, as: 'album'|'playlist'})
+ *         'group-selection' ({collectionIds, as: 'album'|'playlist'}),
+ *         'delete-selection' (collectionIds)
  */
 export class CollectionShelf extends Emitter {
   #root
@@ -80,6 +81,7 @@ export class CollectionShelf extends Emitter {
       'shelf-selection-count',
       'shelf-make-album',
       'shelf-make-playlist',
+      'shelf-delete-selection',
       'shelf-clear-selection'
     ])
 
@@ -570,6 +572,13 @@ export class CollectionShelf extends Emitter {
     this.#el.shelfMakePlaylist.addEventListener('click', () => {
       this.emit('group-selection', { collectionIds: this.selectedIds, as: 'playlist' })
     })
+    /*
+     * ゴミ箱までドラッグしなくても消せるようにしておく。
+     * 棚を広げているとゴミ箱が遠く、掴んだまま運ぶのが億劫なため。
+     */
+    this.#el.shelfDeleteSelection.addEventListener('click', () => {
+      this.emit('delete-selection', this.selectedIds)
+    })
     this.#el.shelfClearSelection.addEventListener('click', () => this.clearSelection())
   }
 
@@ -589,6 +598,7 @@ export class CollectionShelf extends Emitter {
     this.#el.shelfSelectionCount.textContent = `${this.#selected.size}件を選択中`
     this.#el.shelfMakeAlbum.disabled = this.#selected.size === 0
     this.#el.shelfMakePlaylist.disabled = this.#selected.size === 0
+    this.#el.shelfDeleteSelection.disabled = this.#selected.size === 0
   }
 
   #find(collectionId) {

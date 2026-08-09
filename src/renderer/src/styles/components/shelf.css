@@ -114,15 +114,12 @@
   transition: max-height var(--transition-theme);
 }
 
+/*
+ * 展開時の高さは compact.css 側（.app[data-shelf-expanded]）が決める。
+ * ここで data-view ごとに書き分けると詳細度が勝ってしまい、
+ * 展開しても伸びなくなるので、表示種別では分けない。
+ */
 .shelf[data-expanded='true'] .shelf__body {
-  max-height: min(46vh, 460px);
-}
-
-.shelf[data-view='list'] .shelf__body {
-  max-height: 178px;
-}
-
-.shelf[data-view='list'][data-expanded='true'] .shelf__body {
   max-height: min(46vh, 460px);
 }
 

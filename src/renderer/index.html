@@ -15,13 +15,6 @@
     -->
     <div class="app" id="app" data-state="idle" data-list="hidden">
       <header class="topbar">
-        <span class="topbar__mark" aria-hidden="true">
-          <!-- 左右対称の波。山と谷を同じ半円で作っている -->
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-            <path d="M2 12a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 0 5 0" />
-          </svg>
-        </span>
-
         <p class="topbar__context" data-el="context-label"></p>
 
         <div class="topbar__actions">
@@ -244,6 +237,9 @@
           </button>
           <button class="button button--small" type="button" data-el="shelf-make-playlist">
             プレイリストにする
+          </button>
+          <button class="button button--small button--danger" type="button" data-el="shelf-delete-selection">
+            削除
           </button>
           <button class="button button--small button--quiet" type="button" data-el="shelf-clear-selection">
             選択を解除

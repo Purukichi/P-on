@@ -55,6 +55,17 @@
   padding: 4px var(--space-3);
 }
 
+.button--danger {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.button--danger:hover:not(:disabled) {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: #fff;
+}
+
 /* アイコンだけのボタン */
 .iconbutton {
   appearance: none;
