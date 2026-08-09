@@ -1,8 +1,7 @@
 import { Emitter } from '../core/Emitter.js'
+import { IMAGE_EXTENSIONS } from '@shared/ipc-channels.js'
 import { collect } from './dom.js'
 import { filePathsFrom, isFileDrag, splitByExtension } from './drag.js'
-
-const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp']
 
 /**
  * 楽曲情報の編集ダイアログ。
@@ -32,6 +31,7 @@ export class TrackEditor extends Emitter {
       'editor-thumb-image',
       'editor-pick-cover',
       'editor-clear-cover',
+      'editor-cover-note',
       'editor-cancel'
     ])
 
@@ -83,7 +83,13 @@ export class TrackEditor extends Emitter {
     this.#el.editorThumb.dataset.empty = String(!hasCover)
     if (hasCover) this.#el.editorThumbImage.src = track.coverUrl
     else this.#el.editorThumbImage.removeAttribute('src')
-    this.#el.editorClearCover.disabled = !hasCover
+
+    // 曲個別の指定が無いときはアルバム共通のものを借りて表示している
+    const usingAlbumCover = !track?.hasOwnCover && Boolean(track?.albumCoverUrl)
+    this.#el.editorClearCover.disabled = !track?.hasOwnCover
+    this.#el.editorCoverNote.textContent = usingAlbumCover
+      ? 'いまはアルバム共通のジャケットを表示中。ここで設定するとこの曲だけ差し替わります。'
+      : ''
   }
 
   close() {

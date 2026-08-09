@@ -1,5 +1,5 @@
 import { Emitter } from '../core/Emitter.js'
-import { AUDIO_EXTENSIONS } from '@shared/ipc-channels.js'
+import { AUDIO_EXTENSIONS, IMAGE_EXTENSIONS } from '@shared/ipc-channels.js'
 import { collect } from './dom.js'
 import { filePathsFrom, getTrackDragData, isFileDrag, isTrackDrag, splitByExtension } from './drag.js'
 
@@ -9,7 +9,9 @@ import { filePathsFrom, getTrackDragData, isFileDrag, isTrackDrag, splitByExtens
  * ブラウザ既定の挙動（ドロップしたファイルへ画面遷移してしまう）を止めるため、
  * window レベルで dragover / drop を必ず preventDefault している。
  *
- * events: 'files-dropped' (string[] 音源のパス), 'trash-track' (trackId)
+ * events: 'files-dropped' (string[] 音源のパス),
+ *         'images-dropped' (string[] 画像のパス、ジャケット枠以外に落ちたもの),
+ *         'trash-track' (trackId)
  */
 export class DropZones extends Emitter {
   #root
@@ -48,14 +50,34 @@ export class DropZones extends Emitter {
       if (this.#dragDepth === 0) this.#el.dropveil.hidden = true
     })
 
+    /*
+     * ベールを畳むのは capture フェーズで行う。
+     * ジャケット枠などのドロップ先は stopPropagation するため、bubble 側の
+     * リスナーだけだとベールが出しっぱなしになり、画面が固まったように見える。
+     * capture ならどこに落ちても必ず先に呼ばれる。
+     */
+    window.addEventListener(
+      'drop',
+      () => {
+        this.#dragDepth = 0
+        this.#el.dropveil.hidden = true
+      },
+      true
+    )
+
     window.addEventListener('drop', (event) => {
-      this.#dragDepth = 0
-      this.#el.dropveil.hidden = true
       if (!isFileDrag(event)) return
       event.preventDefault()
 
-      const [audio] = splitByExtension(filePathsFrom(event.dataTransfer), AUDIO_EXTENSIONS)
-      if (audio.length > 0) this.emit('files-dropped', audio)
+      const [audio, rest] = splitByExtension(filePathsFrom(event.dataTransfer), AUDIO_EXTENSIONS)
+      if (audio.length > 0) {
+        this.emit('files-dropped', audio)
+        return
+      }
+
+      // ジャケット枠の外に画像だけが落ちたときも、行き場を用意しておく
+      const [images] = splitByExtension(rest, IMAGE_EXTENSIONS)
+      if (images.length > 0) this.emit('images-dropped', images)
     })
   }
 

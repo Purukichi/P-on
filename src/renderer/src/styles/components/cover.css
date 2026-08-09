@@ -73,3 +73,17 @@
   opacity: 1;
   transform: translateY(0);
 }
+
+/* ジャケット未設定の枠はクリックで登録できる。ホバーで案内を出す */
+.cover__frame[data-empty='true'] {
+  cursor: pointer;
+}
+
+.cover__frame[data-empty='true']:hover {
+  outline-color: var(--color-accent);
+}
+
+.cover__frame[data-empty='true']:hover .cover__hint {
+  opacity: 1;
+  transform: translateY(0);
+}

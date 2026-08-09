@@ -32,9 +32,15 @@ body {
   height: 100%;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  /* アクリルの上に薄く白（ナイトなら黒）を重ねて、文字が読める濃さにする */
-  background: var(--glass-bg);
+  /*
+   * ウィンドウは自由にリサイズできるので、ジャケットで埋まらない余白ができる。
+   * その余白は「ジャケットの主要色 + アクリル」で塗る。
+   * --mini-tint は mini.js がジャケットから抽出して書き込む。
+   * 半透明なので、下のアクリル越しにデスクトップが透けて見える。
+   */
+  background: var(--mini-tint, var(--glass-bg));
   border: 1px solid var(--glass-border);
+  transition: background 400ms ease;
 }
 
 .mini__art,
@@ -46,7 +52,8 @@ body {
 }
 
 .mini__art {
-  object-fit: cover;
+  /* ジャケットは切り抜かず全体を見せ、余白は主要色に任せる */
+  object-fit: contain;
   display: block;
 }
 
@@ -86,8 +93,8 @@ body {
   justify-content: space-between;
   padding: var(--space-3);
   background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--transition-fast);
@@ -115,13 +122,32 @@ body {
   flex: 1;
 }
 
+/* 長いタイトルは setMarqueeText が往復スクロールさせる */
 .mini__title {
   margin: 0;
   font-size: var(--font-size-md);
   font-weight: 700;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.mini__title .marquee__inner {
+  display: inline-block;
+}
+
+.mini__title[data-scrolling='true'] .marquee__inner {
+  animation: marquee var(--marquee-duration, 8s) ease-in-out infinite alternate;
+}
+
+@keyframes marquee {
+  0%,
+  18% {
+    transform: translateX(0);
+  }
+  82%,
+  100% {
+    transform: translateX(var(--marquee-distance, 0));
+  }
 }
 
 .mini__artist {

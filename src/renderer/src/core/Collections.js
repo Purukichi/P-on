@@ -17,7 +17,7 @@ export const CollectionType = {
 }
 
 export class Collection {
-  /** @param {{type: string, id: string, name: string, subtitle: string, tracks: import('./Track.js').Track[], sourceId?: string}} init */
+  /** @param {{type: string, id: string, name: string, subtitle: string, tracks: import('./Track.js').Track[], sourceId?: string, ownCoverUrl?: string|null}} init */
   constructor(init) {
     this.type = init.type
     this.id = init.id
@@ -26,15 +26,17 @@ export class Collection {
     this.tracks = init.tracks
     /** プレイリストのときだけ、元の playlist.id が入る */
     this.sourceId = init.sourceId ?? null
+    /** アルバムに直接設定されたジャケット */
+    this.ownCoverUrl = init.ownCoverUrl ?? null
   }
 
   get size() {
     return this.tracks.length
   }
 
-  /** 棚に出すジャケット。収録曲のうち最初に見つかったもの */
+  /** 棚に出すジャケット。アルバム共通の指定が最優先、無ければ収録曲のもの */
   get coverUrl() {
-    return this.tracks.find((track) => track.hasCover)?.coverUrl ?? null
+    return this.ownCoverUrl ?? this.tracks.find((track) => track.hasCover)?.coverUrl ?? null
   }
 
   /** アルバムとプレイリストは中身が複数ある前提なので、再生中にリストを出す */
@@ -101,7 +103,8 @@ function albumsOf(library) {
           : artists.length === 1
             ? artists[0]
             : `${artists.length}組のアーティスト`,
-      tracks
+      tracks,
+      ownCoverUrl: library.albumCoverUrl(album)
     })
   })
 }

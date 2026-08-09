@@ -83,7 +83,9 @@ async function handleMediaRequest(request) {
   const headers = {
     'Content-Type': MIME_TYPES[extname(filePath).toLowerCase()] ?? 'application/octet-stream',
     'Accept-Ranges': 'bytes',
-    'Cache-Control': 'no-store'
+    'Cache-Control': 'no-store',
+    // ジャケットを canvas に描いて主要色を取り出せるように（無いと canvas が taint される）
+    'Access-Control-Allow-Origin': '*'
   }
 
   const range = parseRangeHeader(request.headers.get('range'), size)

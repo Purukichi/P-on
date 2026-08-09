@@ -5,8 +5,8 @@
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
   color: var(--color-text);
   box-shadow: var(--shadow-dialog);
 }
@@ -126,6 +126,17 @@
 
 .editor__thumb[data-empty='true'] .editor__thumb-hint {
   display: block;
+}
+
+.editor__note {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+  color: var(--color-text-muted);
+}
+
+.editor__note:empty {
+  display: none;
 }
 
 .editor__fields {

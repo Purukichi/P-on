@@ -16,8 +16,13 @@ const api = {
     /** ダイアログから取り込む */
     pickFiles: () => ipcRenderer.invoke(IPC.LIBRARY_PICK_FILES),
     updateTrack: (trackId, patch) => ipcRenderer.invoke(IPC.LIBRARY_UPDATE_TRACK, trackId, patch),
+    /** その曲だけのジャケット（シングル用） */
     setCover: (trackId, imagePath) => ipcRenderer.invoke(IPC.LIBRARY_SET_COVER, trackId, imagePath),
     pickCover: (trackId) => ipcRenderer.invoke(IPC.LIBRARY_PICK_COVER, trackId),
+    /** アルバム共通のジャケット。曲ごとの設定とは独立している */
+    setAlbumCover: (albumName, imagePath) =>
+      ipcRenderer.invoke(IPC.LIBRARY_SET_ALBUM_COVER, albumName, imagePath),
+    pickAlbumCover: (albumName) => ipcRenderer.invoke(IPC.LIBRARY_PICK_ALBUM_COVER, albumName),
     deleteTrack: (trackId) => ipcRenderer.invoke(IPC.LIBRARY_DELETE_TRACK, trackId),
     openFolder: () => ipcRenderer.invoke(IPC.LIBRARY_OPEN_FOLDER)
   },

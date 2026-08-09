@@ -1,4 +1,4 @@
-import { BrowserWindow, dialog, ipcMain, shell } from 'electron'
+import { BrowserWindow, dialog, ipcMain, nativeTheme, shell } from 'electron'
 import { AUDIO_EXTENSIONS, IMAGE_EXTENSIONS, IPC } from '../shared/ipc-channels.js'
 import * as library from './library-service.js'
 import { ensureDirectories, libraryRoot } from './library-store.js'
@@ -39,15 +39,30 @@ export function registerIpcHandlers() {
   )
 
   handle(IPC.LIBRARY_PICK_COVER, async (event, trackId) => {
+    const imagePath = await askForImage(event, 'この曲のジャケット画像を選択')
+    if (!imagePath) return library.snapshot()
+    return library.setCover(trackId, imagePath)
+  })
+
+  handle(IPC.LIBRARY_SET_ALBUM_COVER, (_event, albumName, imagePath) =>
+    library.setAlbumCover(albumName, imagePath ?? null)
+  )
+
+  handle(IPC.LIBRARY_PICK_ALBUM_COVER, async (event, albumName) => {
+    const imagePath = await askForImage(event, `「${albumName}」のジャケット画像を選択`)
+    if (!imagePath) return library.snapshot()
+    return library.setAlbumCover(albumName, imagePath)
+  })
+
+  async function askForImage(event, title) {
     const { canceled, filePaths } = await dialog.showOpenDialog(windowOf(event), {
-      title: 'ジャケット画像を選択',
+      title,
       buttonLabel: '設定',
       properties: ['openFile'],
       filters: [{ name: '画像ファイル', extensions: IMAGE_EXTENSIONS }]
     })
-    if (canceled) return library.snapshot()
-    return library.setCover(trackId, filePaths[0])
-  })
+    return canceled ? null : filePaths[0]
+  }
 
   handle(IPC.LIBRARY_DELETE_TRACK, (_event, trackId) => library.deleteTrack(trackId))
 
@@ -103,7 +118,14 @@ function registerPlayerRelay() {
   ipcMain.on(IPC.WINDOW_OPEN_MINI, () => openMiniPlayer())
   ipcMain.on(IPC.WINDOW_CLOSE_MINI, () => closeMiniPlayer())
 
-  ipcMain.on(IPC.WINDOW_SET_TITLEBAR, (_event, { color, symbolColor } = {}) => {
+  ipcMain.on(IPC.WINDOW_SET_TITLEBAR, (_event, { color, symbolColor, theme } = {}) => {
+    /*
+     * Windows のアクリルは OS のダーク / ライト設定に従って濃さが変わる。
+     * システムがダークのままだと明るいテーマでも背景が灰色に沈むので、
+     * アプリのテーマに合わせてアクリル側の明暗も揃える。
+     */
+    if (theme === 'light' || theme === 'dark') nativeTheme.themeSource = theme
+
     const main = getMainWindow()
     if (!main || !color || !symbolColor) return
     try {

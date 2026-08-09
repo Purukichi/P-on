@@ -13,7 +13,7 @@ const HOVER_CLOSE_DELAY = 220
  *
  * events: 'play-collection' ({collectionId, trackId?}),
  *         'create-playlist', 'rename-playlist' (playlistId), 'delete-playlist' (playlistId),
- *         'add-track' ({playlistId, trackId})
+ *         'add-track' ({playlistId, trackId}), 'album-cover' (albumName)
  */
 export class CollectionShelf extends Emitter {
   #root
@@ -157,8 +157,18 @@ export class CollectionShelf extends Emitter {
     popup.addEventListener('pointerleave', () => this.#scheduleClose())
 
     popup.addEventListener('click', (event) => {
+      if (!this.#openId) return
+
+      // アルバムのジャケット設定
+      if (event.target.closest('[data-action="album-cover"]')) {
+        const collection = this.#find(this.#openId)
+        if (collection?.type === CollectionType.ALBUM) this.emit('album-cover', collection.name)
+        this.#closeNow()
+        return
+      }
+
       const row = event.target.closest('[data-track-id]')
-      if (!row || !this.#openId) return
+      if (!row) return
       this.emit('play-collection', {
         collectionId: this.#openId,
         trackId: row.dataset.trackId
@@ -190,6 +200,17 @@ export class CollectionShelf extends Emitter {
         create('span', { className: 'popup__sub', text: collection.subtitle })
       ]
     })
+
+    // アルバムには共通ジャケットを設定できる（曲ごとの設定とは別枠）
+    if (collection.type === CollectionType.ALBUM) {
+      header.append(
+        create('button', {
+          className: 'popup__action',
+          text: collection.ownCoverUrl ? 'アルバムのジャケットを変更' : 'アルバムのジャケットを設定',
+          attrs: { type: 'button', 'data-action': 'album-cover' }
+        })
+      )
+    }
 
     const list = create('ol', { className: 'popup__list' })
     if (collection.tracks.length === 0) {

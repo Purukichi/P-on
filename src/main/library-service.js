@@ -28,18 +28,30 @@ import {
 
 export async function snapshot() {
   const data = await load()
+  const albumCovers = Object.fromEntries(
+    Object.entries(data.albumCovers).map(([album, file]) => [
+      album,
+      { coverFile: file, coverUrl: toMediaUrl(file) }
+    ])
+  )
+
   return {
     libraryPath: libraryRoot(),
-    tracks: data.tracks.map(toTrackDto),
-    playlists: data.playlists.map(toPlaylistDto)
+    tracks: data.tracks.map((track) => toTrackDto(track, data.albumCovers)),
+    playlists: data.playlists.map(toPlaylistDto),
+    albumCovers
   }
 }
 
-function toTrackDto(track) {
+function toTrackDto(track, albumCovers) {
+  const albumCoverFile = track.album ? (albumCovers[track.album] ?? null) : null
   return {
     ...track,
     audioUrl: toMediaUrl(track.audioFile),
-    coverUrl: toMediaUrl(track.coverFile)
+    /** その曲だけのジャケット（シングル用）。無ければ null */
+    ownCoverUrl: toMediaUrl(track.coverFile),
+    /** 所属アルバムのジャケット。無ければ null */
+    albumCoverUrl: toMediaUrl(albumCoverFile)
   }
 }
 
@@ -61,6 +73,12 @@ export async function importFiles(filePaths) {
   const added = []
   const skipped = []
   const staged = []
+  /** このインポートで決まったアルバムジャケット。album -> 相対パス */
+  const stagedAlbumCovers = {}
+
+  const existing = await load()
+  // すでにジャケットが決まっているアルバムは、埋め込み画像を取り込まない
+  const albumsWithCover = new Set(Object.keys(existing.albumCovers))
 
   for (const sourcePath of filePaths) {
     const extension = extname(sourcePath).toLowerCase()
@@ -70,7 +88,26 @@ export async function importFiles(filePaths) {
     }
 
     try {
-      staged.push(await stageOne(sourcePath, extension))
+      const { track, coverFile } = await stageOne(sourcePath, extension, {
+        wantsCover: (album) => !album || !albumsWithCover.has(album)
+      })
+
+      if (coverFile) {
+        if (track.album) {
+          /*
+           * アルバムに属する曲の埋め込み画像は、曲個別ではなくアルバム共通として持つ。
+           * こうしておくと「アルバムのジャケットを差し替える」操作が全曲に効き、
+           * シングルとしても出ている曲だけを別画像にしたいときは
+           * その曲に個別ジャケットを設定して上書きする、という住み分けになる。
+           */
+          stagedAlbumCovers[track.album] = coverFile
+          albumsWithCover.add(track.album)
+        } else {
+          track.coverFile = coverFile
+        }
+      }
+
+      staged.push(track)
     } catch (error) {
       console.error(`[library] ${sourcePath} の取り込みに失敗:`, error)
       skipped.push(basename(sourcePath))
@@ -83,6 +120,9 @@ export async function importFiles(filePaths) {
         data.tracks.push(track)
         added.push(track.id)
       }
+      for (const [album, coverFile] of Object.entries(stagedAlbumCovers)) {
+        data.albumCovers[album] ??= coverFile
+      }
     })
   }
 
@@ -90,7 +130,7 @@ export async function importFiles(filePaths) {
 }
 
 /** ファイルのコピーとタグ読み取りまでを済ませ、library.json に入れるレコードを組み立てる */
-async function stageOne(sourcePath, extension) {
+async function stageOne(sourcePath, extension, { wantsCover }) {
   const originalName = basename(sourcePath, extension)
   const meta = await readMetadata(sourcePath)
 
@@ -99,21 +139,25 @@ async function stageOne(sourcePath, extension) {
   await copyFile(sourcePath, join(audioDir(), audioName))
 
   let coverFile = null
-  if (meta.cover) {
-    const coverName = await uniqueName(coverDir(), sanitize(originalName), meta.cover.extension)
+  if (meta.cover && wantsCover(meta.album)) {
+    const base = meta.album ? `album - ${sanitize(meta.album)}` : sanitize(originalName)
+    const coverName = await uniqueName(coverDir(), base, meta.cover.extension)
     await writeFile(join(coverDir(), coverName), meta.cover.data)
     coverFile = `${COVER_DIR}/${coverName}`
   }
 
   return {
-    id: randomUUID(),
-    title: meta.title ?? originalName,
-    artist: meta.artist,
-    album: meta.album,
-    duration: meta.duration,
-    audioFile: `${AUDIO_DIR}/${audioName}`,
-    coverFile,
-    addedAt: new Date().toISOString()
+    track: {
+      id: randomUUID(),
+      title: meta.title ?? originalName,
+      artist: meta.artist,
+      album: meta.album,
+      duration: meta.duration,
+      audioFile: `${AUDIO_DIR}/${audioName}`,
+      coverFile: null,
+      addedAt: new Date().toISOString()
+    },
+    coverFile
   }
 }
 
@@ -165,6 +209,43 @@ export async function setCover(trackId, imagePath) {
   return snapshot()
 }
 
+/**
+ * アルバムのジャケットを差し替える。imagePath が null なら削除。
+ * 曲ごとの coverFile とは独立しているので、
+ * アルバムに入っている曲がシングルとしても出ている場合は
+ * その曲側に別のジャケットを設定できる。
+ */
+export async function setAlbumCover(albumName, imagePath) {
+  await ensureDirectories()
+
+  const data = await load()
+  if (!data.tracks.some((track) => track.album === albumName)) {
+    throw new Error('アルバムが見つかりません')
+  }
+
+  let nextCoverFile = null
+
+  if (imagePath) {
+    const extension = extname(imagePath).toLowerCase()
+    if (!isSupportedImageExtension(extension)) {
+      throw new Error('対応していない画像形式です (jpg / png / webp / gif / bmp)')
+    }
+    const coverName = await uniqueName(coverDir(), `album - ${sanitize(albumName)}`, extension)
+    await copyFile(imagePath, join(coverDir(), coverName))
+    nextCoverFile = `${COVER_DIR}/${coverName}`
+  }
+
+  const previousCoverFile = data.albumCovers[albumName] ?? null
+
+  await update((current) => {
+    if (nextCoverFile) current.albumCovers[albumName] = nextCoverFile
+    else delete current.albumCovers[albumName]
+  })
+
+  await removeFile(previousCoverFile)
+  return snapshot()
+}
+
 // ---- 削除 ----------------------------------------------------------------
 
 /** 音源とジャケットを実ファイルごと消し、プレイリストからも取り除く */
@@ -173,15 +254,26 @@ export async function deleteTrack(trackId) {
   const track = data.tracks.find((t) => t.id === trackId)
   if (!track) return snapshot()
 
+  /** @type {string[]} */
+  const orphanedCovers = []
+
   await update((current) => {
     current.tracks = current.tracks.filter((t) => t.id !== trackId)
     for (const playlist of current.playlists) {
       playlist.trackIds = playlist.trackIds.filter((id) => id !== trackId)
     }
+
+    // アルバム最後の 1 曲が消えたら、そのアルバムのジャケットも道連れにする
+    if (track.album && !current.tracks.some((t) => t.album === track.album)) {
+      const albumCover = current.albumCovers[track.album]
+      if (albumCover) orphanedCovers.push(albumCover)
+      delete current.albumCovers[track.album]
+    }
   })
 
   await removeFile(track.audioFile)
   await removeFile(track.coverFile)
+  for (const cover of orphanedCovers) await removeFile(cover)
 
   return snapshot()
 }

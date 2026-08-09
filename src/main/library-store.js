@@ -14,7 +14,12 @@ import { app } from 'electron'
  * 取り込みや削除といった操作は library-service.js が担当する。
  */
 
-const EMPTY = { version: 1, tracks: [], playlists: [] }
+/**
+ * albumCovers はアルバム名 -> ジャケットの相対パス。
+ * 曲ごとの coverFile とは別に持つことで、
+ * 「アルバムのジャケット」と「シングルとして出た曲だけのジャケット」を分けて扱える。
+ */
+const EMPTY = { version: 1, tracks: [], playlists: [], albumCovers: {} }
 
 let rootPath = null
 /** @type {typeof EMPTY | null} */
@@ -65,7 +70,8 @@ export async function load() {
     cache = {
       version: parsed.version ?? 1,
       tracks: Array.isArray(parsed.tracks) ? parsed.tracks : [],
-      playlists: Array.isArray(parsed.playlists) ? parsed.playlists : []
+      playlists: Array.isArray(parsed.playlists) ? parsed.playlists : [],
+      albumCovers: isPlainObject(parsed.albumCovers) ? parsed.albumCovers : {}
     }
   } catch (error) {
     if (error.code !== 'ENOENT') {
@@ -90,6 +96,10 @@ export function update(mutator) {
     return data
   })
   return writeChain
+}
+
+function isPlainObject(value) {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 async function persist(data) {

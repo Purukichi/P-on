@@ -40,13 +40,15 @@ export function createMainWindow() {
     minWidth: 960,
     minHeight: 660,
     show: false,
-    backgroundColor: '#ffffff',
-    // タイトルバーを自前の白い領域に溶け込ませる（操作ボタンだけ OS が上に描く）
+    // 本文の下からデスクトップが透けるよう、メインもアクリル素材にする
+    backgroundMaterial: 'acrylic',
+    backgroundColor: '#00000000',
+    // タイトルバーは自前の面に溶け込ませる（操作ボタンだけ OS が上に描く）
     titleBarStyle: 'hidden',
     titleBarOverlay: {
-      color: '#ffffff',
+      color: '#00000000',
       symbolColor: '#0a0a0a',
-      height: 44
+      height: 48
     },
     autoHideMenuBar: true,
     webPreferences: SHARED_WEB_PREFERENCES()
@@ -96,14 +98,14 @@ export function closeMiniPlayer() {
 
 function createMiniWindow() {
   miniWindow = new BrowserWindow({
-    width: 300,
-    height: 300,
-    minWidth: 220,
-    minHeight: 220,
-    maxWidth: 460,
-    maxHeight: 460,
+    width: 320,
+    height: 320,
+    minWidth: 200,
+    minHeight: 180,
     show: false,
     frame: false,
+    // 自由にリサイズできる。ジャケットで埋まらない余白はレンダラー側が
+    // ジャケットの主要色で塗る（mini.js の dominant color 抽出を参照）
     resizable: true,
     maximizable: false,
     fullscreenable: false,

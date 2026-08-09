@@ -235,6 +235,11 @@ shelf.on('delete-playlist', async (playlistId) => {
   if (ok) await library.deletePlaylist(playlistId)
 })
 
+// アルバム共通のジャケット。曲ごとの設定とは独立している
+shelf.on('album-cover', async (albumName) => {
+  await library.pickAlbumCover(albumName)
+})
+
 shelf.on('add-track', async ({ playlistId, trackId }) => {
   const playlist = library.getPlaylist(playlistId)
   if (playlist?.includes(trackId)) {
@@ -326,6 +331,25 @@ editor.on('clear-cover', async (trackId) => {
 })
 
 nowPlaying.on('cover-dropped', async ({ imagePath }) => {
+  await setCoverOfCurrentTrack(imagePath)
+})
+
+// ジャケット未設定の枠をクリック -> 画像選択ダイアログ
+nowPlaying.on('cover-request', async () => {
+  const trackId = engine.track?.id
+  if (!trackId) {
+    setStatus('先に曲を選んでください', { tone: 'error' })
+    return
+  }
+  await library.pickCover(trackId)
+})
+
+// ジャケット枠の外に画像が落ちたときも、再生中の曲のジャケットとして受け取る
+dropZones.on('images-dropped', async (imagePaths) => {
+  await setCoverOfCurrentTrack(imagePaths[0])
+})
+
+async function setCoverOfCurrentTrack(imagePath) {
   const trackId = engine.track?.id
   if (!trackId) {
     setStatus('先に曲を再生してから、ジャケットをドロップしてください', { tone: 'error' })
@@ -333,7 +357,7 @@ nowPlaying.on('cover-dropped', async ({ imagePath }) => {
   }
   await library.setCoverFromPath(trackId, imagePath)
   setStatus('ジャケットを設定しました')
-})
+}
 
 // ---- 配線: テーマ / キーボード --------------------------------------------
 
@@ -342,11 +366,13 @@ function renderTheme() {
   themeButton.setAttribute('aria-pressed', String(theme.isNight))
   themeButton.title = theme.isNight ? 'ライトモードに戻す' : 'ナイトモードにする'
 
-  // OS が描くタイトルバーのボタン area も本文と同じ色にする
+  // ボタン領域は透明にしてアクリルを透かし、記号の色だけ本文に合わせる
   const styles = getComputedStyle(document.documentElement)
   window.hamon.windows.setTitleBar({
-    color: toHex(styles.getPropertyValue('--color-bg')),
-    symbolColor: toHex(styles.getPropertyValue('--color-text'))
+    color: '#00000000',
+    symbolColor: toHex(styles.getPropertyValue('--color-text')),
+    // アクリルの明暗もアプリのテーマに揃える（暗いままだと背景が灰色に沈む）
+    theme: theme.isNight ? 'dark' : 'light'
   })
 }
 

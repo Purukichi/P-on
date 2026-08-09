@@ -10,6 +10,8 @@ export const IPC = {
   LIBRARY_UPDATE_TRACK: 'library:update-track',
   LIBRARY_SET_COVER: 'library:set-cover',
   LIBRARY_PICK_COVER: 'library:pick-cover',
+  LIBRARY_SET_ALBUM_COVER: 'library:set-album-cover',
+  LIBRARY_PICK_ALBUM_COVER: 'library:pick-album-cover',
   LIBRARY_DELETE_TRACK: 'library:delete-track',
   LIBRARY_OPEN_FOLDER: 'library:open-folder',
 

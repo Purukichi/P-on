@@ -7,8 +7,8 @@
   place-items: center;
   padding: var(--space-6);
   background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
   pointer-events: none;
 }
 

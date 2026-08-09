@@ -26,6 +26,7 @@
   white-space: nowrap;
 }
 
+/* 長いタイトルは「…」で切らず、setMarqueeText が往復スクロールさせる */
 .nowplaying__title {
   margin: 0;
   font-size: var(--font-size-title);
@@ -33,7 +34,6 @@
   line-height: 1.2;
   letter-spacing: -0.01em;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

@@ -6,35 +6,46 @@
  * 白をベースに、黒と蛍光グリーンの 3 色で組み立てている。
  */
 :root {
-  /* --- 面 --- */
-  --color-bg: #ffffff;
-  --color-panel: #f4f4f5;
-  --color-sunken: #ececee;
-  --color-border: rgb(10 10 12 / 10%);
-  --color-border-strong: rgb(10 10 12 / 22%);
+  /*
+   * ウィンドウ自体が Windows 11 のアクリル素材（OS 側でデスクトップをぼかす）なので、
+   * 面の色は半透明にしておくと、その下からデスクトップが透けて見える。
+   */
+
+  /*
+   * --- 面 ---
+   * 透け具合と明るさはトレードオフ（背景が暗い壁紙だと透かすほど沈む）。
+   * もっと透かしたい / もっと明るくしたいときは、この 2 つのアルファを動かす。
+   */
+  --color-bg: rgb(255 255 255 / 38%);
+  --color-panel: rgb(255 255 255 / 20%);
+  --color-sunken: rgb(255 255 255 / 40%);
+  --color-border: rgb(10 10 12 / 8%);
+  --color-border-strong: rgb(10 10 12 / 20%);
 
   /* --- 文字 --- */
   --color-text: #0a0a0c;
-  --color-text-muted: #6e6e76;
-  --color-text-faint: #a8a8b0;
+  --color-text-muted: #4f4f58;
+  --color-text-faint: #83838d;
 
   /* --- 黒の面（塗りつぶしボタンなど） --- */
   --color-ink: #0a0a0c;
   --color-ink-contrast: #ffffff;
 
-  /* --- 蛍光グリーン --- */
-  --color-accent: #ccff00;
-  --color-accent-hover: #d8ff3d;
-  --color-accent-contrast: #0a0a0c;
+  /* --- 鮮やかな緑（蛍光ではなく彩度の高い緑） --- */
+  --color-accent: #00c853;
+  --color-accent-hover: #0adb62;
+  --color-accent-contrast: #04150a;
 
-  --color-track: rgb(10 10 12 / 12%);
+  --color-track: rgb(10 10 12 / 14%);
   --color-danger: #e5484d;
 
   /* --- すりガラス --- */
-  --glass-bg: rgb(255 255 255 / 62%);
-  --glass-border: rgb(255 255 255 / 80%);
+  --glass-bg: rgb(255 255 255 / 34%);
+  --glass-border: rgb(255 255 255 / 60%);
   --glass-blur: 22px;
   --glass-shadow: 0 20px 50px rgb(10 10 12 / 16%);
+  /* 背景の濁りを飛ばすための持ち上げ量。ガラス面の backdrop-filter で使う */
+  --glass-lift: brightness(1.14) saturate(1.35);
 
   --shadow-cover: 0 24px 60px rgb(10 10 12 / 14%);
   --shadow-soft: 0 2px 10px rgb(10 10 12 / 6%);
@@ -56,11 +67,17 @@
   --space-6: 32px;
   --space-7: 48px;
 
-  /* --- 文字サイズ --- */
+  /*
+   * --- 書体 ---
+   * Bahnschrift は Windows 標準の DIN 1451 系書体。
+   * 欧文と数字は Bahnschrift が受け持ち、和文グリフは持っていないので
+   * 日本語は自動的に後ろの游ゴシックへフォールバックする。
+   */
   --font-sans:
-    '游ゴシック体', YuGothic, '游ゴシック Medium', 'Yu Gothic Medium', '游ゴシック', 'Yu Gothic',
-    'Segoe UI', system-ui, sans-serif;
-  --font-mono: 'Cascadia Mono', Consolas, ui-monospace, monospace;
+    Bahnschrift, '游ゴシック体', YuGothic, '游ゴシック Medium', 'Yu Gothic Medium', '游ゴシック',
+    'Yu Gothic', 'Segoe UI', system-ui, sans-serif;
+  /* 再生時間などの数字用。名前は歴史的経緯で mono のままだが実体は DIN */
+  --font-mono: Bahnschrift, 'Yu Gothic', 'Segoe UI', sans-serif;
   --font-size-xs: 11px;
   --font-size-sm: 12px;
   --font-size-md: 13px;
@@ -76,24 +93,25 @@
 }
 
 [data-theme='night'] {
-  --color-bg: #0b0b0d;
-  --color-panel: #131316;
-  --color-sunken: #1b1b1f;
+  --color-bg: rgb(12 12 15 / 38%);
+  --color-panel: rgb(255 255 255 / 5%);
+  --color-sunken: rgb(255 255 255 / 12%);
   --color-border: rgb(255 255 255 / 10%);
   --color-border-strong: rgb(255 255 255 / 24%);
 
-  --color-text: #f4f4f6;
-  --color-text-muted: #8d8d97;
-  --color-text-faint: #5a5a63;
+  --color-text: #f6f6f8;
+  --color-text-muted: #b0b0ba;
+  --color-text-faint: #74747e;
 
   --color-ink: #f4f4f6;
   --color-ink-contrast: #0b0b0d;
 
-  --color-track: rgb(255 255 255 / 14%);
+  --color-track: rgb(255 255 255 / 18%);
 
-  --glass-bg: rgb(20 20 23 / 62%);
-  --glass-border: rgb(255 255 255 / 12%);
+  --glass-bg: rgb(15 15 18 / 38%);
+  --glass-border: rgb(255 255 255 / 14%);
   --glass-shadow: 0 20px 50px rgb(0 0 0 / 50%);
+  --glass-lift: brightness(0.92) saturate(1.3);
 
   --shadow-cover: 0 24px 60px rgb(0 0 0 / 55%);
   --shadow-soft: 0 2px 10px rgb(0 0 0 / 35%);

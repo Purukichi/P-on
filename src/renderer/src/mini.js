@@ -1,6 +1,6 @@
 import './styles/mini.css'
 import { formatTime } from './utils/time.js'
-import { pick } from './ui/dom.js'
+import { pick, setMarqueeText } from './ui/dom.js'
 
 /**
  * ミニプレイヤー。
@@ -63,12 +63,20 @@ el.volume.addEventListener('input', () => {
 
 window.hamon.player.onState(render)
 
+let lastTitle = null
+let lastCoverUrl = null
+
 function render(state) {
   const hasTrack = Boolean(state?.trackId)
   root.dataset.hasTrack = String(hasTrack)
   root.dataset.playing = String(Boolean(state?.isPlaying))
 
-  el.title.textContent = hasTrack ? state.title : '曲が選ばれていません'
+  // 高頻度の time-update でマーキーを作り直さないよう、タイトルが変わったときだけ
+  const title = hasTrack ? state.title : '曲が選ばれていません'
+  if (title !== lastTitle) {
+    lastTitle = title
+    setMarqueeText(el.title, title)
+  }
   el.artist.textContent = hasTrack ? state.artist : '—'
   el.toggle.setAttribute('aria-label', state?.isPlaying ? '一時停止' : '再生')
 
@@ -78,6 +86,10 @@ function render(state) {
   } else {
     el.art.removeAttribute('src')
     el.art.hidden = true
+  }
+  if (state?.coverUrl !== lastCoverUrl) {
+    lastCoverUrl = state?.coverUrl ?? null
+    applyTint(lastCoverUrl)
   }
 
   lastDuration = state?.duration ?? 0
@@ -103,6 +115,71 @@ function render(state) {
 
 function setFill(element, ratio) {
   element.style.setProperty('--fill', String(ratio))
+}
+
+// ---- ジャケットの主要色で余白を塗る ----------------------------------------
+
+/** ジャケットから主要色を抽出し、余白の背景 (--mini-tint) に反映する */
+async function applyTint(coverUrl) {
+  if (!coverUrl) {
+    root.style.removeProperty('--mini-tint')
+    return
+  }
+  try {
+    const [r, g, b] = await dominantColor(coverUrl)
+    // 半透明にして、下のアクリル（デスクトップのぼかし）が透けるようにする
+    root.style.setProperty('--mini-tint', `rgb(${r} ${g} ${b} / 44%)`)
+  } catch {
+    root.style.removeProperty('--mini-tint')
+  }
+}
+
+/**
+ * 画像を縮小して描き、「彩度と出現数」で重み付けした最頻色を返す。
+ * 単純な平均だと濁った灰色になりがちなので、鮮やかな色を優先している。
+ */
+function dominantColor(url) {
+  return new Promise((resolve, reject) => {
+    const image = new Image()
+    image.crossOrigin = 'anonymous' // hamon-media:// は ACAO を返すので canvas が汚染されない
+    image.onload = () => {
+      const size = 24
+      const canvas = document.createElement('canvas')
+      canvas.width = size
+      canvas.height = size
+      const context = canvas.getContext('2d', { willReadFrequently: true })
+      context.drawImage(image, 0, 0, size, size)
+
+      const { data } = context.getImageData(0, 0, size, size)
+      const buckets = new Map()
+
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] < 128) continue
+        const r = data[i]
+        const g = data[i + 1]
+        const b = data[i + 2]
+        const saturation = Math.max(r, g, b) - Math.min(r, g, b)
+        const brightness = Math.max(r, g, b)
+        // 4bit に量子化して近い色をまとめる
+        const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4)
+        // 鮮やかで、白飛び・黒潰れしていない色を優遇する
+        const weight = 1 + saturation * 2 + (brightness > 40 && brightness < 235 ? 48 : 0)
+        buckets.set(key, (buckets.get(key) ?? 0) + weight)
+      }
+
+      let bestKey = 0
+      let bestWeight = -1
+      for (const [key, weight] of buckets) {
+        if (weight > bestWeight) {
+          bestWeight = weight
+          bestKey = key
+        }
+      }
+      resolve([((bestKey >> 8) & 15) * 17, ((bestKey >> 4) & 15) * 17, (bestKey & 15) * 17])
+    }
+    image.onerror = () => reject(new Error('cover load failed'))
+    image.src = url
+  })
 }
 
 // 開いた直後は状態を知らないので、メインウィンドウに送り直してもらう

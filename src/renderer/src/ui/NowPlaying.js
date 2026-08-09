@@ -1,15 +1,15 @@
 import { Emitter } from '../core/Emitter.js'
+import { IMAGE_EXTENSIONS } from '@shared/ipc-channels.js'
 import { formatTime } from '../utils/time.js'
-import { collect } from './dom.js'
+import { collect, setMarqueeText } from './dom.js'
 import { filePathsFrom, isFileDrag, splitByExtension } from './drag.js'
-
-const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp']
 
 /**
  * 画面中央〜左：ジャケット、曲情報、シークバー、トランスポート、音量。
  * AudioEngine のイベントを購読して描画するだけで、再生ロジックは持たない。
  *
- * events: 'toggle', 'stop', 'next', 'previous', 'cover-dropped' ({imagePath})
+ * events: 'toggle', 'stop', 'next', 'previous',
+ *         'cover-dropped' ({imagePath}), 'cover-request' (ジャケット未設定の枠がクリックされた)
  */
 export class NowPlaying extends Emitter {
   #root
@@ -69,9 +69,11 @@ export class NowPlaying extends Emitter {
   renderTrack(track) {
     const hasTrack = Boolean(track)
 
-    this.#el.npTitle.textContent = hasTrack ? track.displayTitle : '曲を選んでください'
+    // 長いタイトルは「…」ではなく自動スクロールで全体を見せる
+    setMarqueeText(this.#el.npTitle, hasTrack ? track.displayTitle : '曲を選んでください')
     this.#el.npArtist.textContent = hasTrack ? track.displayArtist : '—'
-    this.#el.npAlbum.textContent = hasTrack ? track.displayAlbum : 'HAMON'
+    this.#el.npAlbum.textContent = hasTrack ? track.displayAlbum : ''
+    this.#el.npAlbum.hidden = !hasTrack
 
     if (hasTrack && track.hasCover) {
       this.#el.coverImage.src = track.coverUrl
@@ -123,6 +125,11 @@ export class NowPlaying extends Emitter {
   /** ジャケット枠に画像を落としたら、再生中の曲のジャケットとして登録する */
   #bindCoverDrop() {
     const frame = this.#el.coverFrame
+
+    // ジャケットが未設定の枠をクリックしたら、画像選択ダイアログを開いてもらう
+    this.#listen(frame, 'click', () => {
+      if (frame.dataset.empty === 'true') this.emit('cover-request')
+    })
 
     this.#listen(frame, 'dragover', (event) => {
       if (!isFileDrag(event)) return

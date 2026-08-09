@@ -39,6 +39,30 @@ export function icon(pathData, { className = 'icon', viewBox = '0 0 24 24' } = {
   return svg
 }
 
+/**
+ * 長いテキストを「…」で切らず、収まらないときだけ自動で往復スクロールさせる。
+ * 距離と時間は CSS 変数で渡し、アニメーション自体は CSS 側（.marquee）が持つ。
+ */
+export function setMarqueeText(element, text) {
+  const inner = document.createElement('span')
+  inner.className = 'marquee__inner'
+  inner.textContent = text
+  element.replaceChildren(inner)
+  element.dataset.scrolling = 'false'
+
+  // レイアウト確定後でないと scrollWidth が取れない
+  requestAnimationFrame(() => {
+    if (element.firstChild !== inner) return // 測る前に差し替えられた
+    const distance = inner.scrollWidth - element.clientWidth
+    if (distance <= 4) return
+    element.style.setProperty('--marquee-distance', `${-distance}px`)
+    // 距離に応じて時間を伸ばしつつ、長すぎるタイトルでも待たされない範囲に収める
+    const seconds = Math.min(Math.max(distance / 90 + 3, 5), 18)
+    element.style.setProperty('--marquee-duration', `${seconds.toFixed(1)}s`)
+    element.dataset.scrolling = 'true'
+  })
+}
+
 function camel(name) {
   return name.replace(/-([a-z])/g, (_, c) => c.toUpperCase())
 }

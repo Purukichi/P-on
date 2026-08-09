@@ -17,6 +17,8 @@ export class Library extends Emitter {
   #tracks = []
   /** @type {Playlist[]} */
   #playlists = []
+  /** @type {Record<string, {coverFile: string, coverUrl: string}>} */
+  #albumCovers = {}
   #libraryPath = ''
 
   constructor(api = window.hamon) {
@@ -45,6 +47,11 @@ export class Library extends Emitter {
 
   getPlaylist(playlistId) {
     return this.#playlists.find((playlist) => playlist.id === playlistId) ?? null
+  }
+
+  /** アルバムに設定された共通ジャケット（未設定なら null） */
+  albumCoverUrl(albumName) {
+    return this.#albumCovers[albumName]?.coverUrl ?? null
   }
 
   /** プレイリストの収録曲を、登録順どおりに Track へ解決する */
@@ -86,6 +93,18 @@ export class Library extends Emitter {
 
   async clearCover(trackId) {
     return this.#run(() => this.#api.library.setCover(trackId, null))
+  }
+
+  async pickAlbumCover(albumName) {
+    return this.#run(() => this.#api.library.pickAlbumCover(albumName))
+  }
+
+  async setAlbumCoverFromPath(albumName, imagePath) {
+    return this.#run(() => this.#api.library.setAlbumCover(albumName, imagePath))
+  }
+
+  async clearAlbumCover(albumName) {
+    return this.#run(() => this.#api.library.setAlbumCover(albumName, null))
   }
 
   async deleteTrack(trackId) {
@@ -150,6 +169,7 @@ export class Library extends Emitter {
     this.#libraryPath = snapshot.libraryPath ?? ''
     this.#tracks = snapshot.tracks.map((dto) => new Track(dto))
     this.#playlists = snapshot.playlists.map((dto) => new Playlist(dto))
+    this.#albumCovers = snapshot.albumCovers ?? {}
     this.emit('change', this)
     return this
   }

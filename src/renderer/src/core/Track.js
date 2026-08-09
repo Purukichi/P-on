@@ -14,8 +14,24 @@ export class Track {
     this.audioFile = dto.audioFile
     this.coverFile = dto.coverFile ?? null
     this.audioUrl = dto.audioUrl
-    this.coverUrl = dto.coverUrl ?? null
+    /** その曲だけに設定されたジャケット（シングルとして出ている場合など） */
+    this.ownCoverUrl = dto.ownCoverUrl ?? null
+    /** 所属アルバムに設定された共通ジャケット */
+    this.albumCoverUrl = dto.albumCoverUrl ?? null
     this.addedAt = dto.addedAt ?? null
+  }
+
+  /**
+   * 実際に表示するジャケット。
+   * 曲個別の指定があればそちらを優先し、無ければアルバム共通のものを使う。
+   */
+  get coverUrl() {
+    return this.ownCoverUrl ?? this.albumCoverUrl
+  }
+
+  /** 曲個別のジャケットが設定されているか（編集ダイアログの「外す」の可否に使う） */
+  get hasOwnCover() {
+    return Boolean(this.ownCoverUrl)
   }
 
   get displayTitle() {

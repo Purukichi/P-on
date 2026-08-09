@@ -14,8 +14,8 @@
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
+  backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-lift);
   box-shadow: var(--glass-shadow);
   animation: popup-in 140ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
@@ -64,6 +64,31 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* アルバムのジャケット設定ボタン */
+.popup__action {
+  appearance: none;
+  justify-self: start;
+  margin-top: var(--space-2);
+  padding: 3px var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.popup__action:hover {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
 }
 
 .popup__list {

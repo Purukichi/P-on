@@ -9,9 +9,8 @@
   gap: var(--space-4);
   height: var(--titlebar-height);
   padding: 0 var(--caption-width) 0 var(--space-5);
-  background: var(--color-bg);
-  border-bottom: 1px solid var(--color-border);
-  transition: background var(--transition-theme);
+  /* 面は body（アクリル + 半透明）に任せ、区切り線も引かない */
+  background: transparent;
   /* 空いている部分はウィンドウのドラッグに使う */
   -webkit-app-region: drag;
 }
@@ -20,12 +19,6 @@
 .topbar input,
 .topbar a {
   -webkit-app-region: no-drag;
-}
-
-.topbar__lead {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
 }
 
 .topbar__mark {
@@ -41,13 +34,6 @@
 .topbar__mark svg {
   width: 15px;
   height: 15px;
-}
-
-.topbar__brand {
-  margin: 0;
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  letter-spacing: 0.24em;
 }
 
 .topbar__context {
