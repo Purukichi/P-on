@@ -259,6 +259,27 @@ export async function setAlbumForTracks(trackIds, albumName) {
 }
 
 /**
+ * 複数の曲にまとめて同じアーティストを書き込む。
+ * アルバム単位でアーティストを付け直すための入口で、
+ * 「A, B」のような連名もそのまま入れられる（表示や検索の側で分解される）。
+ *
+ * @param {string[]} trackIds
+ * @param {string|null} artist null を渡すと未設定に戻す
+ */
+export async function setArtistForTracks(trackIds, artist) {
+  const value = normalize(artist)
+  const ids = new Set(trackIds)
+
+  await update((data) => {
+    for (const track of data.tracks) {
+      if (ids.has(track.id)) track.artist = value
+    }
+  })
+
+  return snapshot()
+}
+
+/**
  * アルバムのジャケットを差し替える。imagePath が null なら削除。
  * 曲ごとの coverFile とは独立しているので、
  * アルバムに入っている曲がシングルとしても出ている場合は

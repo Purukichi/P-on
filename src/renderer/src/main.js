@@ -57,8 +57,6 @@ function render() {
   const listVisible = shouldShowList()
 
   root.dataset.list = listVisible ? 'visible' : 'hidden'
-  pick(root, 'context-label').textContent = current ? current.name : ''
-  pick(root, 'shelf-empty').hidden = collections.length > 0
 
   // 編集中に作り直すと入力欄からフォーカスが外れてしまうので、そのときは触らない
   if (listVisible && !trackList.isEditing) {
@@ -263,6 +261,27 @@ shelf.on('rename-album', async (albumName) => {
   )
   activeCollectionId = `album:${name}`
   setStatus(`「${name}」に変更しました`)
+})
+
+// アルバム単位でアーティストを付け直す（収録曲すべてに書き込む）
+shelf.on('album-artist', async (collectionId) => {
+  const collection = findCollection(collections, collectionId)
+  if (!collection) return
+
+  const current = [...new Set(collection.tracks.flatMap((track) => track.artists))].join(', ')
+  const artist = await nameDialog.ask({
+    heading: `「${collection.name}」のアーティスト`,
+    value: current,
+    confirmLabel: '設定',
+    note: '複数いる場合は「A, B, C」のようにカンマで区切る'
+  })
+  if (artist === null) return
+
+  await library.setArtistForTracks(
+    collection.tracks.map((track) => track.id),
+    artist
+  )
+  setStatus(`「${collection.name}」のアーティストを更新しました`)
 })
 
 // 右クリックメニューの「編集」

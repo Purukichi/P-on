@@ -31,6 +31,7 @@ const MARQUEE_THRESHOLD = 6
  *         'add-track' ({playlistId, trackId}), 'album-cover' (albumName), 'rename-album' (albumName),
  *         'merge-collections' ({sourceId, targetId}), 'add-collection' ({playlistId, collectionId}),
  *         'edit-collection' (collectionId), 'delete-collection' (collectionId),
+ *         'album-artist' (collectionId),
  *         'group-selection' ({collectionIds, as: 'album'|'playlist'}),
  *         'delete-selection' (collectionIds)
  */
@@ -470,6 +471,9 @@ export class CollectionShelf extends Emitter {
         case 'rename-album':
           this.emit('rename-album', collection.name)
           break
+        case 'album-artist':
+          this.emit('album-artist', collection.id)
+          break
         case 'rename-playlist':
           this.emit('rename-playlist', collection.sourceId)
           break
@@ -528,6 +532,7 @@ export class CollectionShelf extends Emitter {
       parts.push(
         item('album-cover', 'アルバムのジャケットを変更'),
         item('rename-album', 'アルバム名を変更'),
+        item('album-artist', 'アーティストを変更'),
         item('delete', 'アルバムごと削除', 'danger')
       )
     } else {

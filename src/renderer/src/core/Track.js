@@ -45,8 +45,8 @@ export class Track {
     if (!f) return ''
 
     const parts = []
-    const name = (f.container ?? f.codec ?? '').toUpperCase()
-    if (name) parts.push(name.replace('MPEG 1 LAYER 3', 'MP3'))
+    const name = formatName(f)
+    if (name) parts.push(name)
     if (f.sampleRate) parts.push(`${round(f.sampleRate / 1000)} kHz`)
     if (f.bitsPerSample) parts.push(`${f.bitsPerSample} bit`)
     else if (f.bitrate) parts.push(`${Math.round(f.bitrate / 1000)} kbps`)
@@ -99,6 +99,26 @@ export function splitArtists(value) {
     .split(/[,、／/]|\bfeat\.\s/i)
     .map((name) => name.trim())
     .filter(Boolean)
+}
+
+/**
+ * 表示用の形式名。
+ * music-metadata は container に 'MPEG'、codec に 'MPEG 1 Layer 3' のような値を返すので、
+ * そのまま出すと MP3 が「MPEG」になってしまう。よく使う形式は言い慣れた名前へ寄せる。
+ */
+function formatName(format) {
+  const container = (format.container ?? '').toUpperCase()
+  const codec = (format.codec ?? '').toUpperCase()
+
+  if (/LAYER\s*3/.test(codec) || container === 'MP3') return 'MP3'
+  if (/LAYER\s*2/.test(codec)) return 'MP2'
+  if (/LAYER\s*1/.test(codec)) return 'MP1'
+  if (container === 'MPEG') return codec.includes('AAC') ? 'AAC' : 'MP3'
+  if (container.includes('MPEG-4') || container === 'M4A') return codec.includes('ALAC') ? 'ALAC' : 'AAC'
+  if (container === 'WAVE') return 'WAV'
+  if (container === 'OGG') return codec.includes('OPUS') ? 'Opus' : 'Ogg Vorbis'
+
+  return container || codec
 }
 
 function round(value) {

@@ -10,7 +10,7 @@
   display: none;
   flex-direction: column;
   min-height: 0;
-  margin: var(--space-6) var(--space-6) var(--space-6) 0;
+  margin: var(--page-gutter) var(--page-gutter) var(--page-gutter) 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-panel);
@@ -24,10 +24,10 @@
 
 .tracklist__head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-5) var(--space-5) var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-3);
 }
 
 .tracklist__title {
@@ -80,7 +80,7 @@
   flex: 1;
   min-height: 0;
   margin: 0;
-  padding: 0 var(--space-3) var(--space-4);
+  padding: 0 var(--space-2) var(--space-4);
   list-style: none;
   overflow-y: auto;
   overscroll-behavior: contain;

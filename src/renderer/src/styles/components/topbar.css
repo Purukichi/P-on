@@ -8,7 +8,7 @@
   align-items: center;
   gap: var(--space-4);
   height: var(--titlebar-height);
-  padding: 0 var(--caption-width) 0 var(--space-5);
+  padding: 0 var(--caption-width) 0 var(--page-gutter);
   /* 面は body（アクリル + 半透明）に任せ、区切り線も引かない */
   background: transparent;
   /* 空いている部分はウィンドウのドラッグに使う */
@@ -21,17 +21,10 @@
   -webkit-app-region: no-drag;
 }
 
-.topbar__context {
-  margin: 0;
+/* 左側は空けておく（ウィンドウのドラッグに使う） */
+.topbar__spacer {
   flex: 1;
-  /* 曲名が長くても操作ボタンを押し出さない */
   min-width: 0;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  letter-spacing: 0.08em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .topbar__actions {
@@ -47,8 +40,8 @@
   appearance: none;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: var(--control-size);
+  height: var(--control-size);
   margin-left: var(--space-2);
   padding: 0;
   border: 1px dashed var(--color-border-strong);

@@ -94,24 +94,28 @@ textarea {
  * 既定は 2 カラム（ジャケット + 再生中の情報）。
  * アルバム / プレイリストを鳴らしているときだけ右にリストが開く。
  */
+/*
+ * ジャケット / 再生中の情報 / リスト の 3 列。
+ * リストは固定幅にせず fr で伸ばす。
+ * ウィンドウを広げたぶんだけ列が伸び、切れていた曲名が読めるようになる。
+ */
 .stage {
   display: grid;
-  grid-template-columns: minmax(260px, 420px) minmax(320px, 1fr);
+  grid-template-columns: minmax(240px, 380px) minmax(320px, 1fr);
   min-height: 0;
   min-width: 0;
-  transition: grid-template-columns var(--transition-theme);
 }
 
 .app[data-list='visible'] .stage {
-  grid-template-columns: minmax(260px, 400px) minmax(300px, 1fr) minmax(280px, 350px);
+  grid-template-columns: minmax(240px, 380px) minmax(320px, 1.4fr) minmax(300px, 1fr);
 }
 
 @media (width < 1120px) {
   .stage {
-    grid-template-columns: minmax(200px, 270px) minmax(260px, 1fr);
+    grid-template-columns: minmax(200px, 280px) minmax(260px, 1fr);
   }
 
   .app[data-list='visible'] .stage {
-    grid-template-columns: minmax(200px, 260px) minmax(240px, 1fr) minmax(240px, 300px);
+    grid-template-columns: minmax(200px, 260px) minmax(240px, 1.4fr) minmax(240px, 1fr);
   }
 }

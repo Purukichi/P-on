@@ -1,8 +1,10 @@
 /* 左カラム：再生中のジャケット。 */
+/* 上下は他のブロックと同じ外周余白、右はブロック間の間隔 */
 .cover {
   display: grid;
   place-items: center;
-  padding: var(--space-6) var(--space-5) var(--space-6) var(--space-6);
+  padding: var(--page-gutter);
+  padding-right: calc(var(--block-gap) / 2);
 }
 
 .cover__frame {

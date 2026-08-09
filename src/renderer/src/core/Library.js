@@ -127,6 +127,11 @@ export class Library extends Emitter {
     return this.#run(() => this.#api.library.setAlbum(trackIds, albumName))
   }
 
+  /** 複数の曲にまとめてアーティストを設定する（null で未設定に戻す） */
+  async setArtistForTracks(trackIds, artist) {
+    return this.#run(() => this.#api.library.setArtist(trackIds, artist))
+  }
+
   async deleteTrack(trackId) {
     return this.#run(() => this.#api.library.deleteTrack(trackId))
   }

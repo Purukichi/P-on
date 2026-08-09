@@ -10,7 +10,8 @@
   align-items: flex-start;
   justify-content: center;
   gap: var(--space-3);
-  padding: var(--space-6) var(--space-7);
+  padding: var(--page-gutter);
+  padding-left: calc(var(--block-gap) * 1.5);
   min-width: 0;
 }
 

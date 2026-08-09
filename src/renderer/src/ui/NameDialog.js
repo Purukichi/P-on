@@ -1,7 +1,8 @@
 import { collect } from './dom.js'
 
 /**
- * 名前をひとつだけ入力させるダイアログ。プレイリストの作成と改名で使い回す。
+ * 名前をひとつだけ入力させるダイアログ。
+ * プレイリストの作成 / 改名、アルバム名やアーティストの付け直しで使い回す。
  * Electron では window.prompt() が使えないため、自前で用意している。
  */
 export class NameDialog {
@@ -20,12 +21,13 @@ export class NameDialog {
       'name-form',
       'name-heading',
       'name-input',
+      'name-note',
       'name-cancel'
     ])
 
     this.#el.nameForm.addEventListener('submit', (event) => {
       event.preventDefault()
-      this.#finish(this.#el.nameInput.value.trim() || null)
+      this.#finish(this.#el.nameInput.value.trim())
     })
     this.#el.nameCancel.addEventListener('click', () => this.#finish(null))
     // Esc で閉じられたときも Promise を解決しておく
@@ -34,10 +36,14 @@ export class NameDialog {
     return this
   }
 
-  /** @returns {Promise<string|null>} キャンセルなら null */
-  ask({ heading, value = '', confirmLabel = '決定' }) {
+  /**
+   * @param {{heading: string, value?: string, confirmLabel?: string, note?: string}} options
+   * @returns {Promise<string|null>} キャンセルなら null。空文字は「未設定にする」の意味で返る
+   */
+  ask({ heading, value = '', confirmLabel = '決定', note = '' }) {
     this.#el.nameHeading.textContent = heading
     this.#el.nameInput.value = value
+    this.#el.nameNote.textContent = note
     this.#el.nameForm.querySelector('[data-el="name-submit"]').textContent = confirmLabel
 
     return new Promise((resolve) => {

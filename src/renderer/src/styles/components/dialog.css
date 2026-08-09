@@ -75,6 +75,15 @@
   color: var(--color-text-faint);
 }
 
+.field__note {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.field__note:empty {
+  display: none;
+}
+
 /* ---- 楽曲情報ダイアログ ---- */
 
 .editor__cover {

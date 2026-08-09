@@ -15,7 +15,7 @@
     -->
     <div class="app" id="app" data-state="idle" data-list="hidden">
       <header class="topbar">
-        <p class="topbar__context" data-el="context-label"></p>
+        <span class="topbar__spacer"></span>
 
         <div class="topbar__actions">
           <button class="button" type="button" data-el="add-tracks">音源を追加</button>
@@ -322,7 +322,8 @@
           <h3 class="dialog__heading" data-el="name-heading">プレイリスト名</h3>
           <label class="field">
             <span class="field__label">名前</span>
-            <input class="field__input" type="text" data-el="name-input" required />
+            <input class="field__input" type="text" data-el="name-input" />
+            <span class="field__note" data-el="name-note"></span>
           </label>
           <footer class="dialog__actions">
             <button class="button button--quiet" type="button" data-el="name-cancel">キャンセル</button>

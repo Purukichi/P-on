@@ -52,6 +52,10 @@ export function registerIpcHandlers() {
     library.setAlbumForTracks(asArray(trackIds), albumName ?? null)
   )
 
+  handle(IPC.LIBRARY_SET_ARTIST, (_event, trackIds, artist) =>
+    library.setArtistForTracks(asArray(trackIds), artist ?? null)
+  )
+
   handle(IPC.LIBRARY_PICK_ALBUM_COVER, async (event, albumName) => {
     const imagePath = await askForImage(event, `「${albumName}」のジャケット画像を選択`)
     if (!imagePath) return library.snapshot()

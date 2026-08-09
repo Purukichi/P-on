@@ -71,8 +71,8 @@
   appearance: none;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: var(--control-size);
+  height: var(--control-size);
   padding: 0;
   border: 1px solid transparent;
   border-radius: var(--radius-md);
