@@ -14,6 +14,8 @@ export const IPC = {
   LIBRARY_PICK_ALBUM_COVER: 'library:pick-album-cover',
   LIBRARY_DELETE_TRACK: 'library:delete-track',
   LIBRARY_OPEN_FOLDER: 'library:open-folder',
+  /** format を持っていない既存レコードにフォーマット情報を埋める */
+  LIBRARY_BACKFILL_FORMATS: 'library:backfill-formats',
 
   // プレイリスト
   PLAYLIST_CREATE: 'playlist:create',

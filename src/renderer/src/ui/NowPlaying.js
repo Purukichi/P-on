@@ -31,6 +31,7 @@ export class NowPlaying extends Emitter {
       'np-album',
       'np-title',
       'np-artist',
+      'np-format',
       'seek',
       'current-time',
       'duration',
@@ -74,6 +75,10 @@ export class NowPlaying extends Emitter {
     this.#el.npArtist.textContent = hasTrack ? track.displayArtist : '—'
     this.#el.npAlbum.textContent = hasTrack ? track.displayAlbum : ''
     this.#el.npAlbum.hidden = !hasTrack
+
+    const format = hasTrack ? track.formatSummary : ''
+    this.#el.npFormat.textContent = format
+    this.#el.npFormat.hidden = format.length === 0
 
     if (hasTrack && track.hasCover) {
       this.#el.coverImage.src = track.coverUrl

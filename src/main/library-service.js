@@ -3,7 +3,7 @@ import { copyFile, unlink, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { randomUUID } from 'node:crypto'
 import { AUDIO_EXTENSIONS } from '../shared/ipc-channels.js'
-import { isSupportedImageExtension, readMetadata } from './metadata.js'
+import { isSupportedImageExtension, readFormat, readMetadata } from './metadata.js'
 import { toMediaUrl } from './media-protocol.js'
 import {
   AUDIO_DIR,
@@ -153,12 +153,40 @@ async function stageOne(sourcePath, extension, { wantsCover }) {
       artist: meta.artist,
       album: meta.album,
       duration: meta.duration,
+      format: meta.format,
       audioFile: `${AUDIO_DIR}/${audioName}`,
       coverFile: null,
       addedAt: new Date().toISOString()
     },
     coverFile
   }
+}
+
+/**
+ * format を持っていない古いレコードを埋める。
+ * フォーマット表示を後から足したので、既存のライブラリにも効くようにしている。
+ * 中身を消したり作り直したりはしない。
+ */
+export async function backfillFormats() {
+  const data = await load()
+  const missing = data.tracks.filter((track) => !track.format)
+  if (missing.length === 0) return { snapshot: await snapshot(), filled: 0 }
+
+  /** @type {Map<string, object|null>} */
+  const results = new Map()
+  for (const track of missing) {
+    const absolute = resolveInLibrary(track.audioFile)
+    results.set(track.id, absolute ? await readFormat(absolute) : null)
+  }
+
+  await update((current) => {
+    for (const track of current.tracks) {
+      const format = results.get(track.id)
+      if (format) track.format = format
+    }
+  })
+
+  return { snapshot: await snapshot(), filled: [...results.values()].filter(Boolean).length }
 }
 
 // ---- 更新 ----------------------------------------------------------------

@@ -1,9 +1,15 @@
 /** アプリ内でトラックをドラッグするときの MIME 型 */
 export const TRACK_MIME = 'application/x-hamon-track'
+/** コレクション（アルバム / シングル / プレイリスト）をドラッグするときの MIME 型 */
+export const COLLECTION_MIME = 'application/x-hamon-collection'
 
 /** dragover の時点では中身を読めないので、types だけで判定する */
 export function isTrackDrag(event) {
   return Array.from(event.dataTransfer?.types ?? []).includes(TRACK_MIME)
+}
+
+export function isCollectionDrag(event) {
+  return Array.from(event.dataTransfer?.types ?? []).includes(COLLECTION_MIME)
 }
 
 export function isFileDrag(event) {
@@ -17,6 +23,52 @@ export function setTrackDragData(event, trackId) {
 
 export function getTrackDragData(event) {
   return event.dataTransfer.getData(TRACK_MIME) || null
+}
+
+export function setCollectionDragData(event, collectionId) {
+  event.dataTransfer.setData(COLLECTION_MIME, collectionId)
+  event.dataTransfer.effectAllowed = 'copy'
+}
+
+export function getCollectionDragData(event) {
+  return event.dataTransfer.getData(COLLECTION_MIME) || null
+}
+
+/**
+ * ドラッグ中にマウスへ追随する小さなサムネイルを付ける。
+ *
+ * setDragImage は「その瞬間に画面に出ている要素」しか写し取れないので、
+ * 画面外ではなく画面内の見えない位置に置いてから渡し、次のフレームで片付ける。
+ *
+ * @param {DragEvent} event
+ * @param {{coverUrl?: string|null, label: string}} options
+ */
+export function attachDragThumbnail(event, { coverUrl, label }) {
+  const ghost = document.createElement('div')
+  ghost.className = 'draghost'
+
+  if (coverUrl) {
+    const image = document.createElement('img')
+    image.className = 'draghost__art'
+    image.src = coverUrl
+    image.alt = ''
+    ghost.append(image)
+  } else {
+    const fallback = document.createElement('span')
+    fallback.className = 'draghost__art draghost__art--empty'
+    fallback.textContent = '♪'
+    ghost.append(fallback)
+  }
+
+  const text = document.createElement('span')
+  text.className = 'draghost__label'
+  text.textContent = label
+  ghost.append(text)
+
+  document.body.append(ghost)
+  // カーソルの少し右下に出す
+  event.dataTransfer.setDragImage(ghost, -12, -12)
+  requestAnimationFrame(() => ghost.remove())
 }
 
 /**

@@ -38,10 +38,31 @@
 }
 
 .nowplaying__artist {
-  margin: 0 0 var(--space-4);
+  margin: 0;
   font-size: var(--font-size-md);
   color: var(--color-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 再生中の音源のフォーマット（例: FLAC · 44.1 kHz · 16 bit · ステレオ） */
+.nowplaying__format {
+  margin: var(--space-2) 0 var(--space-4);
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 2px var(--space-2);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nowplaying__format[hidden] {
+  display: none;
 }

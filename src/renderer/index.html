@@ -54,6 +54,19 @@
           <button
             class="iconbutton"
             type="button"
+            data-el="open-settings"
+            title="設定"
+            aria-label="設定"
+          >
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7m0 2a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3" />
+              <path d="M10.6 2h2.8l.4 2.3q.8.25 1.5.7l2.1-1 1.4 2.4-1.7 1.6q.1.5.1 1t-.1 1l1.7 1.6-1.4 2.4-2.1-1q-.7.45-1.5.7l-.4 2.3h-2.8l-.4-2.3q-.8-.25-1.5-.7l-2.1 1-1.4-2.4 1.7-1.6q-.1-.5-.1-1t.1-1L4.6 6.4 6 4l2.1 1q.7-.45 1.5-.7z" opacity=".55" />
+            </svg>
+          </button>
+
+          <button
+            class="iconbutton"
+            type="button"
             data-el="theme-toggle"
             title="ナイトモード切替"
             aria-label="ナイトモード切替"
@@ -101,6 +114,7 @@
           <p class="nowplaying__album" data-el="np-album" hidden></p>
           <h2 class="nowplaying__title" data-el="np-title">曲を選んでください</h2>
           <p class="nowplaying__artist" data-el="np-artist">—</p>
+          <p class="nowplaying__format" data-el="np-format" hidden></p>
 
           <div class="seekbar">
             <input
@@ -246,6 +260,68 @@
             <button class="button button--primary" type="submit">保存</button>
           </footer>
         </form>
+      </dialog>
+
+      <!-- 設定タブ -->
+      <dialog class="dialog dialog--compact" data-el="settings-dialog">
+        <div class="dialog__form">
+          <h3 class="dialog__heading">設定</h3>
+
+          <div class="settings">
+            <label class="setting">
+              <span class="setting__head">
+                <span class="setting__label">背景の不透明度</span>
+                <span class="setting__value" data-el="settings-alpha-value">38%</span>
+              </span>
+              <input
+                class="setting__range"
+                type="range"
+                data-el="settings-alpha"
+                min="0.1"
+                max="0.95"
+                step="0.01"
+              />
+              <span class="setting__note">下げるほどデスクトップが透ける。上げるほど文字が読みやすい。</span>
+            </label>
+
+            <label class="setting">
+              <span class="setting__head">
+                <span class="setting__label">アクセントカラー</span>
+                <span class="setting__value" data-el="settings-hue-value">151</span>
+              </span>
+              <input
+                class="setting__range setting__range--hue"
+                type="range"
+                data-el="settings-hue"
+                min="0"
+                max="359"
+                step="1"
+              />
+              <span class="setting__note">左から右へ 赤 → 黄 → 緑 → 水 → 青 → 紫 と一周する。</span>
+            </label>
+
+            <label class="setting">
+              <span class="setting__head">
+                <span class="setting__label">ぼかしの強さ</span>
+                <span class="setting__value" data-el="settings-blur-value">26px</span>
+              </span>
+              <input
+                class="setting__range"
+                type="range"
+                data-el="settings-blur"
+                min="0"
+                max="60"
+                step="1"
+              />
+              <span class="setting__note">ポップアップやダイアログの背景をぼかす量。</span>
+            </label>
+          </div>
+
+          <footer class="dialog__actions">
+            <button class="button button--quiet" type="button" data-el="settings-reset">既定に戻す</button>
+            <button class="button button--primary" type="button" data-el="settings-close">閉じる</button>
+          </footer>
+        </div>
       </dialog>
 
       <!-- プレイリスト名の入力 -->

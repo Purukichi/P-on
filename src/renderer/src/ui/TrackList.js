@@ -1,7 +1,7 @@
 import { Emitter } from '../core/Emitter.js'
 import { formatTime } from '../utils/time.js'
 import { collect, create } from './dom.js'
-import { setTrackDragData } from './drag.js'
+import { attachDragThumbnail, setTrackDragData } from './drag.js'
 
 /**
  * 右カラムの一覧。ライブラリ全体とプレイリストの中身、どちらもここが描く。
@@ -41,7 +41,11 @@ export class TrackList extends Emitter {
     this.#el.list.addEventListener('dragstart', (event) => {
       const row = event.target.closest('[data-track-id]')
       if (!row) return
+      const track = this.#tracks.find((t) => t.id === row.dataset.trackId)
       setTrackDragData(event, row.dataset.trackId)
+      if (track) {
+        attachDragThumbnail(event, { coverUrl: track.coverUrl, label: track.displayTitle })
+      }
       row.dataset.dragging = 'true'
     })
 

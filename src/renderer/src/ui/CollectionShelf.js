@@ -2,7 +2,14 @@ import { Emitter } from '../core/Emitter.js'
 import { CollectionType } from '../core/Collections.js'
 import { formatTime } from '../utils/time.js'
 import { collect, create } from './dom.js'
-import { getTrackDragData, isTrackDrag } from './drag.js'
+import {
+  attachDragThumbnail,
+  getCollectionDragData,
+  getTrackDragData,
+  isCollectionDrag,
+  isTrackDrag,
+  setCollectionDragData
+} from './drag.js'
 
 const HOVER_CLOSE_DELAY = 220
 
@@ -13,7 +20,9 @@ const HOVER_CLOSE_DELAY = 220
  *
  * events: 'play-collection' ({collectionId, trackId?}),
  *         'create-playlist', 'rename-playlist' (playlistId), 'delete-playlist' (playlistId),
- *         'add-track' ({playlistId, trackId}), 'album-cover' (albumName)
+ *         'add-track' ({playlistId, trackId}), 'album-cover' (albumName),
+ *         'merge-collections' ({sourceId, targetId})  カード同士を重ねたとき,
+ *         'add-collection' ({playlistId, collectionId}) プレイリストへ束ごと追加
  */
 export class CollectionShelf extends Emitter {
   #root
@@ -70,6 +79,7 @@ export class CollectionShelf extends Emitter {
         'data-collection-id': collection.id,
         'data-type': collection.type,
         'data-active': String(isActive),
+        draggable: 'true',
         role: 'button',
         tabindex: '0',
         title: `${collection.name}（${collection.subtitle}）`
@@ -269,35 +279,84 @@ export class CollectionShelf extends Emitter {
     this.#el.shelfPopup.hidden = true
   }
 
-  // ---- 曲のドロップでプレイリストに追加 ------------------------------------
+  // ---- ドラッグ&ドロップ ----------------------------------------------------
 
+  /**
+   * 受け付ける組み合わせは 3 つ。
+   *   曲         -> プレイリスト        : その曲を追加
+   *   コレクション -> プレイリスト        : 束ごと追加
+   *   コレクション -> アルバム / シングル : 2 つをまとめて新しいプレイリストを作る
+   */
   #bindDropTargets() {
     const list = this.#el.shelfList
 
+    // カード自体もドラッグできる。掴んだ絵がマウスに追随する
+    list.addEventListener('dragstart', (event) => {
+      const card = event.target.closest('[data-collection-id]')
+      if (!card) return
+      const collection = this.#find(card.dataset.collectionId)
+      if (!collection) return
+
+      setCollectionDragData(event, collection.id)
+      attachDragThumbnail(event, { coverUrl: collection.coverUrl, label: collection.name })
+      card.dataset.dragging = 'true'
+      this.#closeNow()
+    })
+
+    list.addEventListener('dragend', (event) => {
+      const card = event.target.closest('[data-collection-id]')
+      if (card) card.dataset.dragging = 'false'
+    })
+
     list.addEventListener('dragover', (event) => {
-      const card = event.target.closest('[data-type="playlist"]')
-      if (!card || !isTrackDrag(event)) return
+      const card = this.#dropTargetFor(event)
+      if (!card) return
       event.preventDefault()
       event.dataTransfer.dropEffect = 'copy'
       card.dataset.dropping = 'true'
     })
 
     list.addEventListener('dragleave', (event) => {
-      const card = event.target.closest('[data-type="playlist"]')
+      const card = event.target.closest('[data-collection-id]')
       if (card) card.dataset.dropping = 'false'
     })
 
     list.addEventListener('drop', (event) => {
-      const card = event.target.closest('[data-type="playlist"]')
-      if (!card || !isTrackDrag(event)) return
+      const card = this.#dropTargetFor(event)
+      if (!card) return
       event.preventDefault()
       card.dataset.dropping = 'false'
-      const trackId = getTrackDragData(event)
-      const collection = this.#find(card.dataset.collectionId)
-      if (trackId && collection) {
-        this.emit('add-track', { playlistId: collection.sourceId, trackId })
+
+      const target = this.#find(card.dataset.collectionId)
+      if (!target) return
+
+      if (isTrackDrag(event)) {
+        const trackId = getTrackDragData(event)
+        if (trackId) this.emit('add-track', { playlistId: target.sourceId, trackId })
+        return
+      }
+
+      const sourceId = getCollectionDragData(event)
+      if (!sourceId || sourceId === target.id) return
+
+      if (target.type === CollectionType.PLAYLIST) {
+        this.emit('add-collection', { playlistId: target.sourceId, collectionId: sourceId })
+      } else {
+        this.emit('merge-collections', { sourceId, targetId: target.id })
       }
     })
+  }
+
+  /** ドラッグ中の中身に応じて、受け入れられるカードを返す */
+  #dropTargetFor(event) {
+    const card = event.target.closest('[data-collection-id]')
+    if (!card || card.dataset.dragging === 'true') return null
+
+    // 曲はプレイリストにしか落とせない
+    if (isTrackDrag(event)) return card.dataset.type === 'playlist' ? card : null
+    // コレクションはどのカードにも落とせる
+    if (isCollectionDrag(event)) return card
+    return null
   }
 
   #find(collectionId) {

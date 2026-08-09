@@ -55,6 +55,7 @@ export function createMainWindow() {
   })
 
   mainWindow.on('ready-to-show', () => mainWindow.show())
+  keepBackdropAlive(mainWindow)
   mainWindow.on('closed', () => {
     mainWindow = null
     getMiniWindow()?.destroy()
@@ -118,6 +119,7 @@ function createMiniWindow() {
   })
 
   miniWindow.setAlwaysOnTop(true, 'floating')
+  keepBackdropAlive(miniWindow)
 
   // タスクバーから最小化された場合もメインに戻す
   miniWindow.on('minimize', () => closeMiniPlayer())
@@ -128,6 +130,25 @@ function createMiniWindow() {
 
   loadRenderer(miniWindow, 'mini.html')
   return miniWindow
+}
+
+/**
+ * Windows はウィンドウが非アクティブになるとアクリルを切って不透明に落とす。
+ * それだと「常に透けていてほしい」という期待に合わないので、
+ * フォーカスが外れたタイミングで素材を貼り直して透過を維持する。
+ */
+function keepBackdropAlive(window) {
+  const reapply = () => {
+    if (window.isDestroyed()) return
+    try {
+      window.setBackgroundMaterial('acrylic')
+    } catch {
+      // 対応していないプラットフォームでは何もしない
+    }
+  }
+  window.on('blur', reapply)
+  window.on('focus', reapply)
+  window.on('show', reapply)
 }
 
 /** dev では Vite の dev サーバー、本番ではビルド済み HTML を読む */

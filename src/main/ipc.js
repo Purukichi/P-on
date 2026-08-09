@@ -66,6 +66,8 @@ export function registerIpcHandlers() {
 
   handle(IPC.LIBRARY_DELETE_TRACK, (_event, trackId) => library.deleteTrack(trackId))
 
+  handle(IPC.LIBRARY_BACKFILL_FORMATS, () => library.backfillFormats())
+
   handle(IPC.LIBRARY_OPEN_FOLDER, async () => {
     await ensureDirectories()
     await shell.openPath(libraryRoot())

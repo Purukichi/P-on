@@ -28,7 +28,12 @@ let cache = null
 let writeChain = Promise.resolve()
 
 export function libraryRoot() {
-  rootPath ??= join(app.getPath('documents'), 'HAMON')
+  /*
+   * 既定は ドキュメント/HAMON。
+   * HAMON_LIBRARY_DIR を渡すと保存先を差し替えられる。
+   * 動作確認のときに本番のライブラリを触らずに済ませるための逃げ道。
+   */
+  rootPath ??= process.env.HAMON_LIBRARY_DIR?.trim() || join(app.getPath('documents'), 'HAMON')
   return rootPath
 }
 

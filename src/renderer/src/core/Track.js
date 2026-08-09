@@ -11,6 +11,8 @@ export class Track {
     this.album = dto.album ?? null
     /** 秒。未取得なら null */
     this.duration = dto.duration ?? null
+    /** @type {{container: string|null, codec: string|null, sampleRate: number|null, bitsPerSample: number|null, bitrate: number|null, channels: number|null, lossless: boolean|null}|null} */
+    this.format = dto.format ?? null
     this.audioFile = dto.audioFile
     this.coverFile = dto.coverFile ?? null
     this.audioUrl = dto.audioUrl
@@ -34,6 +36,26 @@ export class Track {
     return Boolean(this.ownCoverUrl)
   }
 
+  /**
+   * 音質の要約。例: 「FLAC · 44.1 kHz · 16 bit · ステレオ」
+   * 可逆でない形式ではビットレートを出す。
+   */
+  get formatSummary() {
+    const f = this.format
+    if (!f) return ''
+
+    const parts = []
+    const name = (f.container ?? f.codec ?? '').toUpperCase()
+    if (name) parts.push(name.replace('MPEG 1 LAYER 3', 'MP3'))
+    if (f.sampleRate) parts.push(`${round(f.sampleRate / 1000)} kHz`)
+    if (f.bitsPerSample) parts.push(`${f.bitsPerSample} bit`)
+    else if (f.bitrate) parts.push(`${Math.round(f.bitrate / 1000)} kbps`)
+    if (f.channels) parts.push(channelLabel(f.channels))
+    if (f.lossless === true) parts.push('ロスレス')
+
+    return parts.join(' · ')
+  }
+
   get displayTitle() {
     return this.title || '無題のトラック'
   }
@@ -50,4 +72,14 @@ export class Track {
   get hasCover() {
     return Boolean(this.coverUrl)
   }
+}
+
+function round(value) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1)
+}
+
+function channelLabel(channels) {
+  if (channels === 1) return 'モノラル'
+  if (channels === 2) return 'ステレオ'
+  return `${channels}ch`
 }

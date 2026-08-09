@@ -24,7 +24,9 @@ const api = {
       ipcRenderer.invoke(IPC.LIBRARY_SET_ALBUM_COVER, albumName, imagePath),
     pickAlbumCover: (albumName) => ipcRenderer.invoke(IPC.LIBRARY_PICK_ALBUM_COVER, albumName),
     deleteTrack: (trackId) => ipcRenderer.invoke(IPC.LIBRARY_DELETE_TRACK, trackId),
-    openFolder: () => ipcRenderer.invoke(IPC.LIBRARY_OPEN_FOLDER)
+    openFolder: () => ipcRenderer.invoke(IPC.LIBRARY_OPEN_FOLDER),
+    /** フォーマット表示を後から足したので、既存レコードにも埋めて回る */
+    backfillFormats: () => ipcRenderer.invoke(IPC.LIBRARY_BACKFILL_FORMATS)
   },
 
   playlists: {

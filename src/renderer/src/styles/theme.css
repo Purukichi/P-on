@@ -12,13 +12,21 @@
    */
 
   /*
-   * --- 面 ---
-   * 透け具合と明るさはトレードオフ（背景が暗い壁紙だと透かすほど沈む）。
-   * もっと透かしたい / もっと明るくしたいときは、この 2 つのアルファを動かす。
+   * --- 可変パラメータ ---
+   * Settings クラスが上書きする。設定タブのスライダーはこの 3 つを動かしている。
    */
-  --color-bg: rgb(255 255 255 / 38%);
-  --color-panel: rgb(255 255 255 / 20%);
-  --color-sunken: rgb(255 255 255 / 40%);
+  --surface-alpha: 0.38;
+  --accent-hue: 151;
+  --glass-blur: 26px;
+
+  /*
+   * --- 面 ---
+   * すべて --surface-alpha からの相対で決める。
+   * 透け具合と明るさはトレードオフ（暗い壁紙だと透かすほど沈む）。
+   */
+  --color-bg: rgb(255 255 255 / calc(var(--surface-alpha) * 100%));
+  --color-panel: rgb(255 255 255 / calc(var(--surface-alpha) * 52%));
+  --color-sunken: rgb(255 255 255 / calc(var(--surface-alpha) * 105%));
   --color-border: rgb(10 10 12 / 8%);
   --color-border-strong: rgb(10 10 12 / 20%);
 
@@ -31,18 +39,18 @@
   --color-ink: #0a0a0c;
   --color-ink-contrast: #ffffff;
 
-  /* --- 鮮やかな緑（蛍光ではなく彩度の高い緑） --- */
-  --color-accent: #00c853;
-  --color-accent-hover: #0adb62;
-  --color-accent-contrast: #04150a;
+  /* --- アクセント。色相だけスライダーで動かす（既定の 151 は #00c853 相当） --- */
+  --color-accent: hsl(var(--accent-hue) 100% 42%);
+  --color-accent-hover: hsl(var(--accent-hue) 100% 50%);
+  /* 明度から黒 / 白を選んで Settings が上書きする */
+  --color-accent-contrast: #0a0a0c;
 
   --color-track: rgb(10 10 12 / 14%);
   --color-danger: #e5484d;
 
   /* --- すりガラス --- */
-  --glass-bg: rgb(255 255 255 / 34%);
+  --glass-bg: rgb(255 255 255 / calc(var(--surface-alpha) * 90%));
   --glass-border: rgb(255 255 255 / 60%);
-  --glass-blur: 22px;
   --glass-shadow: 0 20px 50px rgb(10 10 12 / 16%);
   /* 背景の濁りを飛ばすための持ち上げ量。ガラス面の backdrop-filter で使う */
   --glass-lift: brightness(1.14) saturate(1.35);
@@ -93,9 +101,9 @@
 }
 
 [data-theme='night'] {
-  --color-bg: rgb(12 12 15 / 38%);
-  --color-panel: rgb(255 255 255 / 5%);
-  --color-sunken: rgb(255 255 255 / 12%);
+  --color-bg: rgb(12 12 15 / calc(var(--surface-alpha) * 100%));
+  --color-panel: rgb(255 255 255 / calc(var(--surface-alpha) * 14%));
+  --color-sunken: rgb(255 255 255 / calc(var(--surface-alpha) * 32%));
   --color-border: rgb(255 255 255 / 10%);
   --color-border-strong: rgb(255 255 255 / 24%);
 
@@ -108,7 +116,7 @@
 
   --color-track: rgb(255 255 255 / 18%);
 
-  --glass-bg: rgb(15 15 18 / 38%);
+  --glass-bg: rgb(15 15 18 / calc(var(--surface-alpha) * 100%));
   --glass-border: rgb(255 255 255 / 14%);
   --glass-shadow: 0 20px 50px rgb(0 0 0 / 50%);
   --glass-lift: brightness(0.92) saturate(1.3);

@@ -3,11 +3,13 @@ import { AudioEngine } from './core/AudioEngine.js'
 import { Library } from './core/Library.js'
 import { PlayQueue } from './core/PlayQueue.js'
 import { Theme } from './core/Theme.js'
+import { Settings } from './core/Settings.js'
 import { CollectionType, buildCollections, findCollection } from './core/Collections.js'
 import { CollectionShelf } from './ui/CollectionShelf.js'
 import { DropZones } from './ui/DropZones.js'
 import { NameDialog } from './ui/NameDialog.js'
 import { NowPlaying } from './ui/NowPlaying.js'
+import { SettingsDialog } from './ui/SettingsDialog.js'
 import { TrackEditor } from './ui/TrackEditor.js'
 import { TrackList } from './ui/TrackList.js'
 import { pick } from './ui/dom.js'
@@ -15,6 +17,7 @@ import { pick } from './ui/dom.js'
 const root = document.querySelector('#app')
 
 const theme = new Theme()
+const settings = new Settings()
 const engine = new AudioEngine({ volume: 0.8 })
 const library = new Library()
 const queue = new PlayQueue()
@@ -24,6 +27,7 @@ const trackList = new TrackList(root).mount()
 const shelf = new CollectionShelf(root).mount()
 const editor = new TrackEditor(root).mount()
 const nameDialog = new NameDialog(root).mount()
+const settingsDialog = new SettingsDialog(root, { settings }).mount()
 const dropZones = new DropZones(root).mount()
 
 /** @type {import('./core/Collections.js').Collection[]} */
@@ -250,6 +254,48 @@ shelf.on('add-track', async ({ playlistId, trackId }) => {
   setStatus(`「${playlist?.name ?? 'プレイリスト'}」に追加しました`)
 })
 
+// アルバム / シングルを別のアルバム / シングルに重ねる -> 2 つでプレイリストを作る
+shelf.on('merge-collections', async ({ sourceId, targetId }) => {
+  const source = findCollection(collections, sourceId)
+  const target = findCollection(collections, targetId)
+  if (!source || !target) return
+
+  const name = await nameDialog.ask({
+    heading: 'この 2 つでプレイリストを作る',
+    value: `${target.name} + ${source.name}`,
+    confirmLabel: '作成'
+  })
+  if (!name) return
+
+  const playlistId = await library.createPlaylist(name)
+  if (!playlistId) return
+
+  // 落とされた側を先頭に、掴んできた側を後ろに並べる
+  const trackIds = [...target.tracks, ...source.tracks].map((track) => track.id)
+  await library.addToPlaylist(playlistId, trackIds)
+
+  activeCollectionId = `playlist:${playlistId}`
+  render()
+  setStatus(`「${name}」を作成しました（${trackIds.length}曲）`)
+})
+
+// コレクションをプレイリストに重ねる -> 束ごと追加
+shelf.on('add-collection', async ({ playlistId, collectionId }) => {
+  const playlist = library.getPlaylist(playlistId)
+  const source = findCollection(collections, collectionId)
+  if (!playlist || !source) return
+
+  const trackIds = source.tracks.map((track) => track.id)
+  const added = trackIds.filter((id) => !playlist.includes(id))
+  if (added.length === 0) {
+    setStatus('すべて追加済みです')
+    return
+  }
+
+  await library.addToPlaylist(playlistId, trackIds)
+  setStatus(`「${playlist.name}」に${added.length}曲を追加しました`)
+})
+
 // ---- 配線: 取り込み / 削除 ------------------------------------------------
 
 pick(root, 'add-tracks').addEventListener('click', async () => {
@@ -257,6 +303,7 @@ pick(root, 'add-tracks').addEventListener('click', async () => {
 })
 
 pick(root, 'open-folder').addEventListener('click', () => library.openFolder())
+pick(root, 'open-settings').addEventListener('click', () => settingsDialog.open())
 
 dropZones.on('files-dropped', async (filePaths) => {
   setStatus(`${filePaths.length}件を取り込んでいます…`, { duration: 60000 })
@@ -425,6 +472,11 @@ library.on('error', (error) => setStatus(error.message, { tone: 'error' }))
 await library.load()
 render()
 
+// フォーマット表示を後から足したので、既存のライブラリにも埋めて回る（データは消さない）
+library.backfillFormats().then((filled) => {
+  if (filled > 0) setStatus(`${filled}曲のフォーマット情報を読み込みました`)
+})
+
 // dev 時だけコンソールからいじれるようにしておく (本番ビルドでは除去される)
 if (import.meta.env.DEV) {
   window.__hamon = {
@@ -432,11 +484,12 @@ if (import.meta.env.DEV) {
     library,
     queue,
     theme,
+    settings,
     dropZones,
     get collections() {
       return collections
     },
     playCollection,
-    views: { nowPlaying, trackList, shelf, editor, nameDialog }
+    views: { nowPlaying, trackList, shelf, editor, nameDialog, settingsDialog }
   }
 }

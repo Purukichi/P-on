@@ -17,7 +17,7 @@ const PICTURE_EXTENSIONS = {
  *                    duration: number|null, cover: {data: Buffer, extension: string}|null}>}
  */
 export async function readMetadata(filePath) {
-  const empty = { title: null, artist: null, album: null, duration: null, cover: null }
+  const empty = { title: null, artist: null, album: null, duration: null, cover: null, format: null }
 
   try {
     const { common, format } = await parseFile(filePath, { duration: true })
@@ -33,11 +33,39 @@ export async function readMetadata(filePath) {
             data: Buffer.from(picture.data),
             extension: PICTURE_EXTENSIONS[picture.format?.toLowerCase()] ?? '.jpg'
           }
-        : null
+        : null,
+      format: toFormatInfo(format)
     }
   } catch (error) {
     console.warn(`[metadata] ${filePath} のタグを読めませんでした:`, error.message)
     return empty
+  }
+}
+
+/** 音質の表示に使う項目だけを抜き出す */
+export async function readFormat(filePath) {
+  try {
+    const { format } = await parseFile(filePath, { duration: true })
+    return toFormatInfo(format)
+  } catch (error) {
+    console.warn(`[metadata] ${filePath} のフォーマットを読めませんでした:`, error.message)
+    return null
+  }
+}
+
+function toFormatInfo(format) {
+  if (!format) return null
+  return {
+    container: clean(format.container),
+    codec: clean(format.codec),
+    /** Hz */
+    sampleRate: Number.isFinite(format.sampleRate) ? format.sampleRate : null,
+    /** bit。可逆でないコーデックでは入らないことが多い */
+    bitsPerSample: Number.isFinite(format.bitsPerSample) ? format.bitsPerSample : null,
+    /** bps */
+    bitrate: Number.isFinite(format.bitrate) ? format.bitrate : null,
+    channels: Number.isFinite(format.numberOfChannels) ? format.numberOfChannels : null,
+    lossless: typeof format.lossless === 'boolean' ? format.lossless : null
   }
 }
 

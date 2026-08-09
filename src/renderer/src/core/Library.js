@@ -67,6 +67,21 @@ export class Library extends Emitter {
     return this.#apply(await this.#api.library.snapshot())
   }
 
+  /**
+   * フォーマット情報を後から足したので、古いレコードにも埋めて回る。
+   * 既存のデータは消さずに項目を足すだけ。
+   */
+  async backfillFormats() {
+    try {
+      const { snapshot, filled } = await this.#api.library.backfillFormats()
+      if (filled > 0) this.#apply(snapshot)
+      return filled
+    } catch (error) {
+      this.emit('error', error)
+      return 0
+    }
+  }
+
   // ---- 変更 --------------------------------------------------------------
 
   /** ドロップされたファイルを取り込む @returns {Promise<{added: Track[], skipped: string[]}>} */
