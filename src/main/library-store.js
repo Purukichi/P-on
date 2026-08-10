@@ -1,12 +1,12 @@
 import { join, resolve } from 'node:path'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { app } from 'electron'
 
 /**
  * ライブラリの実体（フォルダ構成 + library.json）を受け持つ層。
  *
- *   Documents/HAMON/
+ *   Documents/P-on/
  *   ├── library.json   メタデータ
  *   ├── audio/         取り込んだ音源
  *   └── covers/        ジャケット画像
@@ -33,16 +33,51 @@ let cache = null
 /** 書き込みを直列化するためのチェーン */
 let writeChain = Promise.resolve()
 
+/** 既定の置き場所。旧名の HAMON も、残っていれば拾い続ける */
+const LIBRARY_DIR = 'P-on'
+const LEGACY_LIBRARY_DIR = 'HAMON'
+
 export function libraryRoot() {
-  /*
-   * 既定は ドキュメント/HAMON。
-   * ユーザーが保存先を変えたときは、その場所を userData の config.json に覚えておく。
-   * HAMON_LIBRARY_DIR を渡すと、どちらよりも優先して差し替えられる。
-   * 動作確認のときに本番のライブラリを触らずに済ませるための逃げ道。
-   */
-  rootPath ??=
-    process.env.HAMON_LIBRARY_DIR?.trim() || readStoredRoot() || join(app.getPath('documents'), 'HAMON')
+  rootPath ??= resolveInitialRoot()
   return rootPath
+}
+
+/**
+ * 最初に「どこを見るか」を決める。
+ *
+ * HAMON から P-on に改名したので、改名前から使っている人の音源を
+ * 見失わないことがここの主な仕事になる。名前が変わると
+ * userData のフォルダ名も変わり、保存先の記録ごと消えてしまうため、
+ * 旧 userData の記録と旧フォルダの両方を見に行く。
+ */
+function resolveInitialRoot() {
+  /*
+   * 環境変数はどれよりも優先。
+   * 動作確認のときに本番のライブラリを触らずに済ませるための逃げ道で、
+   * 旧名のほうも受け付ける。
+   */
+  const fromEnv = (process.env.P_ON_LIBRARY_DIR ?? process.env.HAMON_LIBRARY_DIR)?.trim()
+  if (fromEnv) return fromEnv
+
+  // 自分で保存先を変えていた人は、その記録がどちらかに残っている
+  const stored = readStoredRoot() ?? readLegacyStoredRoot()
+  if (stored) {
+    // 旧 userData から拾った場合も、次からは新しいほうを見れば済むようにする
+    writeStoredRoot(stored)
+    return stored
+  }
+
+  const documents = app.getPath('documents')
+  const preferred = join(documents, LIBRARY_DIR)
+  const legacy = join(documents, LEGACY_LIBRARY_DIR)
+
+  // 既定のまま使っていた人は、改名前のフォルダに音源が入っている
+  if (!existsSync(preferred) && existsSync(legacy)) {
+    writeStoredRoot(legacy)
+    return legacy
+  }
+
+  return preferred
 }
 
 /**
@@ -74,8 +109,21 @@ function configFile() {
 }
 
 function readStoredRoot() {
+  return readRootFrom(configFile())
+}
+
+/**
+ * 改名前（HAMON）の userData に残っている記録。
+ * 名前が変わると userData のフォルダごと別になるので、
+ * 保存先を自分で変えていた人のためにこちらも見る。
+ */
+function readLegacyStoredRoot() {
+  return readRootFrom(join(app.getPath('appData'), LEGACY_LIBRARY_DIR, 'config.json'))
+}
+
+function readRootFrom(file) {
   try {
-    const parsed = JSON.parse(readFileSync(configFile(), 'utf8'))
+    const parsed = JSON.parse(readFileSync(file, 'utf8'))
     const dir = typeof parsed.libraryDir === 'string' ? parsed.libraryDir.trim() : ''
     return dir.length > 0 ? dir : null
   } catch {

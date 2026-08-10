@@ -128,7 +128,7 @@ export async function changeLibraryLocation(nextRoot, mode) {
 
   if (mode !== 'none') {
     if (check.hasLibrary) {
-      throw new Error('選んだフォルダにはすでに HAMON のライブラリがあります')
+      throw new Error('選んだフォルダにはすでに P-on のライブラリがあります')
     }
     await copyLibraryContents(current, nextRoot)
   }

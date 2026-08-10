@@ -1,5 +1,8 @@
+# appId は改名しても据え置く。
+# これが変わると Windows は別のアプリとして扱い、入っている HAMON が
+# 置き換わらずに 2 つ並んでしまう（自動更新も届かない）。
 appId: com.hamon.player
-productName: HAMON
+productName: P-on
 copyright: Copyright © 2026
 
 # 自動更新の配信元。
@@ -7,6 +10,8 @@ copyright: Copyright © 2026
 # インストール済みのアプリはこの Releases を見に行く。
 # GitHub のユーザー名やリポジトリ名が違う場合は、必ずここを直してからビルドすること
 # （間違っていても起動はするが、更新が永久に見つからない）。
+# リポジトリ名も据え置く。すでに配った版がここを見に来るため、
+# 名前を変えると既存の利用者に更新が届かなくなる。
 publish:
   provider: github
   owner: Purukichi

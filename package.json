@@ -1,7 +1,7 @@
 {
-  "name": "hamon",
+  "name": "p-on",
   "version": "1.2.4",
-  "description": "HAMON - a customizable desktop audio player",
+  "description": "P-on - a customizable desktop audio player",
   "private": true,
   "license": "MIT",
   "//author": "exe のプロパティと「アプリと機能」の発行元に出る。空だと発行元が空欄になる",
