@@ -30,11 +30,18 @@
   padding: var(--space-4) var(--space-4) var(--space-3);
 }
 
+/*
+ * アルバム名。
+ * overflow: hidden は行送りの箱で切るので、字面がそれより大きいと
+ * 上下（特に y や g の下）が削れる。line-height は必ず余裕をもたせること。
+ * 字間を詰めすぎると小さな字が団子になるので、0.12em から控えめにしている。
+ */
 .tracklist__title {
   margin: 0;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-md);
   font-weight: 700;
-  letter-spacing: 0.12em;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

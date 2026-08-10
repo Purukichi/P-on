@@ -9,6 +9,62 @@
   margin-top: var(--space-4);
 }
 
+/*
+ * 上部バーに置くときの姿。
+ * 逃がす余白が無いので、アイコンと数値も並びの中に収める。
+ */
+.volume--inline {
+  position: static;
+  margin-top: 0;
+  gap: var(--space-2);
+  /* 中央カラムのバーの半分ほど。ここを変えるとバーの長さが変わる */
+  width: calc(var(--np-measure) / 2);
+  flex: none;
+}
+
+.volume--inline .volume__icon,
+.volume--inline .volume__value {
+  position: static;
+  flex: none;
+}
+
+/* 数字は押せるようにする（既定では飾りなので pointer-events を切ってある） */
+.volume--inline .volume__value {
+  pointer-events: auto;
+  cursor: text;
+  border-radius: var(--radius-sm);
+}
+
+.volume--inline .volume__value:hover {
+  background: var(--color-sunken);
+}
+
+/* ダブルクリックで数字と入れ替わる入力欄。見た目は数字のまま揃える */
+.volume__entry {
+  flex: none;
+  width: 3ch;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid var(--color-accent);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  outline: none;
+}
+
+.volume__entry[hidden] {
+  display: none;
+}
+
+.volume--inline .volume__input {
+  flex: 1;
+  min-width: 0;
+}
+
 .volume__icon {
   position: absolute;
   left: -26px;

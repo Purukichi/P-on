@@ -97,6 +97,20 @@ export function closeMiniPlayer() {
   main.focus()
 }
 
+/**
+ * すでに起動しているウィンドウを前に出す。
+ * 二重起動を弾いたとき（＝ユーザーはアイコンを押したのに何も起きない）に呼ぶ。
+ * ミニプレイヤーに切り替えている最中はそちらを、そうでなければメインを出す。
+ */
+export function focusExistingWindow() {
+  const mini = getMiniWindow()
+  const target = mini?.isVisible() ? mini : getMainWindow()
+  if (!target) return
+  if (target.isMinimized()) target.restore()
+  target.show()
+  target.focus()
+}
+
 function createMiniWindow() {
   miniWindow = new BrowserWindow({
     // ジャケットの下に操作面を常時出すぶん、既定を縦長にしている

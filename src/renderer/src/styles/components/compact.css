@@ -38,24 +38,40 @@
   display: none;
 }
 
-/* 曲情報と操作を横一列に並べ替える */
+/*
+ * 曲情報と操作を横一列に並べ替える。
+ * 「曲情報 / 操作ボタン / シークバー」の 3 区画にし、
+ * 両端に来る曲情報とシークバーを同じ 1fr にして、操作ボタンを中央に据える。
+ *
+ * DOM の並びは縦置きのまま（曲情報 → シークバー → 操作）なので、
+ * 列は grid-column で振り分ける。このとき grid-row も必ず添えること。
+ * 列だけ指定すると、3 番目の操作ボタンを 1 行目に置こうとした時点で
+ * 自動配置のカーソルが 2 列目を通り過ぎており、2 行目に落ちてしまう。
+ */
 .app[data-shelf-expanded='true'] .nowplaying {
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-rows: auto;
+  /* ジャケットの水平中央線に、3 区画すべての中心をそろえる */
   align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-3) var(--space-6);
+  column-gap: var(--space-5);
+  /* ジャケットとの間隔も列の間隔と同じにそろえる */
+  padding: var(--space-3) var(--space-6) var(--space-3) var(--space-5);
 }
 
-.app[data-shelf-expanded='true'] .nowplaying__album,
 .app[data-shelf-expanded='true'] .nowplaying__format {
   display: none;
 }
 
 .app[data-shelf-expanded='true'] .nowplaying__meta {
+  grid-column: 1;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  gap: 0;
   min-width: 0;
-  flex: 1;
+  max-width: none;
 }
 
 .app[data-shelf-expanded='true'] .nowplaying__title {
@@ -69,11 +85,12 @@
 }
 
 .app[data-shelf-expanded='true'] .transport {
+  grid-column: 2;
+  grid-row: 1;
   margin-top: 0;
   gap: var(--space-2);
   width: auto;
   max-width: none;
-  flex: none;
 }
 
 .app[data-shelf-expanded='true'] .transport__button {
@@ -86,27 +103,41 @@
   height: 40px;
 }
 
+/*
+ * シークバーだけは中身の組み方も変える。
+ * 縦置きのまま（バーの下に時間）だと、箱の中心は揃っても
+ * 肝心の線が時間のぶんだけ上にずれて見える。
+ * コンパクト時は時間をバーの左右に逃がし、線そのものを中心軸に乗せる。
+ */
 .app[data-shelf-expanded='true'] .seekbar {
-  width: 200px;
+  grid-column: 3;
+  grid-row: 1;
+  width: 100%;
   max-width: none;
-  flex: none;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
 }
 
-.app[data-shelf-expanded='true'] .volume {
-  margin-top: 0;
-  width: 110px;
-  max-width: none;
-  flex: none;
-  /* コンパクト時はアイコンと数値を並びの中に収める */
-  padding-left: 22px;
+/* 2 つの時間を .seekbar の列に直接並べる（入れ物は畳む） */
+.app[data-shelf-expanded='true'] .seekbar__times {
+  display: contents;
 }
 
-.app[data-shelf-expanded='true'] .volume__icon {
-  left: 0;
+.app[data-shelf-expanded='true'] .seekbar__time--current {
+  grid-column: 1;
+  grid-row: 1;
 }
 
-.app[data-shelf-expanded='true'] .volume__value {
-  display: none;
+.app[data-shelf-expanded='true'] .seekbar__input {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.app[data-shelf-expanded='true'] .seekbar__time:not(.seekbar__time--current) {
+  grid-column: 3;
+  grid-row: 1;
 }
 
 /*

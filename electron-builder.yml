@@ -2,6 +2,18 @@ appId: com.hamon.player
 productName: HAMON
 copyright: Copyright © 2026
 
+# 自動更新の配信元。
+# ここの owner / repo がそのまま app-update.yml に焼き込まれ、
+# インストール済みのアプリはこの Releases を見に行く。
+# GitHub のユーザー名やリポジトリ名が違う場合は、必ずここを直してからビルドすること
+# （間違っていても起動はするが、更新が永久に見つからない）。
+publish:
+  provider: github
+  owner: Purukichi
+  repo: HAMON
+  # 下書きや先行公開は配らない。正式公開したものだけを更新として扱う
+  releaseType: release
+
 directories:
   buildResources: build
   output: release
@@ -27,11 +39,19 @@ win:
   artifactName: ${productName}-${version}-${arch}.${ext}
 
 nsis:
+  # 管理者権限を求めず、現在のユーザーにだけ入れる。
+  # 「アプリと機能」に載り、スタートメニューとデスクトップからも起動できる。
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
+  createStartMenuShortcut: true
+  # スタートメニュー直下に置く（フォルダを 1 段挟まない）
+  menuCategory: false
   shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  # 取り込んだ音源は ドキュメント/HAMON にあり、アンインストールでは消さない
+  deleteAppDataOnUninstall: false
 
 portable:
   artifactName: ${productName}-${version}-portable.${ext}

@@ -23,12 +23,25 @@ const api = {
     setAlbumCover: (albumName, imagePath) =>
       ipcRenderer.invoke(IPC.LIBRARY_SET_ALBUM_COVER, albumName, imagePath),
     pickAlbumCover: (albumName) => ipcRenderer.invoke(IPC.LIBRARY_PICK_ALBUM_COVER, albumName),
+    /** アルバムのアーティスト。収録曲の artist は書き換えない。null で未設定に戻す */
+    setAlbumArtist: (albumName, artist) =>
+      ipcRenderer.invoke(IPC.LIBRARY_SET_ALBUM_ARTIST, albumName, artist),
+    /** アルバム名の変更。ジャケットとアルバムのアーティストも一緒に付け替える */
+    renameAlbum: (oldName, newName) =>
+      ipcRenderer.invoke(IPC.LIBRARY_RENAME_ALBUM, oldName, newName),
     /** 複数の曲にまとめてアルバム名を書き込む。null でシングルに戻す */
     setAlbum: (trackIds, albumName) => ipcRenderer.invoke(IPC.LIBRARY_SET_ALBUM, trackIds, albumName),
-    /** 複数の曲にまとめてアーティストを書き込む。null で未設定に戻す */
+    /** 複数の曲にまとめて収録曲側のアーティストを書き込む。null で未設定に戻す */
     setArtist: (trackIds, artist) => ipcRenderer.invoke(IPC.LIBRARY_SET_ARTIST, trackIds, artist),
     deleteTrack: (trackId) => ipcRenderer.invoke(IPC.LIBRARY_DELETE_TRACK, trackId),
     openFolder: () => ipcRenderer.invoke(IPC.LIBRARY_OPEN_FOLDER),
+    /**
+     * 保存先のフォルダとデータの移し方をユーザーに選ばせる。
+     * @returns {Promise<{path: string, mode: 'move'|'copy'|'none'}|null>} キャンセルなら null
+     */
+    chooseLocation: () => ipcRenderer.invoke(IPC.LIBRARY_CHOOSE_LOCATION),
+    /** 選ばれた保存先へ実際に切り替える。移す場合は先に再生を止めておくこと */
+    applyLocation: (path, mode) => ipcRenderer.invoke(IPC.LIBRARY_APPLY_LOCATION, path, mode),
     /** フォーマット表示を後から足したので、既存レコードにも埋めて回る */
     backfillFormats: () => ipcRenderer.invoke(IPC.LIBRARY_BACKFILL_FORMATS)
   },
@@ -38,7 +51,10 @@ const api = {
     rename: (id, name) => ipcRenderer.invoke(IPC.PLAYLIST_RENAME, id, name),
     remove: (id) => ipcRenderer.invoke(IPC.PLAYLIST_DELETE, id),
     addTracks: (id, trackIds) => ipcRenderer.invoke(IPC.PLAYLIST_ADD_TRACKS, id, trackIds),
-    removeTrack: (id, trackId) => ipcRenderer.invoke(IPC.PLAYLIST_REMOVE_TRACK, id, trackId)
+    removeTrack: (id, trackId) => ipcRenderer.invoke(IPC.PLAYLIST_REMOVE_TRACK, id, trackId),
+    /** プレイリストのジャケット。null を渡すと外す */
+    setCover: (id, imagePath) => ipcRenderer.invoke(IPC.PLAYLIST_SET_COVER, id, imagePath),
+    pickCover: (id, name) => ipcRenderer.invoke(IPC.PLAYLIST_PICK_COVER, id, name)
   },
 
   /** OS 標準の確認ダイアログ @returns {Promise<boolean>} */

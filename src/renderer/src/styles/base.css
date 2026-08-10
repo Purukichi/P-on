@@ -96,8 +96,9 @@ textarea {
  */
 /*
  * ジャケット / 再生中の情報 / リスト の 3 列。
- * リストは固定幅にせず fr で伸ばす。
- * ウィンドウを広げたぶんだけ列が伸び、切れていた曲名が読めるようになる。
+ * 伸ばすのはリストの列だけ。ジャケットと再生中の情報は中身どおりの固定幅にする。
+ * こうするとリストの左端は動かず、ウィンドウを広げたぶんは右端だけが伸びるので、
+ * 再生中の情報とリストの間に無駄な隙間が空かない。
  */
 .stage {
   display: grid;
@@ -107,7 +108,7 @@ textarea {
 }
 
 .app[data-list='visible'] .stage {
-  grid-template-columns: minmax(240px, 380px) minmax(320px, 1.4fr) minmax(300px, 1fr);
+  grid-template-columns: minmax(240px, 380px) var(--np-column) minmax(300px, 1fr);
 }
 
 @media (width < 1120px) {
@@ -116,6 +117,6 @@ textarea {
   }
 
   .app[data-list='visible'] .stage {
-    grid-template-columns: minmax(200px, 260px) minmax(240px, 1.4fr) minmax(240px, 1fr);
+    grid-template-columns: minmax(200px, 260px) var(--np-column) minmax(240px, 1fr);
   }
 }

@@ -19,6 +19,8 @@ export class Library extends Emitter {
   #playlists = []
   /** @type {Record<string, {coverFile: string, coverUrl: string}>} */
   #albumCovers = {}
+  /** アルバム名 -> アルバムのアーティスト @type {Record<string, string>} */
+  #albumArtists = {}
   #libraryPath = ''
 
   constructor(api = window.hamon) {
@@ -52,6 +54,11 @@ export class Library extends Emitter {
   /** アルバムに設定された共通ジャケット（未設定なら null） */
   albumCoverUrl(albumName) {
     return this.#albumCovers[albumName]?.coverUrl ?? null
+  }
+
+  /** アルバムに設定されたアーティスト（未設定なら null）。収録曲の artist とは別物 */
+  albumArtist(albumName) {
+    return this.#albumArtists[albumName] ?? null
   }
 
   /** プレイリストの収録曲を、登録順どおりに Track へ解決する */
@@ -122,12 +129,22 @@ export class Library extends Emitter {
     return this.#run(() => this.#api.library.setAlbumCover(albumName, null))
   }
 
+  /** アルバムのアーティストを設定する。収録曲の artist は触らない（null で未設定に戻す） */
+  async setAlbumArtist(albumName, artist) {
+    return this.#run(() => this.#api.library.setAlbumArtist(albumName, artist))
+  }
+
+  /** アルバム名を変える。ジャケットとアルバムのアーティストも一緒に移る */
+  async renameAlbum(oldName, newName) {
+    return this.#run(() => this.#api.library.renameAlbum(oldName, newName))
+  }
+
   /** 複数の曲をひとつのアルバムにまとめる（null でシングルに戻す） */
   async setAlbumForTracks(trackIds, albumName) {
     return this.#run(() => this.#api.library.setAlbum(trackIds, albumName))
   }
 
-  /** 複数の曲にまとめてアーティストを設定する（null で未設定に戻す） */
+  /** 複数の曲にまとめて収録曲側のアーティストを設定する（null で未設定に戻す） */
   async setArtistForTracks(trackIds, artist) {
     return this.#run(() => this.#api.library.setArtist(trackIds, artist))
   }
@@ -163,8 +180,42 @@ export class Library extends Emitter {
     return this.#run(() => this.#api.playlists.removeTrack(playlistId, trackId))
   }
 
+  /** プレイリストのジャケットをダイアログから選ぶ */
+  async pickPlaylistCover(playlistId, name) {
+    return this.#run(() => this.#api.playlists.pickCover(playlistId, name))
+  }
+
+  async setPlaylistCoverFromPath(playlistId, imagePath) {
+    return this.#run(() => this.#api.playlists.setCover(playlistId, imagePath))
+  }
+
+  async clearPlaylistCover(playlistId) {
+    return this.#run(() => this.#api.playlists.setCover(playlistId, null))
+  }
+
   openFolder() {
     return this.#api.library.openFolder()
+  }
+
+  /** 保存先とデータの移し方を選ばせる。キャンセルなら null */
+  chooseLocation() {
+    return this.#api.library.chooseLocation()
+  }
+
+  /**
+   * 保存先を切り替える。移す場合は、呼ぶ前に再生を止めておくこと
+   * （鳴らしているファイルを掴んだままだと Windows が元のファイルを消せない）。
+   * @returns {Promise<{ok: boolean, warning?: string|null}>}
+   */
+  async changeLocation(path, mode) {
+    try {
+      const { snapshot, warning } = await this.#api.library.applyLocation(path, mode)
+      this.#apply(snapshot)
+      return { ok: true, warning }
+    } catch (error) {
+      this.emit('error', error)
+      return { ok: false }
+    }
   }
 
   // ---- 内部 --------------------------------------------------------------
@@ -195,6 +246,7 @@ export class Library extends Emitter {
     this.#tracks = snapshot.tracks.map((dto) => new Track(dto))
     this.#playlists = snapshot.playlists.map((dto) => new Playlist(dto))
     this.#albumCovers = snapshot.albumCovers ?? {}
+    this.#albumArtists = snapshot.albumArtists ?? {}
     this.emit('change', this)
     return this
   }

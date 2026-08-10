@@ -76,9 +76,14 @@
   border-radius: var(--radius-sm);
   background: var(--color-accent);
   color: var(--color-accent-contrast);
-  font-size: 10px;
+  font-size: var(--font-size-xs);
   font-weight: 700;
-  letter-spacing: 0.18em;
+  /*
+   * 字間は最後の 1 字のうしろにも入るので、その分だけ右の詰まりが浅くなる。
+   * 詰めすぎると小さな字が団子になるため、控えめにしたうえで右側で相殺する。
+   */
+  letter-spacing: 0.12em;
+  padding-right: calc(6px - 0.12em);
 }
 
 .menu__name {

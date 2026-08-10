@@ -3,8 +3,6 @@
  * タイトル・シークバー・音量バーの幅は --np-measure で揃える。
  */
 .nowplaying {
-  --np-measure: 340px;
-
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -17,8 +15,7 @@
 
 .nowplaying__meta,
 .nowplaying .seekbar,
-.nowplaying .transport,
-.nowplaying .volume {
+.nowplaying .transport {
   width: 100%;
   max-width: var(--np-measure);
 }
@@ -33,7 +30,6 @@
 }
 
 /* バッジ類は中身の幅に収める */
-.nowplaying__album,
 .nowplaying__format {
   width: auto;
   max-width: 100%;
@@ -42,23 +38,6 @@
 .nowplaying__title,
 .nowplaying__artist {
   width: 100%;
-}
-
-.nowplaying__album {
-  margin: 0;
-  align-self: flex-start;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  /* アルバム名は入力どおりに出す（大文字化しない） */
-  text-transform: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* 長いタイトルは「…」で切らず、setMarqueeText が往復スクロールさせる */

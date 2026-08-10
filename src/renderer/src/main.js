@@ -58,8 +58,8 @@ function render() {
 
   root.dataset.list = listVisible ? 'visible' : 'hidden'
 
-  // 編集中に作り直すと入力欄からフォーカスが外れてしまうので、そのときは触らない
-  if (listVisible && !trackList.isEditing) {
+  // 編集中でも最新を渡しておく（TrackList 側が控えて、編集を終えた時点で反映する）
+  if (listVisible) {
     trackList.render({
       title: current?.name ?? '再生キュー',
       mode: current?.type === CollectionType.PLAYLIST ? 'playlist' : 'library',
@@ -71,6 +71,8 @@ function render() {
 
   shelf.render(collections, { activeCollectionId })
   nowPlaying.setNavigation({ hasPrevious: queue.hasPrevious, hasNext: queue.hasNext })
+  // いまどこに保存しているかは、変更ボタンに触れれば分かるようにしておく
+  changeLibraryButton.title = `ライブラリの保存先を変更\n現在: ${library.libraryPath}`
   publishPlayerState()
 }
 
@@ -246,6 +248,18 @@ shelf.on('album-cover', async (albumName) => {
   await library.pickAlbumCover(albumName)
 })
 
+// プレイリストのジャケット。id に紐づくので、名前を変えても外れない
+shelf.on('playlist-cover', async (playlistId) => {
+  const playlist = library.getPlaylist(playlistId)
+  if (!playlist) return
+  await library.pickPlaylistCover(playlistId, playlist.name)
+})
+
+shelf.on('playlist-cover-clear', async (playlistId) => {
+  await library.clearPlaylistCover(playlistId)
+  setStatus('ジャケットを外しました。収録曲のものが使われます')
+})
+
 shelf.on('rename-album', async (albumName) => {
   const collection = findCollection(collections, `album:${albumName}`)
   if (!collection) return
@@ -255,25 +269,47 @@ shelf.on('rename-album', async (albumName) => {
     confirmLabel: '変更'
   })
   if (!name || name === albumName) return
-  await library.setAlbumForTracks(
-    collection.tracks.map((track) => track.id),
-    name
-  )
+  // ジャケットとアルバムのアーティストも一緒に付け替わる
+  await library.renameAlbum(albumName, name)
   activeCollectionId = `album:${name}`
   setStatus(`「${name}」に変更しました`)
 })
 
-// アルバム単位でアーティストを付け直す（収録曲すべてに書き込む）
+/*
+ * アルバムとしてのアーティスト表記。
+ * 収録曲の artist には触らないので、
+ * 「アルバムは V.A.、曲ごとの演奏者はそれぞれ別」といった持ち方ができる。
+ */
 shelf.on('album-artist', async (collectionId) => {
   const collection = findCollection(collections, collectionId)
   if (!collection) return
 
-  const current = [...new Set(collection.tracks.flatMap((track) => track.artists))].join(', ')
   const artist = await nameDialog.ask({
-    heading: `「${collection.name}」のアーティスト`,
-    value: current,
+    heading: `「${collection.name}」のアルバムアーティスト`,
+    value: collection.ownArtist ?? '',
     confirmLabel: '設定',
-    note: '複数いる場合は「A, B, C」のようにカンマで区切る'
+    note: '空にすると収録曲のアーティストから表示します。複数いる場合は「A, B, C」のようにカンマで区切る'
+  })
+  if (artist === null) return
+
+  await library.setAlbumArtist(collection.name, artist)
+  setStatus(
+    artist
+      ? `「${collection.name}」のアルバムアーティストを設定しました`
+      : `「${collection.name}」のアルバムアーティストを解除しました`
+  )
+})
+
+// 収録曲そのもののアーティストを一括で書き換える（アルバムアーティストとは別）
+shelf.on('track-artists', async (collectionId) => {
+  const collection = findCollection(collections, collectionId)
+  if (!collection) return
+
+  const artist = await nameDialog.ask({
+    heading: `「${collection.name}」の収録曲のアーティスト`,
+    value: collection.trackArtists.join(', '),
+    confirmLabel: '設定',
+    note: `${collection.size}曲すべてのアーティストを書き換えます`
   })
   if (artist === null) return
 
@@ -281,7 +317,7 @@ shelf.on('album-artist', async (collectionId) => {
     collection.tracks.map((track) => track.id),
     artist
   )
-  setStatus(`「${collection.name}」のアーティストを更新しました`)
+  setStatus(`「${collection.name}」の収録曲のアーティストを更新しました`)
 })
 
 // 右クリックメニューの「編集」
@@ -399,6 +435,36 @@ pick(root, 'add-tracks').addEventListener('click', async () => {
 })
 
 pick(root, 'open-folder').addEventListener('click', () => library.openFolder())
+
+/*
+ * ライブラリの保存先を変える。
+ * フォルダ選択と「データをどうするか」の確認は main 側のダイアログが受け持ち、
+ * ここは決まった内容を実行するだけ。
+ */
+const changeLibraryButton = pick(root, 'change-library')
+changeLibraryButton.addEventListener('click', async () => {
+  const choice = await library.chooseLocation()
+  if (!choice) return
+
+  /*
+   * 実行前に再生を止める。
+   * 鳴らしているファイルを掴んだままだと Windows が元のファイルを消せないし、
+   * 切り替えたあとに同じ曲が同じ場所にあるとも限らない。
+   */
+  engine.unload()
+  queue.clear()
+  activeCollectionId = null
+  render()
+
+  setStatus('ライブラリを移しています…', { duration: 600000 })
+  const { ok, warning } = await library.changeLocation(choice.path, choice.mode)
+  if (!ok) return
+
+  setStatus(warning ?? `保存先を ${choice.path} に変更しました`, {
+    tone: warning ? 'error' : 'info',
+    duration: warning ? 12000 : 4000
+  })
+})
 
 dropZones.on('files-dropped', async (filePaths) => {
   setStatus(`${filePaths.length}件を取り込んでいます…`, { duration: 60000 })
@@ -559,8 +625,19 @@ nowPlaying.on('cover-dropped', async ({ imagePath }) => {
   await setCoverOfCurrentTrack(imagePath)
 })
 
-// ジャケット未設定の枠をクリック -> 画像選択ダイアログ
+// ジャケット未設定の枠をクリック -> 画像選択ダイアログ（ドロップと同じ行き先に登録する）
 nowPlaying.on('cover-request', async () => {
+  const current = activeCollection()
+
+  if (current?.type === CollectionType.ALBUM) {
+    await library.pickAlbumCover(current.name)
+    return
+  }
+  if (current?.type === CollectionType.PLAYLIST) {
+    await library.pickPlaylistCover(current.sourceId, current.name)
+    return
+  }
+
   const trackId = engine.track?.id
   if (!trackId) {
     setStatus('先に曲を選んでください', { tone: 'error' })
@@ -576,13 +653,22 @@ dropZones.on('images-dropped', async (imagePaths) => {
 
 /**
  * ジャケット枠へのドロップ。
- * アルバムを鳴らしているときはアルバム共通のジャケットとして登録し、
- * それ以外はその曲だけのジャケットにする。
+ * いま鳴らしている単位に合わせて、登録先を選び分ける。
+ *   アルバム       … アルバム共通のジャケット
+ *   プレイリスト   … プレイリストのジャケット
+ *   それ以外       … その曲だけのジャケット
  */
 async function setCoverOfCurrentTrack(imagePath) {
   const current = activeCollection()
+
   if (current?.type === CollectionType.ALBUM) {
     await library.setAlbumCoverFromPath(current.name, imagePath)
+    setStatus(`「${current.name}」のジャケットを設定しました`)
+    return
+  }
+
+  if (current?.type === CollectionType.PLAYLIST) {
+    await library.setPlaylistCoverFromPath(current.sourceId, imagePath)
     setStatus(`「${current.name}」のジャケットを設定しました`)
     return
   }

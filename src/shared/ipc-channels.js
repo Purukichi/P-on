@@ -12,12 +12,20 @@ export const IPC = {
   LIBRARY_PICK_COVER: 'library:pick-cover',
   LIBRARY_SET_ALBUM_COVER: 'library:set-album-cover',
   LIBRARY_PICK_ALBUM_COVER: 'library:pick-album-cover',
+  /** アルバムのアーティスト。収録曲ごとの artist とは別に持つ */
+  LIBRARY_SET_ALBUM_ARTIST: 'library:set-album-artist',
+  /** アルバム名の変更。ジャケットとアルバムのアーティストも一緒に付け替える */
+  LIBRARY_RENAME_ALBUM: 'library:rename-album',
   /** 複数の曲にまとめてアルバム名を書き込む（シングルをアルバムにまとめ直す） */
   LIBRARY_SET_ALBUM: 'library:set-album',
-  /** 複数の曲にまとめてアーティストを書き込む（アルバム単位での付け直し） */
+  /** 複数の曲にまとめてアーティストを書き込む（収録曲側の一括変更） */
   LIBRARY_SET_ARTIST: 'library:set-artist',
   LIBRARY_DELETE_TRACK: 'library:delete-track',
   LIBRARY_OPEN_FOLDER: 'library:open-folder',
+  /** 保存先のフォルダとデータの移し方を選ばせる（ダイアログは main 側で出す） */
+  LIBRARY_CHOOSE_LOCATION: 'library:choose-location',
+  /** 選ばれた保存先へ実際に切り替える */
+  LIBRARY_APPLY_LOCATION: 'library:apply-location',
   /** format を持っていない既存レコードにフォーマット情報を埋める */
   LIBRARY_BACKFILL_FORMATS: 'library:backfill-formats',
 
@@ -27,6 +35,9 @@ export const IPC = {
   PLAYLIST_DELETE: 'playlist:delete',
   PLAYLIST_ADD_TRACKS: 'playlist:add-tracks',
   PLAYLIST_REMOVE_TRACK: 'playlist:remove-track',
+  /** プレイリストのジャケット。id に紐づくので改名しても外れない */
+  PLAYLIST_SET_COVER: 'playlist:set-cover',
+  PLAYLIST_PICK_COVER: 'playlist:pick-cover',
 
   // 確認ダイアログ
   CONFIRM: 'app:confirm',

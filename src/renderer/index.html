@@ -15,6 +15,35 @@
     -->
     <div class="app" id="app" data-state="idle" data-list="hidden">
       <header class="topbar">
+        <!--
+          音量は上部バーの左端に置く。
+          中央カラムに置くと、数値がリストの上に乗ってしまうため。
+        -->
+        <div class="volume volume--inline">
+          <svg class="volume__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M4 9.5h3.5L12 5.5v13L7.5 14.5H4z" />
+            <path d="M15.5 9a4 4 0 0 1 0 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+          <input class="volume__input" type="range" data-el="volume" min="0" max="1" step="0.01" value="0.8" aria-label="音量" />
+          <!-- 数字はダブルクリック（またはフォーカスして Enter）で直接入力に変わる -->
+          <span
+            class="volume__value"
+            data-el="volume-value"
+            role="button"
+            tabindex="0"
+            title="ダブルクリックで数値を入力"
+            >80</span
+          >
+          <input
+            class="volume__entry"
+            type="text"
+            inputmode="numeric"
+            data-el="volume-entry"
+            aria-label="音量（0〜100）"
+            hidden
+          />
+        </div>
+
         <span class="topbar__spacer"></span>
 
         <div class="topbar__actions">
@@ -42,6 +71,19 @@
           >
             <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4l2 2h9A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z" />
+            </svg>
+          </button>
+
+          <button
+            class="iconbutton"
+            type="button"
+            data-el="change-library"
+            title="ライブラリの保存先を変更"
+            aria-label="ライブラリの保存先を変更"
+          >
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4l2 2h9A1.5 1.5 0 0 1 21 8.5V11h-2V9h-8.8l-2-2H5v10h6v2H4.5A1.5 1.5 0 0 1 3 17.5z" />
+              <path d="M17 13.5 22 17l-5 3.5V18h-4v-2h4z" />
             </svg>
           </button>
 
@@ -94,7 +136,6 @@
         <section class="nowplaying">
           <!-- 棚を展開したときは、この塊がそのまま 1 行に畳まれる -->
           <div class="nowplaying__meta">
-            <p class="nowplaying__album" data-el="np-album" hidden></p>
             <h2 class="nowplaying__title" data-el="np-title">曲を選んでください</h2>
             <p class="nowplaying__artist" data-el="np-artist">—</p>
             <p class="nowplaying__format" data-el="np-format" hidden></p>
@@ -152,16 +193,6 @@
                 <path d="M15 6h2v12h-2zM6 6l8 6-8 6z" />
               </svg>
             </button>
-          </div>
-
-          <!-- アイコンと数値は左右の余白へ逃がし、バー自体はシークバーと同じ幅にする -->
-          <div class="volume">
-            <svg class="volume__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M4 9.5h3.5L12 5.5v13L7.5 14.5H4z" />
-              <path d="M15.5 9a4 4 0 0 1 0 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-            </svg>
-            <input class="volume__input" type="range" data-el="volume" min="0" max="1" step="0.01" value="0.8" aria-label="音量" />
-            <span class="volume__value" data-el="volume-value">80</span>
           </div>
         </section>
 

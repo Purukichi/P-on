@@ -7,6 +7,8 @@ export class Playlist {
     this.id = dto.id
     this.name = dto.name ?? '無題のプレイリスト'
     this.trackIds = [...(dto.trackIds ?? [])]
+    /** プレイリストに直接設定したジャケット。無ければ収録曲のものを使う */
+    this.coverUrl = dto.coverUrl ?? null
     this.createdAt = dto.createdAt ?? null
   }
 

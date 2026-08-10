@@ -17,7 +17,9 @@
 
 .topbar button,
 .topbar input,
-.topbar a {
+.topbar a,
+/* つまみのすぐ脇を掴んでウィンドウが動かないよう、音量まわりはひとまとめで除外する */
+.topbar .volume {
   -webkit-app-region: no-drag;
 }
 

@@ -357,17 +357,18 @@
   transform: none;
 }
 
+/* 印はここが一番小さくなる。線が 1px を割ってかすれない大きさに留める */
 .shelf[data-view='list'] .card__badge {
   left: 2px;
   bottom: 2px;
-  width: 15px;
-  height: 15px;
-  border-radius: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
 }
 
 .shelf[data-view='list'] .card__badge svg {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
 }
 
 .shelf[data-view='list'] .card__check {
@@ -401,14 +402,19 @@
   grid-row: 2;
 }
 
+/*
+ * 種別と曲数。
+ * faint はナイトモードだと背景に沈んで読めないので、
+ * 右のリストの補助テキスト（.track__meta）と同じ muted に揃える。
+ */
 .shelf[data-view='list'] .card__meta {
   display: block;
   grid-column: 4;
   grid-row: 1 / 3;
   font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--color-text-faint);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
   white-space: nowrap;
 }
 

@@ -1,10 +1,11 @@
 {
   "name": "hamon",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "description": "HAMON - a customizable desktop audio player",
   "private": true,
   "license": "MIT",
-  "author": "",
+  "//author": "exe のプロパティと「アプリと機能」の発行元に出る。空だと発行元が空欄になる",
+  "author": "Purukichi",
   "main": "./out/main/index.js",
   "scripts": {
     "postinstall": "install-electron",
@@ -13,7 +14,10 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "build:dir": "electron-vite build && electron-builder --dir",
-    "build:win": "electron-vite build && electron-builder --win"
+    "//": "electron-builder のキャッシュはプロジェクト内 (.builder-cache) に置く。%LOCALAPPDATA% 配下だとフォルダの rename が EXDEV で弾かれてパッケージングに失敗する環境があるため",
+    "build:win": "electron-vite build && set \"ELECTRON_BUILDER_CACHE=%CD%\\.builder-cache\" && electron-builder --win",
+    "//release": "GitHub Releases へ上げて配信する。GH_TOKEN（repo 権限の Personal Access Token）が必要",
+    "release": "electron-vite build && set \"ELECTRON_BUILDER_CACHE=%CD%\\.builder-cache\" && electron-builder --win --publish always"
   },
   "devDependencies": {
     "electron": "^43.3.0",
@@ -22,6 +26,7 @@
     "vite": "^7.1.0"
   },
   "dependencies": {
+    "electron-updater": "^6.8.9",
     "music-metadata": "^11.14.0"
   }
 }

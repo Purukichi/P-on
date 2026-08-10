@@ -29,9 +29,10 @@ const MARQUEE_THRESHOLD = 6
  * events: 'play-collection' ({collectionId, trackId?}),
  *         'create-playlist', 'rename-playlist' (playlistId), 'delete-playlist' (playlistId),
  *         'add-track' ({playlistId, trackId}), 'album-cover' (albumName), 'rename-album' (albumName),
+ *         'playlist-cover' (playlistId), 'playlist-cover-clear' (playlistId),
  *         'merge-collections' ({sourceId, targetId}), 'add-collection' ({playlistId, collectionId}),
  *         'edit-collection' (collectionId), 'delete-collection' (collectionId),
- *         'album-artist' (collectionId),
+ *         'album-artist' (collectionId), 'track-artists' (collectionId),
  *         'group-selection' ({collectionIds, as: 'album'|'playlist'}),
  *         'delete-selection' (collectionIds)
  */
@@ -474,8 +475,17 @@ export class CollectionShelf extends Emitter {
         case 'album-artist':
           this.emit('album-artist', collection.id)
           break
+        case 'track-artists':
+          this.emit('track-artists', collection.id)
+          break
         case 'rename-playlist':
           this.emit('rename-playlist', collection.sourceId)
+          break
+        case 'playlist-cover':
+          this.emit('playlist-cover', collection.sourceId)
+          break
+        case 'playlist-cover-clear':
+          this.emit('playlist-cover-clear', collection.sourceId)
           break
         case 'delete':
           this.emit('delete-collection', collectionId)
@@ -527,12 +537,21 @@ export class CollectionShelf extends Emitter {
     ]
 
     if (collection.type === CollectionType.PLAYLIST) {
+      parts.push(item('playlist-cover', 'プレイリストのジャケットを変更'))
+      // 自前のジャケットを持っているときだけ「外す」を出す（収録曲のものに戻る）
+      if (collection.ownCoverUrl) parts.push(item('playlist-cover-clear', 'ジャケットを外す'))
       parts.push(item('rename-playlist', '名前を変更'), item('delete', 'プレイリストを削除', 'danger'))
     } else if (collection.type === CollectionType.ALBUM) {
+      /*
+       * アーティストは 2 段構え。
+       * 上はアルバムとしての表記（V.A. など）で、収録曲には触らない。
+       * 下は収録曲そのものの書き換えなので、まとめて直したいときだけ使う。
+       */
       parts.push(
         item('album-cover', 'アルバムのジャケットを変更'),
         item('rename-album', 'アルバム名を変更'),
-        item('album-artist', 'アーティストを変更'),
+        item('album-artist', 'アルバムのアーティストを変更'),
+        item('track-artists', '収録曲のアーティストをまとめて変更'),
         item('delete', 'アルバムごと削除', 'danger')
       )
     } else {
@@ -630,6 +649,10 @@ function checkIcon() {
  *   アルバム   … 盤が 2 枚重なった形
  *   シングル   … 一枚の盤
  *   プレイリスト … リストと再生記号
+ *
+ * 線は 12〜14px まで縮めて描かれる。viewBox は 24 なので、
+ * ここでの太さは実寸では半分ほどになる。1px を割ると線がかすれて潰れるため、
+ * 見た目の細さより「縮めても残ること」を優先して太めに取っている。
  */
 function badgeIcon(type) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
@@ -643,13 +666,13 @@ function badgeIcon(type) {
     )
   } else if (type === CollectionType.ALBUM) {
     svg.append(
-      circle(15.6, 12, 6.6, { stroke: 'currentColor', width: 1.6, opacity: 0.55 }),
-      circle(9.2, 12, 7, { stroke: 'currentColor', width: 1.8 }),
+      circle(15.6, 12, 6.4, { stroke: 'currentColor', width: 2.4, opacity: 0.55 }),
+      circle(9.2, 12, 6.8, { stroke: 'currentColor', width: 2.6 }),
       circle(9.2, 12, 2.1, { fill: 'currentColor' })
     )
   } else {
     svg.append(
-      circle(12, 12, 8.2, { stroke: 'currentColor', width: 1.8 }),
+      circle(12, 12, 8, { stroke: 'currentColor', width: 2.6 }),
       circle(12, 12, 2.4, { fill: 'currentColor' })
     )
   }

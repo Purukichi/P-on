@@ -48,6 +48,14 @@ export function registerIpcHandlers() {
     library.setAlbumCover(albumName, imagePath ?? null)
   )
 
+  handle(IPC.LIBRARY_SET_ALBUM_ARTIST, (_event, albumName, artist) =>
+    library.setAlbumArtist(albumName, artist ?? null)
+  )
+
+  handle(IPC.LIBRARY_RENAME_ALBUM, (_event, oldName, newName) =>
+    library.renameAlbum(oldName, newName)
+  )
+
   handle(IPC.LIBRARY_SET_ALBUM, (_event, trackIds, albumName) =>
     library.setAlbumForTracks(asArray(trackIds), albumName ?? null)
   )
@@ -81,6 +89,72 @@ export function registerIpcHandlers() {
     await shell.openPath(libraryRoot())
   })
 
+  // ---- 保存先の変更 ------------------------------------------------------
+
+  /*
+   * フォルダ選択と「データをどうするか」の確認は、まとめてここで済ませる。
+   * レンダラーは結果だけ受け取って、実行前に再生を止められる。
+   */
+  handle(IPC.LIBRARY_CHOOSE_LOCATION, async (event) => {
+    const parent = windowOf(event)
+    const currentRoot = library.libraryLocation()
+
+    const { canceled, filePaths } = await dialog.showOpenDialog(parent, {
+      title: 'ライブラリの保存先を選ぶ',
+      buttonLabel: 'ここにする',
+      defaultPath: currentRoot,
+      properties: ['openDirectory', 'createDirectory']
+    })
+    if (canceled || !filePaths[0]) return null
+
+    const target = filePaths[0]
+    const check = library.inspectLocation(target)
+
+    if (!check.ok) {
+      await dialog.showMessageBox(parent, {
+        type: 'error',
+        message: check.reason,
+        detail: target,
+        buttons: ['OK']
+      })
+      return null
+    }
+
+    // すでにライブラリがあるフォルダは、上書きせず「そのまま使う」だけにする
+    if (check.hasLibrary) {
+      const { response } = await dialog.showMessageBox(parent, {
+        type: 'question',
+        message: '選んだフォルダには、すでに HAMON のライブラリがあります',
+        detail: `${target}\n\nこちらに切り替えますか？\nいまのライブラリのデータは、元の場所にそのまま残ります。`,
+        buttons: ['このライブラリを使う', 'キャンセル'],
+        defaultId: 0,
+        cancelId: 1
+      })
+      return response === 0 ? { path: target, mode: 'none' } : null
+    }
+
+    const { response } = await dialog.showMessageBox(parent, {
+      type: 'question',
+      message: 'いまのデータをどうしますか？',
+      detail: `移動元: ${currentRoot}\n移動先: ${target}\n\n「移動」と「コピー」はどちらも先に写しきってから切り替えるので、途中で失敗しても元のデータは残ります。`,
+      buttons: [
+        '移動する（元のフォルダからは削除）',
+        'コピーする（元も残す）',
+        '移さない（保存先だけ変更）',
+        'キャンセル'
+      ],
+      defaultId: 0,
+      cancelId: 3
+    })
+
+    const modes = ['move', 'copy', 'none']
+    return response < modes.length ? { path: target, mode: modes[response] } : null
+  })
+
+  handle(IPC.LIBRARY_APPLY_LOCATION, (_event, path, mode) =>
+    library.changeLibraryLocation(path, mode)
+  )
+
   // ---- プレイリスト ------------------------------------------------------
 
   handle(IPC.PLAYLIST_CREATE, (_event, name) => library.createPlaylist(name))
@@ -90,6 +164,16 @@ export function registerIpcHandlers() {
     library.addToPlaylist(id, asArray(trackIds))
   )
   handle(IPC.PLAYLIST_REMOVE_TRACK, (_event, id, trackId) => library.removeFromPlaylist(id, trackId))
+
+  handle(IPC.PLAYLIST_SET_COVER, (_event, id, imagePath) =>
+    library.setPlaylistCover(id, imagePath ?? null)
+  )
+
+  handle(IPC.PLAYLIST_PICK_COVER, async (event, id, name) => {
+    const imagePath = await askForImage(event, `「${name}」のジャケット画像を選択`)
+    if (!imagePath) return library.snapshot()
+    return library.setPlaylistCover(id, imagePath)
+  })
 
   // ---- 共通 --------------------------------------------------------------
 

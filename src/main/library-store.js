@@ -1,5 +1,6 @@
 import { join, resolve } from 'node:path'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { app } from 'electron'
 
 /**
@@ -18,8 +19,13 @@ import { app } from 'electron'
  * albumCovers はアルバム名 -> ジャケットの相対パス。
  * 曲ごとの coverFile とは別に持つことで、
  * 「アルバムのジャケット」と「シングルとして出た曲だけのジャケット」を分けて扱える。
+ *
+ * albumArtists も同じ考え方で、アルバム名 -> アーティスト名。
+ * 曲ごとの artist とは独立しているので、
+ * 「アルバムとしての表記（例: V.A. や バンド名）」と
+ * 「収録曲ごとの演奏者」を別々に持てる。
  */
-const EMPTY = { version: 1, tracks: [], playlists: [], albumCovers: {} }
+const EMPTY = { version: 1, tracks: [], playlists: [], albumCovers: {}, albumArtists: {} }
 
 let rootPath = null
 /** @type {typeof EMPTY | null} */
@@ -30,11 +36,61 @@ let writeChain = Promise.resolve()
 export function libraryRoot() {
   /*
    * 既定は ドキュメント/HAMON。
-   * HAMON_LIBRARY_DIR を渡すと保存先を差し替えられる。
+   * ユーザーが保存先を変えたときは、その場所を userData の config.json に覚えておく。
+   * HAMON_LIBRARY_DIR を渡すと、どちらよりも優先して差し替えられる。
    * 動作確認のときに本番のライブラリを触らずに済ませるための逃げ道。
    */
-  rootPath ??= process.env.HAMON_LIBRARY_DIR?.trim() || join(app.getPath('documents'), 'HAMON')
+  rootPath ??=
+    process.env.HAMON_LIBRARY_DIR?.trim() || readStoredRoot() || join(app.getPath('documents'), 'HAMON')
   return rootPath
+}
+
+/**
+ * 保存先を切り替える。次の起動でもここを見る。
+ * 読み込み済みの library.json は別物になるので捨てる。
+ * ファイルの移動そのものは library-service が受け持つ。
+ */
+export function setLibraryRoot(nextRoot) {
+  rootPath = nextRoot
+  cache = null
+  writeStoredRoot(nextRoot)
+}
+
+/**
+ * 進行中の書き込みが終わるまで待つ。
+ * 保存先を切り替える前に呼ばないと、書きかけの library.json が
+ * 移動元に取り残されることがある。
+ */
+export function flushWrites() {
+  return writeChain.catch(() => {})
+}
+
+/**
+ * 保存先の設定はライブラリの外（userData）に置く。
+ * ライブラリごと移しても付いてこないので、「どこを見るか」の記録として壊れない。
+ */
+function configFile() {
+  return join(app.getPath('userData'), 'config.json')
+}
+
+function readStoredRoot() {
+  try {
+    const parsed = JSON.parse(readFileSync(configFile(), 'utf8'))
+    const dir = typeof parsed.libraryDir === 'string' ? parsed.libraryDir.trim() : ''
+    return dir.length > 0 ? dir : null
+  } catch {
+    // 未設定でも初回起動でも、既定の場所に落とせばよい
+    return null
+  }
+}
+
+function writeStoredRoot(dir) {
+  try {
+    mkdirSync(app.getPath('userData'), { recursive: true })
+    writeFileSync(configFile(), JSON.stringify({ libraryDir: dir }, null, 2), 'utf8')
+  } catch (error) {
+    console.error('[library] 保存先を記録できませんでした:', error)
+  }
 }
 
 export const AUDIO_DIR = 'audio'
@@ -76,7 +132,8 @@ export async function load() {
       version: parsed.version ?? 1,
       tracks: Array.isArray(parsed.tracks) ? parsed.tracks : [],
       playlists: Array.isArray(parsed.playlists) ? parsed.playlists : [],
-      albumCovers: isPlainObject(parsed.albumCovers) ? parsed.albumCovers : {}
+      albumCovers: isPlainObject(parsed.albumCovers) ? parsed.albumCovers : {},
+      albumArtists: isPlainObject(parsed.albumArtists) ? parsed.albumArtists : {}
     }
   } catch (error) {
     if (error.code !== 'ENOENT') {

@@ -16,6 +16,8 @@ export class NowPlaying extends Emitter {
   #engine
   #el
   #isScrubbing = false
+  /** 音量を数字で入力している最中か */
+  #isTypingVolume = false
   #disposers = []
 
   constructor(root, { engine }) {
@@ -28,7 +30,6 @@ export class NowPlaying extends Emitter {
     this.#el = collect(this.#root, [
       'cover-frame',
       'cover-image',
-      'np-album',
       'np-title',
       'np-artist',
       'np-format',
@@ -40,10 +41,12 @@ export class NowPlaying extends Emitter {
       'prev',
       'next',
       'volume',
-      'volume-value'
+      'volume-value',
+      'volume-entry'
     ])
 
     this.#bindControls()
+    this.#bindVolumeEntry()
     this.#bindCoverDrop()
     this.#bindEngine()
 
@@ -73,8 +76,6 @@ export class NowPlaying extends Emitter {
     // 長いタイトルは「…」ではなく自動スクロールで全体を見せる
     setMarqueeText(this.#el.npTitle, hasTrack ? track.displayTitle : '曲を選んでください')
     this.#el.npArtist.textContent = hasTrack ? track.displayArtist : '—'
-    this.#el.npAlbum.textContent = hasTrack ? track.displayAlbum : ''
-    this.#el.npAlbum.hidden = !hasTrack
 
     const format = hasTrack ? track.formatSummary : ''
     this.#el.npFormat.textContent = format
@@ -124,6 +125,60 @@ export class NowPlaying extends Emitter {
 
     this.#listen(volume, 'input', () => {
       this.#engine.volume = Number(volume.value)
+    })
+  }
+
+  /**
+   * 音量の数字を直接入力させる。
+   * スライダーだと 1 刻みで狙うのが難しいので、
+   * ダブルクリック（キーボードなら Enter / Space）で入力欄に差し替える。
+   */
+  #bindVolumeEntry() {
+    const { volumeValue, volumeEntry } = this.#el
+
+    const open = () => {
+      this.#isTypingVolume = true
+      volumeEntry.value = String(Math.round(this.#engine.volume * 100))
+      volumeValue.hidden = true
+      volumeEntry.hidden = false
+      volumeEntry.focus()
+      volumeEntry.select()
+    }
+
+    const close = () => {
+      this.#isTypingVolume = false
+      volumeEntry.hidden = true
+      volumeValue.hidden = false
+    }
+
+    const commit = () => {
+      // 閉じたあとに blur が飛んでくるので、二度読まないようにする
+      if (!this.#isTypingVolume) return
+      const parsed = Number(volumeEntry.value.trim())
+      close()
+      // 数字でなければ黙って元の値のまま閉じる
+      if (!Number.isFinite(parsed)) return
+      this.#engine.volume = Math.min(Math.max(parsed, 0), 100) / 100
+    }
+
+    this.#listen(volumeValue, 'dblclick', open)
+    this.#listen(volumeValue, 'keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return
+      event.preventDefault()
+      open()
+    })
+
+    this.#listen(volumeEntry, 'blur', commit)
+    this.#listen(volumeEntry, 'keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        commit()
+      } else if (event.key === 'Escape') {
+        event.preventDefault()
+        close()
+      }
+      // Space で再生が切り替わらないよう、入力中のキーは外へ流さない
+      event.stopPropagation()
     })
   }
 

@@ -1,5 +1,5 @@
-import { basename, extname, join } from 'node:path'
-import { copyFile, unlink, writeFile } from 'node:fs/promises'
+import { basename, extname, join, resolve, sep } from 'node:path'
+import { copyFile, cp, mkdir, rm, rmdir, unlink, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { randomUUID } from 'node:crypto'
 import { AUDIO_EXTENSIONS } from '../shared/ipc-channels.js'
@@ -11,9 +11,12 @@ import {
   audioDir,
   coverDir,
   ensureDirectories,
+  flushWrites,
+  libraryFile,
   libraryRoot,
   load,
   resolveInLibrary,
+  setLibraryRoot,
   update
 } from './library-store.js'
 
@@ -39,7 +42,9 @@ export async function snapshot() {
     libraryPath: libraryRoot(),
     tracks: data.tracks.map((track) => toTrackDto(track, data.albumCovers)),
     playlists: data.playlists.map(toPlaylistDto),
-    albumCovers
+    albumCovers,
+    /** アルバム名 -> アルバムのアーティスト。曲ごとの artist とは別管理 */
+    albumArtists: { ...data.albumArtists }
   }
 }
 
@@ -56,7 +61,138 @@ function toTrackDto(track, albumCovers) {
 }
 
 function toPlaylistDto(playlist) {
-  return { ...playlist, trackIds: [...playlist.trackIds] }
+  return {
+    ...playlist,
+    trackIds: [...playlist.trackIds],
+    /** プレイリストに直接設定したジャケット。無ければ収録曲のものが使われる */
+    coverUrl: toMediaUrl(playlist.coverFile)
+  }
+}
+
+// ---- 保存先 --------------------------------------------------------------
+
+/** いまライブラリを置いている場所 */
+export function libraryLocation() {
+  return libraryRoot()
+}
+
+/**
+ * 選ばれたフォルダを保存先にできるか調べる。
+ * ダイアログの出し分けに使うので、投げずに理由を返す。
+ *
+ * @returns {{ok: boolean, reason?: string, hasLibrary: boolean}}
+ */
+export function inspectLocation(target) {
+  const current = libraryRoot()
+  const hasLibrary = existsSync(join(target, 'library.json'))
+
+  if (isSamePath(current, target)) {
+    return { ok: false, reason: 'いまと同じ場所です', hasLibrary }
+  }
+  /*
+   * 入れ子だと、移動元のフォルダを消すときに移動先ごと巻き添えにしたり、
+   * コピーが自分自身を飲み込んで終わらなくなったりする。
+   */
+  if (isInside(target, current) || isInside(current, target)) {
+    return {
+      ok: false,
+      reason: 'いまの保存先と入れ子になっているフォルダは選べません',
+      hasLibrary
+    }
+  }
+
+  return { ok: true, hasLibrary }
+}
+
+/**
+ * 保存先を切り替える。
+ *
+ * mode:
+ *   'move' … 中身を移してから元を消す
+ *   'copy' … 中身を写して元も残す
+ *   'none' … ファイルは動かさず、見る場所だけ変える
+ *
+ * 順番が肝。先に写しきってから切り替えるので、
+ * 途中で失敗しても元のライブラリは無傷のまま残る。
+ *
+ * @returns {Promise<{snapshot: object, libraryPath: string, warning: string|null}>}
+ */
+export async function changeLibraryLocation(nextRoot, mode) {
+  const current = libraryRoot()
+  const check = inspectLocation(nextRoot)
+  if (!check.ok) throw new Error(check.reason)
+
+  // 書きかけの library.json を移動元に取り残さない
+  await flushWrites()
+  await mkdir(nextRoot, { recursive: true })
+
+  if (mode !== 'none') {
+    if (check.hasLibrary) {
+      throw new Error('選んだフォルダにはすでに HAMON のライブラリがあります')
+    }
+    await copyLibraryContents(current, nextRoot)
+  }
+
+  setLibraryRoot(nextRoot)
+  await ensureDirectories()
+
+  const warning = mode === 'move' ? await removeLibraryContents(current) : null
+  return { snapshot: await snapshot(), libraryPath: nextRoot, warning }
+}
+
+/** library.json / audio / covers を丸ごと写す。無いものは黙って飛ばす */
+async function copyLibraryContents(from, to) {
+  const source = libraryFile()
+  if (existsSync(source)) await copyFile(source, join(to, 'library.json'))
+
+  for (const directory of [AUDIO_DIR, COVER_DIR]) {
+    const origin = join(from, directory)
+    if (!existsSync(origin)) continue
+    await cp(origin, join(to, directory), { recursive: true })
+  }
+}
+
+/**
+ * 移動元の中身を片づける。
+ * 消せなかった場合でも切り替え自体は済んでいるので、投げずに文言で返す。
+ * （再生していたファイルを OS が掴んだままだと、Windows は削除を断る）
+ */
+async function removeLibraryContents(root) {
+  const leftovers = []
+
+  for (const entry of ['library.json', AUDIO_DIR, COVER_DIR]) {
+    try {
+      await rm(join(root, entry), { recursive: true, force: true })
+    } catch {
+      leftovers.push(entry)
+    }
+  }
+
+  // 空になっていれば入れ物ごと消す。rmdir は中身が残っていれば失敗するので、
+  // 同居している他のファイルを巻き添えにする心配がない
+  try {
+    await rmdir(root)
+  } catch {
+    /* 空でなければ残しておく。中身は上で消してある */
+  }
+
+  if (leftovers.length === 0) return null
+  return `移動は済みましたが、元のフォルダの ${leftovers.join(' / ')} を削除できませんでした（${root}）`
+}
+
+function normalizePath(value) {
+  // Windows 向け。大文字小文字と末尾の区切りの違いを吸収する
+  return resolve(value).replace(/[\\/]+$/, '').toLowerCase()
+}
+
+function isSamePath(a, b) {
+  return normalizePath(a) === normalizePath(b)
+}
+
+/** child が parent の中にあるか */
+function isInside(child, parent) {
+  const from = normalizePath(parent) + sep.toLowerCase()
+  return normalizePath(child).startsWith(from)
 }
 
 // ---- 取り込み ------------------------------------------------------------
@@ -280,6 +416,62 @@ export async function setArtistForTracks(trackIds, artist) {
 }
 
 /**
+ * アルバムのアーティストを設定する。
+ * 収録曲の artist には一切触らない。
+ * アルバムとしての表記（V.A. など）と、曲ごとの演奏者を別々に持たせるための入口。
+ *
+ * @param {string} albumName
+ * @param {string|null} artist null を渡すと未設定に戻す（収録曲から拾い直した表示になる）
+ */
+export async function setAlbumArtist(albumName, artist) {
+  const data = await load()
+  if (!data.tracks.some((track) => track.album === albumName)) {
+    throw new Error('アルバムが見つかりません')
+  }
+
+  const value = normalize(artist)
+
+  await update((current) => {
+    if (value) current.albumArtists[albumName] = value
+    else delete current.albumArtists[albumName]
+  })
+
+  return snapshot()
+}
+
+/**
+ * アルバム名を変える。
+ * 収録曲の album を書き換えるだけでなく、
+ * アルバム名をキーに持っているジャケットとアーティストも一緒に付け替える。
+ * （曲だけ書き換えると、その 2 つが宙に浮いて設定が消えてしまう）
+ */
+export async function renameAlbum(oldName, newName) {
+  const album = normalize(newName)
+  if (!album) throw new Error('アルバム名を入力してください')
+
+  await update((data) => {
+    for (const track of data.tracks) {
+      if (track.album === oldName) track.album = album
+    }
+
+    const cover = data.albumCovers[oldName]
+    if (cover) {
+      delete data.albumCovers[oldName]
+      // 移動先にすでに設定があるときは、そちらを尊重して上書きしない
+      data.albumCovers[album] ??= cover
+    }
+
+    const artist = data.albumArtists[oldName]
+    if (artist) {
+      delete data.albumArtists[oldName]
+      data.albumArtists[album] ??= artist
+    }
+  })
+
+  return snapshot()
+}
+
+/**
  * アルバムのジャケットを差し替える。imagePath が null なら削除。
  * 曲ごとの coverFile とは独立しているので、
  * アルバムに入っている曲がシングルとしても出ている場合は
@@ -333,11 +525,12 @@ export async function deleteTrack(trackId) {
       playlist.trackIds = playlist.trackIds.filter((id) => id !== trackId)
     }
 
-    // アルバム最後の 1 曲が消えたら、そのアルバムのジャケットも道連れにする
+    // アルバム最後の 1 曲が消えたら、そのアルバムのジャケットとアーティストも道連れにする
     if (track.album && !current.tracks.some((t) => t.album === track.album)) {
       const albumCover = current.albumCovers[track.album]
       if (albumCover) orphanedCovers.push(albumCover)
       delete current.albumCovers[track.album]
+      delete current.albumArtists[track.album]
     }
   })
 
@@ -371,10 +564,50 @@ export async function renamePlaylist(playlistId, name) {
   return snapshot()
 }
 
-export async function deletePlaylist(playlistId) {
-  await update((data) => {
-    data.playlists = data.playlists.filter((p) => p.id !== playlistId)
+/**
+ * プレイリストのジャケットを差し替える。imagePath が null なら削除。
+ * アルバムと違って名前ではなく id に紐づけているので、改名しても外れない。
+ */
+export async function setPlaylistCover(playlistId, imagePath) {
+  await ensureDirectories()
+
+  const data = await load()
+  const playlist = data.playlists.find((p) => p.id === playlistId)
+  if (!playlist) throw new Error('プレイリストが見つかりません')
+
+  let nextCoverFile = null
+
+  if (imagePath) {
+    const extension = extname(imagePath).toLowerCase()
+    if (!isSupportedImageExtension(extension)) {
+      throw new Error('対応していない画像形式です (jpg / png / webp / gif / bmp)')
+    }
+    const coverName = await uniqueName(coverDir(), `playlist - ${sanitize(playlist.name)}`, extension)
+    await copyFile(imagePath, join(coverDir(), coverName))
+    nextCoverFile = `${COVER_DIR}/${coverName}`
+  }
+
+  const previousCoverFile = playlist.coverFile ?? null
+
+  await update((current) => {
+    const target = current.playlists.find((p) => p.id === playlistId)
+    if (target) target.coverFile = nextCoverFile
   })
+
+  await removeFile(previousCoverFile)
+  return snapshot()
+}
+
+export async function deletePlaylist(playlistId) {
+  const data = await load()
+  // 入れ物を消したらジャケットも道連れにする（曲そのものは残す）
+  const coverFile = data.playlists.find((p) => p.id === playlistId)?.coverFile ?? null
+
+  await update((current) => {
+    current.playlists = current.playlists.filter((p) => p.id !== playlistId)
+  })
+
+  await removeFile(coverFile)
   return snapshot()
 }
 

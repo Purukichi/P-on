@@ -20,6 +20,11 @@ export class TrackList extends Emitter {
   #activeTrackId = null
   #mode = 'library'
   #editing = false
+  /**
+   * 最後に渡された表示内容。
+   * 編集中は DOM を組み直さずここに控えておき、編集を終えたときにまとめて反映する。
+   */
+  #latest = { title: '', mode: 'library', tracks: [], emptyMessage: '' }
 
   constructor(root) {
     super()
@@ -98,6 +103,20 @@ export class TrackList extends Emitter {
    * @param {string} options.emptyMessage
    */
   render({ title, mode, tracks, emptyMessage }) {
+    this.#latest = { title, mode, tracks, emptyMessage }
+
+    /*
+     * 編集中に組み直すと入力欄からフォーカスが外れてしまうので、DOM は触らない。
+     * 控えた内容は編集を終えた時点で反映されるので、
+     * その場で直したクレジットもそのまま画面に出る。
+     */
+    if (this.#editing) return
+    this.#paint()
+  }
+
+  /** 控えてある内容で一覧を組み直す */
+  #paint() {
+    const { title, mode, tracks, emptyMessage } = this.#latest
     this.#tracks = tracks
     this.#mode = mode
 
@@ -123,12 +142,8 @@ export class TrackList extends Emitter {
     this.#root.dataset.listEdit = String(editing)
     this.#el.listEdit.dataset.active = String(editing)
     this.#el.listEdit.textContent = editing ? '完了' : '編集'
-    this.render({
-      title: this.#el.listTitle.textContent,
-      mode: this.#mode,
-      tracks: this.#tracks,
-      emptyMessage: this.#el.listEmpty.textContent
-    })
+    // 編集中に届いていた更新もここで一緒に反映される
+    this.#paint()
   }
 
   #commit(field) {
@@ -171,10 +186,8 @@ export class TrackList extends Emitter {
         className: 'track__main',
         children: [
           create('span', { className: 'track__title', text: track.displayTitle }),
-          create('span', {
-            className: 'track__meta',
-            text: `${track.displayArtist} — ${track.displayAlbum}`
-          })
+          // 見出しに出ているアルバム名は繰り返さない。行にはアーティストだけ添える
+          create('span', { className: 'track__meta', text: track.displayArtist })
         ]
       }),
       create('span', {

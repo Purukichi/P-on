@@ -17,7 +17,7 @@ export const CollectionType = {
 }
 
 export class Collection {
-  /** @param {{type: string, id: string, name: string, subtitle: string, tracks: import('./Track.js').Track[], sourceId?: string, ownCoverUrl?: string|null}} init */
+  /** @param {{type: string, id: string, name: string, subtitle: string, tracks: import('./Track.js').Track[], sourceId?: string, ownCoverUrl?: string|null, ownArtist?: string|null}} init */
   constructor(init) {
     this.type = init.type
     this.id = init.id
@@ -28,6 +28,8 @@ export class Collection {
     this.sourceId = init.sourceId ?? null
     /** アルバムに直接設定されたジャケット */
     this.ownCoverUrl = init.ownCoverUrl ?? null
+    /** アルバムに直接設定されたアーティスト（収録曲の artist とは別物） */
+    this.ownArtist = init.ownArtist ?? null
   }
 
   get size() {
@@ -37,6 +39,14 @@ export class Collection {
   /** 棚に出すジャケット。アルバム共通の指定が最優先、無ければ収録曲のもの */
   get coverUrl() {
     return this.ownCoverUrl ?? this.tracks.find((track) => track.hasCover)?.coverUrl ?? null
+  }
+
+  /**
+   * 収録曲側のアーティストを重複なく並べたもの。
+   * アルバムのアーティストが未設定のときの表示と、検索の照合に使う。
+   */
+  get trackArtists() {
+    return [...new Set(this.tracks.flatMap((track) => track.artists))]
   }
 
   /** アルバムとプレイリストは中身が複数ある前提なので、再生中にリストを出す */
@@ -97,7 +107,8 @@ function playlistsOf(library) {
         sourceId: playlist.id,
         name: playlist.name,
         subtitle: `${playlist.trackIds.length}曲`,
-        tracks: library.tracksOfPlaylist(playlist.id)
+        tracks: library.tracksOfPlaylist(playlist.id),
+        ownCoverUrl: playlist.coverUrl
       })
   )
 }
@@ -114,19 +125,23 @@ function albumsOf(library) {
 
   return [...grouped.entries()].map(([album, tracks]) => {
     /*
-     * 収録曲のアーティストを全部ならべる。
+     * 表に出すのはアルバムのアーティスト。
+     * 設定されていなければ収録曲のアーティストを全部ならべる。
      * 「A, B」のような連名は分解したうえで、同じ名前は 1 度だけ出す。
      * 「N組のアーティスト」と丸めると誰が入っているのか分からないため。
      */
+    const ownArtist = library.albumArtist(album)
     const artists = [...new Set(tracks.flatMap((track) => track.artists))]
+    const fallback = artists.length === 0 ? 'アーティスト未設定' : artists.join(', ')
 
     return new Collection({
       type: CollectionType.ALBUM,
       id: `album:${album}`,
       name: album,
-      subtitle: artists.length === 0 ? 'アーティスト未設定' : artists.join(', '),
+      subtitle: ownArtist ?? fallback,
       tracks,
-      ownCoverUrl: library.albumCoverUrl(album)
+      ownCoverUrl: library.albumCoverUrl(album),
+      ownArtist
     })
   })
 }
