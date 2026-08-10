@@ -43,10 +43,11 @@
   cursor: default;
 }
 
-/* 主役の再生ボタンだけ大きく塗りつぶす */
+/*
+ * 主役の再生ボタン。
+ * 大きさは他と揃え、目立たせるのは塗りつぶしだけに任せる。
+ */
 .transport__button--play {
-  width: 54px;
-  height: 54px;
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: var(--color-accent-contrast);
@@ -55,11 +56,6 @@
 .transport__button--play:hover:not(:disabled) {
   background: var(--color-accent-hover);
   border-color: var(--color-accent-hover);
-}
-
-.transport__button--play .icon {
-  width: 24px;
-  height: 24px;
 }
 
 /* data-playing に応じて ▶ / ⏸ を差し替える */

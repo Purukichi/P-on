@@ -93,14 +93,10 @@
   max-width: none;
 }
 
+/* 展開時は 4 つとも同じ大きさ。再生ボタンは塗りつぶしだけで見分ける */
 .app[data-shelf-expanded='true'] .transport__button {
   width: 30px;
   height: 30px;
-}
-
-.app[data-shelf-expanded='true'] .transport__button--play {
-  width: 40px;
-  height: 40px;
 }
 
 /*

@@ -29,11 +29,10 @@ files:
 win:
   # build/icon.svg を元に生成したもの (scripts/make-icon は scratchpad 側)
   icon: build/icon.ico
+  # 配るのはインストーラだけ。ポータブル版は自動更新が効かず、
+  # 「更新されない版」が出回るほうが困るのでやめた
   target:
     - target: nsis
-      arch:
-        - x64
-    - target: portable
       arch:
         - x64
   artifactName: ${productName}-${version}-${arch}.${ext}
@@ -52,6 +51,3 @@ nsis:
   uninstallDisplayName: ${productName}
   # 取り込んだ音源は ドキュメント/HAMON にあり、アンインストールでは消さない
   deleteAppDataOnUninstall: false
-
-portable:
-  artifactName: ${productName}-${version}-portable.${ext}
