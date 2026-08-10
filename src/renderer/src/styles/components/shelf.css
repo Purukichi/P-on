@@ -142,21 +142,26 @@
   background: var(--color-accent);
 }
 
-/* 枠線とホバーの浮きが切れないよう、上下に少し余白を取る */
+/*
+ * 選択枠はカードの外側に描かれる（outline-offset 2px + 線幅、
+ * ドロップ先になっているときは線が 2px に太って少し拡大もする）。
+ * ここの余白がその張り出しより狭いと、スクロール領域の縁で枠が切れる。
+ * 端の列でも切れないよう、四辺とも張り出しぶんを見込んで取る。
+ */
 .shelf__list {
-  padding: 6px 2px;
+  padding: 8px;
 }
 
 .shelf[data-view='grid'] .shelf__list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .shelf[data-view='list'] .shelf__list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .shelf__empty {
