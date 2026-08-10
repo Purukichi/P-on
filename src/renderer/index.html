@@ -16,6 +16,27 @@
     <div class="app" id="app" data-state="idle" data-list="hidden">
       <header class="topbar">
         <!--
+          ブランドマーク。押すとバージョンと更新の確認が出る。
+          図形は build/icon.svg と同じもの（viewBox も揃えてある）。
+        -->
+        <button
+          class="brandmark"
+          type="button"
+          data-el="about-open"
+          title="バージョン情報"
+          aria-label="バージョン情報"
+          aria-expanded="false"
+        >
+          <svg class="brandmark__icon" viewBox="0 0 100 110" aria-hidden="true">
+            <path
+              fill="currentColor"
+              fill-rule="evenodd"
+              d="M0.4 49.8 L0.4 96 C0.4 104 2.5 110 9 110 C18 110 28 104.5 35.5 97.4 A49.8 49.8 0 1 0 0.4 49.8 Z M24.6 57 A34.1 34.1 0 1 1 92.8 57 A34.1 34.1 0 1 1 24.6 57 Z"
+            />
+          </svg>
+        </button>
+
+        <!--
           音量は上部バーの左端に置く。
           中央カラムに置くと、数値がリストの上に乗ってしまうため。
         -->
@@ -286,6 +307,29 @@
           <div class="marquee-select" data-el="shelf-marquee" hidden></div>
         </div>
       </footer>
+
+      <!-- ブランドマークを押すと出る。バージョンと更新の確認だけ -->
+      <div class="about" data-el="about" role="dialog" aria-label="バージョン情報" hidden>
+        <div class="about__head">
+          <svg class="about__mark" viewBox="0 0 100 110" aria-hidden="true">
+            <path
+              fill="currentColor"
+              fill-rule="evenodd"
+              d="M0.4 49.8 L0.4 96 C0.4 104 2.5 110 9 110 C18 110 28 104.5 35.5 97.4 A49.8 49.8 0 1 0 0.4 49.8 Z M24.6 57 A34.1 34.1 0 1 1 92.8 57 A34.1 34.1 0 1 1 24.6 57 Z"
+            />
+          </svg>
+          <div>
+            <p class="about__name">HAMON</p>
+            <p class="about__version">バージョン <span data-el="about-version">—</span></p>
+          </div>
+        </div>
+
+        <p class="about__status" data-el="about-status" data-tone="info"></p>
+
+        <div class="about__actions">
+          <button class="button button--small" type="button" data-el="about-check">更新を確認</button>
+        </div>
+      </div>
 
       <!-- カードを右クリックしたときのメニュー（収録曲の一覧もここに入る） -->
       <div class="menu" data-el="shelf-menu" hidden></div>

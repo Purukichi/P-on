@@ -23,14 +23,77 @@ const { autoUpdater } = electronUpdater
 /** 起動直後は取り込みや描画で忙しいので、少し待ってから確認する */
 const FIRST_CHECK_DELAY = 8000
 
+/**
+ * この環境で自動更新が使えるか。
+ * 使えない理由は画面にそのまま出すので、文言もここで持つ。
+ */
+let support = { supported: false, reason: '' }
+
+/** ダウンロード済みの版。手動で確認したときに「準備できています」と答えるために覚えておく */
+let downloadedVersion = null
+
+/** バージョン情報のパネルに出す内容 */
+export function appInfo() {
+  return { version: app.getVersion(), ...support }
+}
+
+/**
+ * 手動での更新確認。
+ * 自動の確認と同じ autoUpdater を使うので、
+ * 見つかればそのまま裏でダウンロードが始まり、
+ * 済んだ時点で initUpdater 側の案内が出る。
+ *
+ * @returns {Promise<{status: string, version?: string, message?: string}>}
+ */
+export async function checkForUpdatesManually() {
+  if (!support.supported) return { status: 'unsupported', message: support.reason }
+  if (downloadedVersion) return { status: 'downloaded', version: downloadedVersion }
+
+  try {
+    const result = await autoUpdater.checkForUpdates()
+    const latest = result?.updateInfo?.version ?? null
+    if (!latest) return { status: 'error', message: '更新情報を取得できませんでした' }
+    if (latest === app.getVersion()) return { status: 'latest', version: latest }
+    return { status: 'available', version: latest }
+  } catch (error) {
+    return { status: 'error', message: readableError(error) }
+  }
+}
+
+/**
+ * 生のエラーは URL やヘッダまで含んでいて画面に出せないので、
+ * よくある原因だけ言い換える。
+ */
+function readableError(error) {
+  const text = String(error?.message ?? error)
+  if (text.includes('404')) {
+    return '配信元が見つかりませんでした。リリースが未公開か、リポジトリが非公開の可能性があります。'
+  }
+  if (/ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNREFUSED|net::/i.test(text)) {
+    return 'ネットワークに接続できませんでした。'
+  }
+  return '更新を確認できませんでした。'
+}
+
 export function initUpdater() {
   /*
    * 動くのはインストール版だけ。
    * - 開発中は app-update.yml が無い
    * - ポータブル版は自分自身を書き換えられない（PORTABLE_EXECUTABLE_DIR で見分ける）
    */
-  if (!app.isPackaged) return
-  if (process.env.PORTABLE_EXECUTABLE_DIR) return
+  if (!app.isPackaged) {
+    support = { supported: false, reason: '開発中のため、更新の確認は行いません。' }
+    return
+  }
+  if (process.env.PORTABLE_EXECUTABLE_DIR) {
+    support = {
+      supported: false,
+      reason: 'ポータブル版は自動更新に対応していません。新しい版は手動で入れ替えてください。'
+    }
+    return
+  }
+
+  support = { supported: true, reason: '' }
 
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true
@@ -40,6 +103,8 @@ export function initUpdater() {
   let prompted = false
 
   autoUpdater.on('update-downloaded', async (info) => {
+    downloadedVersion = info.version
+
     // ダウンロード完了は再確認のたびに飛びうるので、聞くのは 1 回だけ
     if (prompted) return
     prompted = true

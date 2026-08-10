@@ -60,6 +60,13 @@ const api = {
   /** OS 標準の確認ダイアログ @returns {Promise<boolean>} */
   confirm: (options) => ipcRenderer.invoke(IPC.CONFIRM, options),
 
+  app: {
+    /** @returns {Promise<{version: string, supported: boolean, reason: string}>} */
+    info: () => ipcRenderer.invoke(IPC.APP_INFO),
+    /** @returns {Promise<{status: string, version?: string, message?: string}>} */
+    checkUpdate: () => ipcRenderer.invoke(IPC.APP_CHECK_UPDATE)
+  },
+
   /**
    * メインウィンドウ（音を鳴らしている側）とミニプレイヤーの間の通信。
    * publish / on は送り手と受け手が逆になるだけで、両ウィンドウとも同じ API を使う。

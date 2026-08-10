@@ -1,0 +1,107 @@
+/*
+ * 左上のブランドマークと、押したときに出るバージョン情報。
+ * マークの形は build/icon.svg と同じ図形を使う。
+ */
+
+.brandmark {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  width: var(--control-size);
+  height: var(--control-size);
+  flex: none;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  /* 色相スライダーを動かすと、このマークも一緒に変わる */
+  color: var(--color-accent);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.brandmark:hover {
+  background: var(--color-sunken);
+}
+
+.brandmark:active {
+  transform: scale(0.94);
+}
+
+.brandmark__icon {
+  /* 図形が縦長なので、高さを基準に合わせる */
+  width: 18px;
+  height: 20px;
+  display: block;
+}
+
+/* ---- バージョン情報のパネル ---- */
+
+.about {
+  position: fixed;
+  z-index: 40;
+  width: 260px;
+  padding: var(--space-4);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  background: var(--panel-bg);
+  box-shadow: var(--panel-shadow);
+}
+
+.about[hidden] {
+  display: none;
+}
+
+.about__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.about__mark {
+  width: 30px;
+  height: 33px;
+  color: var(--color-accent);
+}
+
+.about__name {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.about__version {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.about__status {
+  margin: var(--space-3) 0 0;
+  min-height: 2.6em;
+  font-size: var(--font-size-xs);
+  line-height: 1.7;
+  color: var(--color-text-muted);
+}
+
+/* 更新が見つかったときだけ目立たせる */
+.about__status[data-tone='ready'] {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.about__status[data-tone='error'] {
+  color: var(--color-danger);
+}
+
+.about__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-3);
+}

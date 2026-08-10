@@ -8,6 +8,7 @@
 @import './base.css';
 
 @import './components/topbar.css';
+@import './components/about.css';
 @import './components/button.css';
 @import './components/cover.css';
 @import './components/nowplaying.css';

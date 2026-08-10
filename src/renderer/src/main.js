@@ -5,6 +5,7 @@ import { PlayQueue } from './core/PlayQueue.js'
 import { Theme } from './core/Theme.js'
 import { applyAppearance } from './core/Settings.js'
 import { CollectionType, buildCollections, findCollection } from './core/Collections.js'
+import { AboutPanel } from './ui/AboutPanel.js'
 import { CollectionShelf } from './ui/CollectionShelf.js'
 import { DropZones } from './ui/DropZones.js'
 import { NameDialog } from './ui/NameDialog.js'
@@ -27,6 +28,7 @@ const shelf = new CollectionShelf(root).mount()
 const editor = new TrackEditor(root).mount()
 const nameDialog = new NameDialog(root).mount()
 const dropZones = new DropZones(root).mount()
+const about = new AboutPanel(root).mount()
 
 /** @type {import('./core/Collections.js').Collection[]} */
 let collections = []
@@ -767,6 +769,6 @@ if (import.meta.env.DEV) {
     playCollection,
     deleteTracks,
     deleteCollection,
-    views: { nowPlaying, trackList, shelf, editor, nameDialog }
+    views: { nowPlaying, trackList, shelf, editor, nameDialog, about }
   }
 }

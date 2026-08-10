@@ -3,6 +3,7 @@ import { AUDIO_EXTENSIONS, IMAGE_EXTENSIONS, IPC } from '../shared/ipc-channels.
 import * as library from './library-service.js'
 import { ensureDirectories, libraryRoot } from './library-store.js'
 import { closeMiniPlayer, getMainWindow, getMiniWindow, openMiniPlayer } from './windows.js'
+import { appInfo, checkForUpdatesManually } from './updater.js'
 
 export function registerIpcHandlers() {
   const handle = (channel, fn) => ipcMain.handle(channel, fn)
@@ -174,6 +175,11 @@ export function registerIpcHandlers() {
     if (!imagePath) return library.snapshot()
     return library.setPlaylistCover(id, imagePath)
   })
+
+  // ---- バージョン情報 ----------------------------------------------------
+
+  handle(IPC.APP_INFO, () => appInfo())
+  handle(IPC.APP_CHECK_UPDATE, () => checkForUpdatesManually())
 
   // ---- 共通 --------------------------------------------------------------
 

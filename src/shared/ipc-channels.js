@@ -42,6 +42,11 @@ export const IPC = {
   // 確認ダイアログ
   CONFIRM: 'app:confirm',
 
+  /** バージョンと、この環境で自動更新が使えるか */
+  APP_INFO: 'app:info',
+  /** 手動での更新確認 */
+  APP_CHECK_UPDATE: 'app:check-update',
+
   /*
    * ミニプレイヤー。
    * 音を出しているのは常にメインウィンドウ側の <audio> ひとつだけで、
