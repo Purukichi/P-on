@@ -2,11 +2,12 @@
   <!--
     HAMON のマーク。
     輪の左上を太く、右下を細くした環に、左下へ伸びる尾を付けた形。
-    アプリ内（index.html の .brandmark / .about__mark）と同じ図形を使っているので、
-    形を変えるときは両方そろえること。viewBox 0 0 100 110 を基準にしている。
+    下敷きは置かず、図形そのものをアイコンにする（背景は透過）。
+
+    アプリ内（index.html の .brandmark / .about__mark）と同じ図形なので、
+    形を変えるときは両方そろえること。素の viewBox は 0 0 100 110。
   -->
-  <rect width="512" height="512" rx="112" fill="#ffffff" />
-  <g transform="translate(119.5 106) scale(2.7273)">
+  <g transform="translate(47 26) scale(4.1818)">
     <path
       fill="#00c853"
       fill-rule="evenodd"
