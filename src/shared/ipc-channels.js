@@ -63,6 +63,10 @@ export const IPC = {
   WINDOW_CLOSE_MINI: 'window:close-mini',
   /** ミニプレイヤーからアプリごと終了する */
   WINDOW_QUIT: 'window:quit',
+  /** ミニプレイヤーの形（縦長 / 正方形 / 横長） */
+  WINDOW_MINI_SHAPE: 'window:mini-shape',
+  /** ミニプレイヤーを常に手前に出すか */
+  WINDOW_MINI_ON_TOP: 'window:mini-on-top',
   /** テーマ変更時に、OS が描くタイトルバーの色を本文と揃える */
   WINDOW_SET_TITLEBAR: 'window:set-titlebar'
 }

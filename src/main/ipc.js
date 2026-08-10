@@ -2,7 +2,14 @@ import { app, BrowserWindow, dialog, ipcMain, nativeTheme, shell } from 'electro
 import { AUDIO_EXTENSIONS, IMAGE_EXTENSIONS, IPC } from '../shared/ipc-channels.js'
 import * as library from './library-service.js'
 import { ensureDirectories, libraryRoot } from './library-store.js'
-import { closeMiniPlayer, getMainWindow, getMiniWindow, openMiniPlayer } from './windows.js'
+import {
+  closeMiniPlayer,
+  getMainWindow,
+  getMiniWindow,
+  openMiniPlayer,
+  setMiniAlwaysOnTop,
+  setMiniShape
+} from './windows.js'
 import { appInfo, checkForUpdatesManually } from './updater.js'
 
 export function registerIpcHandlers() {
@@ -218,6 +225,8 @@ function registerPlayerRelay() {
   ipcMain.on(IPC.WINDOW_OPEN_MINI, () => openMiniPlayer())
   ipcMain.on(IPC.WINDOW_CLOSE_MINI, () => closeMiniPlayer())
   ipcMain.on(IPC.WINDOW_QUIT, () => app.quit())
+  ipcMain.on(IPC.WINDOW_MINI_SHAPE, (_event, shape) => setMiniShape(shape))
+  ipcMain.on(IPC.WINDOW_MINI_ON_TOP, (_event, onTop) => setMiniAlwaysOnTop(onTop))
 
   ipcMain.on(IPC.WINDOW_SET_TITLEBAR, (_event, { color, symbolColor, theme } = {}) => {
     /*

@@ -30,20 +30,35 @@ body {
 /*
  * 上がジャケット、下が操作面。
  * 操作面はジャケットに重ねず場所を取り、常に出しておく。
+ * data-shape で 縦長 / 正方形 / 横長 を切り替える（窓の寸法は main 側が合わせる）。
  */
 .mini {
+  /*
+   * Windows 11 は枠なしウィンドウの四隅を DWM 側で丸める。
+   * ここの角丸がそれより大きいと、隅に食い違いが見えてしまうので、
+   * OS が描く半径（8dip）に合わせている。
+   */
+  --mini-radius: 8px;
+
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   height: 100%;
-  border-radius: var(--radius-lg);
+  border-radius: var(--mini-radius);
   overflow: hidden;
   /*
    * ジャケットで埋まらない余白は「ジャケットの主要色 + アクリル」で塗る。
    * --mini-tint は mini.js がジャケットから抽出して書き込む。
    */
-  background: var(--mini-tint, var(--panel-bg));
-  border: 1px solid var(--panel-border);
+  background: var(--mini-tint, var(--color-bg));
+  border: 1px solid var(--color-border);
   transition: background 400ms ease;
+}
+
+/* 横長のときだけ、ジャケットと操作面を左右に並べる */
+.mini[data-shape='landscape'] {
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
 }
 
 /* ---- ジャケット ---- */
@@ -57,10 +72,15 @@ body {
   -webkit-app-region: drag;
 }
 
+/*
+ * contain だと上下に地の色の帯が出て、ジャケットの角と窓の丸みがずれて見える。
+ * cover で枠いっぱいに敷き、画像の角がそのまま窓の角になるようにしている。
+ * （そのぶん左右または上下が少し切り取られる）
+ */
 .mini__art {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   display: block;
 }
 
@@ -84,14 +104,24 @@ body {
 
 /* ---- 操作面 ---- */
 
+/*
+ * 操作面。メインUIの本体と同じ半透明の面にして、
+ * 窓のアクリル（デスクトップのぼかし）が透けるようにする。
+ */
 .mini__panel {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: var(--space-2);
   padding: var(--space-3);
-  /* 半透明にせず、本体と同じパネルを敷く */
-  background: var(--panel-bg);
-  border-top: 1px solid var(--panel-border);
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+}
+
+/* 横長では左右に並ぶので、区切り線も縦になる */
+.mini[data-shape='landscape'] .mini__panel {
+  border-top: none;
+  border-left: 1px solid var(--color-border);
 }
 
 .mini__panel button,
@@ -178,6 +208,23 @@ body {
 .mini__iconbutton svg {
   width: 16px;
   height: 16px;
+}
+
+/* ピン留め中は色を点ける */
+.mini__iconbutton[data-active='true'] {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+/* 形の切り替えボタンは、いまの形の図形だけ出す */
+.mini__iconbutton [class^='shape--'] {
+  display: none;
+}
+
+.mini[data-shape='portrait'] .shape--portrait,
+.mini[data-shape='square'] .shape--square,
+.mini[data-shape='landscape'] .shape--landscape {
+  display: block;
 }
 
 /* ---- シークと音量 ---- */

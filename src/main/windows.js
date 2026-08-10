@@ -20,6 +20,17 @@ const SHARED_WEB_PREFERENCES = () => ({
   backgroundThrottling: false
 })
 
+/**
+ * ミニプレイヤーの形。
+ * 縦長 / 正方形 / 横長 の 3 通りで、レンダラー側の data-shape と対になっている。
+ * 高さは操作面（およそ 132px）を見込んだ寸法。
+ */
+const MINI_SHAPES = {
+  portrait: { width: 300, height: 452 },
+  square: { width: 384, height: 384 },
+  landscape: { width: 560, height: 268 }
+}
+
 /** @type {BrowserWindow|null} */
 let mainWindow = null
 /** @type {BrowserWindow|null} */
@@ -78,8 +89,37 @@ export function openMiniPlayer() {
   const mini = getMiniWindow() ?? createMiniWindow()
   if (mini.isMinimized()) mini.restore()
   mini.show()
-  mini.setAlwaysOnTop(true, 'floating')
+  /*
+   * 最前面かどうかはここで決め打ちしない。
+   * 生成時は true で始まり、以降はミニ側のピン留めボタンが持ち主になる。
+   * ここで true に戻すと、切っておいた設定が開き直すたびに復活してしまう。
+   */
   main.hide()
+}
+
+/**
+ * ミニプレイヤーの形を変える。
+ * 位置は中心を保つ。左上を固定すると、横長にしたときだけ画面の端へ寄って見える。
+ */
+export function setMiniShape(shape) {
+  const size = MINI_SHAPES[shape]
+  const mini = getMiniWindow()
+  if (!mini || !size) return
+
+  const [width, height] = mini.getSize()
+  const [x, y] = mini.getPosition()
+
+  mini.setBounds({
+    x: Math.round(x + (width - size.width) / 2),
+    y: Math.round(y + (height - size.height) / 2),
+    width: size.width,
+    height: size.height
+  })
+}
+
+/** 常に手前に出すかどうか */
+export function setMiniAlwaysOnTop(onTop) {
+  getMiniWindow()?.setAlwaysOnTop(Boolean(onTop), 'floating')
 }
 
 /** ミニプレイヤーを畳んでメインに戻す */
@@ -114,10 +154,10 @@ export function focusExistingWindow() {
 function createMiniWindow() {
   miniWindow = new BrowserWindow({
     // ジャケットの下に操作面を常時出すぶん、既定を縦長にしている
-    width: 300,
-    height: 420,
+    width: MINI_SHAPES.portrait.width,
+    height: MINI_SHAPES.portrait.height,
     minWidth: 240,
-    minHeight: 260,
+    minHeight: 230,
     show: false,
     frame: false,
     // 自由にリサイズできる。ジャケットで埋まらない余白はレンダラー側が

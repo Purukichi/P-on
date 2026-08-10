@@ -89,6 +89,10 @@ const api = {
     closeMini: () => ipcRenderer.send(IPC.WINDOW_CLOSE_MINI),
     /** アプリごと終了する */
     quit: () => ipcRenderer.send(IPC.WINDOW_QUIT),
+    /** ミニプレイヤーの形（'portrait' | 'square' | 'landscape'） */
+    setMiniShape: (shape) => ipcRenderer.send(IPC.WINDOW_MINI_SHAPE, shape),
+    /** ミニプレイヤーを常に手前に出すか */
+    setMiniAlwaysOnTop: (onTop) => ipcRenderer.send(IPC.WINDOW_MINI_ON_TOP, onTop),
     /** OS が描くタイトルバーの色を本文と揃える */
     setTitleBar: (colors) => ipcRenderer.send(IPC.WINDOW_SET_TITLEBAR, colors)
   },

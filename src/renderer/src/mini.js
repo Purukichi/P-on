@@ -23,7 +23,9 @@ const el = {
   next: pick(root, 'mini-next'),
   volume: pick(root, 'mini-volume'),
   restore: pick(root, 'mini-restore'),
-  close: pick(root, 'mini-close')
+  close: pick(root, 'mini-close'),
+  shape: pick(root, 'mini-shape'),
+  pin: pick(root, 'mini-pin')
 }
 
 const send = (type, value) => window.hamon.player.sendCommand({ type, value })
@@ -38,6 +40,45 @@ el.prev.addEventListener('click', () => send('previous'))
 el.next.addEventListener('click', () => send('next'))
 el.restore.addEventListener('click', () => window.hamon.windows.closeMini())
 el.close.addEventListener('click', () => window.hamon.windows.quit())
+
+// ---- 形とピン留め ----------------------------------------------------------
+
+/*
+ * どちらも次に開いたときのために覚えておく。
+ * ミニのウィンドウは畳んでも壊さず hide するだけなので、
+ * 読み書きするのはこの画面が最初に読み込まれたときだけになる。
+ */
+const SHAPE_KEY = 'hamon.mini.shape'
+const ON_TOP_KEY = 'hamon.mini.onTop'
+const SHAPES = ['portrait', 'square', 'landscape']
+
+function applyShape(shape) {
+  const next = SHAPES.includes(shape) ? shape : 'portrait'
+  root.dataset.shape = next
+  localStorage.setItem(SHAPE_KEY, next)
+  window.hamon.windows.setMiniShape(next)
+}
+
+function applyAlwaysOnTop(onTop) {
+  el.pin.dataset.active = String(onTop)
+  el.pin.setAttribute('aria-pressed', String(onTop))
+  el.pin.title = onTop ? '常に手前に表示（解除する）' : '常に手前に表示する'
+  localStorage.setItem(ON_TOP_KEY, onTop ? 'on' : 'off')
+  window.hamon.windows.setMiniAlwaysOnTop(onTop)
+}
+
+el.shape.addEventListener('click', () => {
+  const current = SHAPES.indexOf(root.dataset.shape)
+  applyShape(SHAPES[(current + 1) % SHAPES.length])
+})
+
+el.pin.addEventListener('click', () => {
+  applyAlwaysOnTop(el.pin.dataset.active !== 'true')
+})
+
+applyShape(localStorage.getItem(SHAPE_KEY) ?? 'portrait')
+// 既定は手前に出す。生成時のウィンドウ設定と揃えてある
+applyAlwaysOnTop(localStorage.getItem(ON_TOP_KEY) !== 'off')
 
 el.seek.addEventListener('pointerdown', () => {
   isScrubbing = true
