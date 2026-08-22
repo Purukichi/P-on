@@ -1,6 +1,7 @@
 import { Emitter } from '../core/Emitter.js'
 import { IMAGE_EXTENSIONS } from '@shared/ipc-channels.js'
 import { formatTime } from '../utils/time.js'
+import { artistLinks } from './ArtistLinks.js'
 import { collect, setMarqueeText } from './dom.js'
 import { filePathsFrom, isFileDrag, splitByExtension } from './drag.js'
 
@@ -8,8 +9,13 @@ import { filePathsFrom, isFileDrag, splitByExtension } from './drag.js'
  * 画面中央〜左：ジャケット、曲情報、シークバー、トランスポート、音量。
  * AudioEngine のイベントを購読して描画するだけで、再生ロジックは持たない。
  *
- * events: 'toggle', 'stop', 'next', 'previous',
- *         'cover-dropped' ({imagePath}), 'cover-request' (ジャケット未設定の枠がクリックされた)
+ * ジャケットは 2 段構え。
+ * 大きい枠は「いま鳴っている曲」のもので、左上の札は「その曲が入っている単位」のもの。
+ * アルバムの中に単独配信のジャケットを持つ曲が混ざっていても、両方見えるようにしている。
+ *
+ * events: 'toggle', 'stop', 'next', 'previous', 'repeat', 'shuffle',
+ *         'cover-dropped' ({imagePath}), 'cover-request' (ジャケット未設定の枠がクリックされた),
+ *         'album-cover-dropped' ({imagePath}), 'album-cover-request' (札への操作)
  */
 export class NowPlaying extends Emitter {
   #root
@@ -30,6 +36,11 @@ export class NowPlaying extends Emitter {
     this.#el = collect(this.#root, [
       'cover-frame',
       'cover-image',
+      'cover-album',
+      'cover-album-art',
+      'cover-album-image',
+      'cover-album-name',
+      'cover-album-sub',
       'np-title',
       'np-artist',
       'np-format',
@@ -40,6 +51,8 @@ export class NowPlaying extends Emitter {
       'stop',
       'prev',
       'next',
+      'repeat',
+      'shuffle',
       'volume',
       'volume-value',
       'volume-entry'
@@ -48,6 +61,7 @@ export class NowPlaying extends Emitter {
     this.#bindControls()
     this.#bindVolumeEntry()
     this.#bindCoverDrop()
+    this.#bindAlbumChip()
     this.#bindEngine()
 
     this.renderTrack(this.#engine.track)
@@ -69,13 +83,59 @@ export class NowPlaying extends Emitter {
     this.#el.next.disabled = !hasNext
   }
 
+  /** ループの状態を出す。見た目の出し分けは data-repeat を見て CSS が行う */
+  renderRepeat(mode) {
+    const label =
+      mode === 'one' ? '1曲だけループ' : mode === 'all' ? 'キュー全体をループ' : 'ループしない'
+    this.#el.repeat.dataset.repeat = mode
+    this.#el.repeat.dataset.tip = `${label}（押すと切り替え）`
+    this.#el.repeat.setAttribute('aria-label', label)
+  }
+
+  /** シャッフルの状態を出す。見た目の出し分けは data-shuffle を見て CSS が行う */
+  renderShuffle(on) {
+    const label = on ? 'シャッフル再生' : '順番どおりに再生'
+    this.#el.shuffle.dataset.shuffle = String(Boolean(on))
+    this.#el.shuffle.dataset.tip = `${label}（押すと切り替え）`
+    this.#el.shuffle.setAttribute('aria-label', label)
+  }
+
+  /**
+   * ジャケットの上に出す「いま鳴らしている単位」の札。
+   * アルバム / プレイリストを鳴らしているときだけ出す。
+   *
+   * @param {{name: string, sub: string, coverUrl: string|null}|null} context null で消す
+   */
+  renderContext(context) {
+    const chip = this.#el.coverAlbum
+    chip.hidden = !context
+    if (!context) return
+
+    this.#el.coverAlbumName.textContent = context.name
+    this.#el.coverAlbumSub.textContent = context.sub
+    this.#el.coverAlbumSub.hidden = !context.sub
+
+    if (context.coverUrl) {
+      this.#el.coverAlbumImage.src = context.coverUrl
+      this.#el.coverAlbumArt.dataset.empty = 'false'
+    } else {
+      this.#el.coverAlbumImage.removeAttribute('src')
+      this.#el.coverAlbumArt.dataset.empty = 'true'
+    }
+
+    chip.dataset.tip = `${context.name}\nクリックまたは画像をドロップでジャケットを設定`
+  }
+
   /** ライブラリ更新でジャケットや曲名が変わったときに外から呼ぶ */
   renderTrack(track) {
     const hasTrack = Boolean(track)
 
     // 長いタイトルは「…」ではなく自動スクロールで全体を見せる
     setMarqueeText(this.#el.npTitle, hasTrack ? track.displayTitle : '曲を選んでください')
-    this.#el.npArtist.textContent = hasTrack ? track.displayArtist : '—'
+    // 名前は押せる形にしておく（ArtistPopover がその人の曲を一覧にする）
+    this.#el.npArtist.replaceChildren(
+      ...artistLinks(hasTrack ? track.artist : null, { fallback: hasTrack ? track.displayArtist : '—' })
+    )
 
     const format = hasTrack ? track.formatSummary : ''
     this.#el.npFormat.textContent = format
@@ -99,12 +159,14 @@ export class NowPlaying extends Emitter {
   // ---- DOM -> engine -----------------------------------------------------
 
   #bindControls() {
-    const { playToggle, stop, prev, next, seek, volume } = this.#el
+    const { playToggle, stop, prev, next, repeat, shuffle, seek, volume } = this.#el
 
     this.#listen(playToggle, 'click', () => this.emit('toggle'))
     this.#listen(stop, 'click', () => this.emit('stop'))
     this.#listen(prev, 'click', () => this.emit('previous'))
     this.#listen(next, 'click', () => this.emit('next'))
+    this.#listen(repeat, 'click', () => this.emit('repeat'))
+    this.#listen(shuffle, 'click', () => this.emit('shuffle'))
 
     // ドラッグ中は timeupdate でつまみが戻らないようにフラグを立てる
     this.#listen(seek, 'pointerdown', () => {
@@ -182,7 +244,12 @@ export class NowPlaying extends Emitter {
     })
   }
 
-  /** ジャケット枠に画像を落としたら、再生中の曲のジャケットとして登録する */
+  /**
+   * ジャケット枠に画像を落としたら、再生中の「曲」のジャケットとして登録する。
+   * アルバムを鳴らしている最中でも曲ごとに設定できるので、
+   * 単独配信のジャケットを持つ曲だけ差し替える、といったことができる。
+   * アルバム側を変えたいときは左上の札に落とす。
+   */
   #bindCoverDrop() {
     const frame = this.#el.coverFrame
 
@@ -211,6 +278,37 @@ export class NowPlaying extends Emitter {
     })
   }
 
+  /** 左上の札。こちらはアルバム / プレイリスト側のジャケットを受け持つ */
+  #bindAlbumChip() {
+    const chip = this.#el.coverAlbum
+
+    this.#listen(chip, 'click', () => this.emit('album-cover-request'))
+
+    this.#listen(chip, 'dragover', (event) => {
+      if (!isFileDrag(event)) return
+      event.preventDefault()
+      event.stopPropagation()
+      event.dataTransfer.dropEffect = 'copy'
+      chip.dataset.dropping = 'true'
+      // 枠側の「落とせます」表示は引っ込める
+      this.#el.coverFrame.dataset.dropping = 'false'
+    })
+
+    this.#listen(chip, 'dragleave', (event) => {
+      if (chip.contains(event.relatedTarget)) return
+      chip.dataset.dropping = 'false'
+    })
+
+    this.#listen(chip, 'drop', (event) => {
+      if (!isFileDrag(event)) return
+      event.preventDefault()
+      event.stopPropagation()
+      chip.dataset.dropping = 'false'
+      const [images] = splitByExtension(filePathsFrom(event.dataTransfer), IMAGE_EXTENSIONS)
+      if (images.length > 0) this.emit('album-cover-dropped', { imagePath: images[0] })
+    })
+  }
+
   // ---- engine -> DOM -----------------------------------------------------
 
   #bindEngine() {
@@ -228,7 +326,7 @@ export class NowPlaying extends Emitter {
     const isPlaying = state === 'playing'
     this.#el.playToggle.dataset.playing = String(isPlaying)
     this.#el.playToggle.setAttribute('aria-label', isPlaying ? '一時停止' : '再生')
-    this.#el.playToggle.title = isPlaying ? '一時停止 (Space)' : '再生 (Space)'
+    this.#el.playToggle.dataset.tip = isPlaying ? '一時停止 (Space)' : '再生 (Space)'
   }
 
   #renderTime({ currentTime, duration, progress }) {

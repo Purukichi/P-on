@@ -149,6 +149,14 @@ export class Library extends Emitter {
     return this.#run(() => this.#api.library.setArtist(trackIds, artist))
   }
 
+  /**
+   * 曲の並びを入れ替える（アルバムの曲順）。
+   * 渡した id が使っていた位置はそのままに、その枠へ新しい順で入れ直される。
+   */
+  async reorderTracks(trackIds) {
+    return this.#run(() => this.#api.library.reorderTracks(trackIds))
+  }
+
   async deleteTrack(trackId) {
     return this.#run(() => this.#api.library.deleteTrack(trackId))
   }
@@ -178,6 +186,11 @@ export class Library extends Emitter {
 
   async removeFromPlaylist(playlistId, trackId) {
     return this.#run(() => this.#api.playlists.removeTrack(playlistId, trackId))
+  }
+
+  /** プレイリストの中の曲順を入れ替える */
+  async reorderPlaylist(playlistId, trackIds) {
+    return this.#run(() => this.#api.playlists.reorder(playlistId, trackIds))
   }
 
   /** プレイリストのジャケットをダイアログから選ぶ */

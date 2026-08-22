@@ -1,0 +1,38 @@
+/*
+ * 押せるアーティスト名。
+ * 押すと棚の検索がその名前で走る（専用のパネルは持たない）。
+ */
+
+.artistlink {
+  appearance: none;
+  border: 0;
+  border-bottom: 1px dashed transparent;
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+  max-width: 100%;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.artistlink:hover,
+.artistlink:focus-visible {
+  color: var(--color-accent);
+  border-bottom-color: currentColor;
+}
+
+.artistlink__sep {
+  color: var(--color-text-faint);
+}
+
+/*
+ * 再生中の行はアクセント色で塗られている。
+ * その上でアクセント色にすると字が沈むので、下線だけで示す。
+ */
+.track[data-active='true'] .artistlink:hover,
+.track[data-active='true'] .artistlink:focus-visible {
+  color: inherit;
+}

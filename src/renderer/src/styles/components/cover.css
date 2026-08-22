@@ -1,15 +1,35 @@
 /* 左カラム：再生中のジャケット。 */
 /* 上下は他のブロックと同じ外周余白、右はブロック間の間隔 */
+/*
+ * 札（アルバム / プレイリスト）を上に、ジャケットを下に積む。
+ * 札は隠れているあいだ display: none になるので、flex なら間隔も一緒に消える。
+ */
 .cover {
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  /* 札もジャケットも左端でそろえる */
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--space-2);
   padding: var(--page-gutter);
   padding-right: calc(var(--block-gap) / 2);
+  /* 中身（正方形のジャケット）が高さを押し広げないようにする */
+  min-height: 0;
+  min-width: 0;
 }
 
+/*
+ * 正方形のまま、横幅と高さの小さいほうに収める。
+ * width だけで決めると、ウィンドウを縦に狭めたときに枠が列の高さを超え、
+ * 下の棚や右のリストと重なって切れてしまう。
+ */
 .cover__frame {
   position: relative;
   width: 100%;
+  max-width: 100%;
+  /* 札のぶんは flex が引いてくれるので、ここは縮められるようにしておくだけ */
+  min-height: 0;
+  flex: 0 1 auto;
   aspect-ratio: 1;
   display: grid;
   place-items: center;
@@ -74,6 +94,97 @@
 .cover__frame[data-dropping='true'] .cover__hint {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* ---- いま鳴らしている単位（アルバム / プレイリスト）の札 ---- */
+
+/*
+ * ジャケットの上（絵には重ねない）。
+ * 下の枠は「その曲」のジャケット、この札は「その入れ物」のジャケット。
+ * 幅は中身なりにして、枠が高さで縮んだときも横に張り出さないようにしている。
+ */
+.cover__album {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-panel);
+  color: var(--color-text);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.cover__album[hidden] {
+  display: none;
+}
+
+.cover__album:hover {
+  border-color: var(--color-accent);
+}
+
+.cover__album[data-dropping='true'] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.cover__album-art {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--color-sunken);
+  overflow: hidden;
+}
+
+.cover__album-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cover__album-art[data-empty='true'] .cover__album-image {
+  display: none;
+}
+
+.cover__album-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.cover__album-name {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cover__album-sub {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 落とせる状態のときは、文字の色も面に合わせる */
+.cover__album[data-dropping='true'] .cover__album-sub {
+  color: inherit;
+}
+
+.cover__album-sub[hidden] {
+  display: none;
 }
 
 /* ジャケット未設定の枠はクリックで登録できる。ホバーで案内を出す */

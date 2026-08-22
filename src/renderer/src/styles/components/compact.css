@@ -22,6 +22,11 @@
   padding: var(--space-3) 0 var(--space-3) var(--space-6);
 }
 
+/* 1 行に畳んだ幅では札を置く余地がないので、このときだけ引っ込める */
+.app[data-shelf-expanded='true'] .cover__album {
+  display: none;
+}
+
 .app[data-shelf-expanded='true'] .cover__frame {
   width: 56px;
   height: 56px;

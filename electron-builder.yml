@@ -25,6 +25,13 @@ directories:
   buildResources: build
   output: release
 
+# タスクバー用に、アイコンの実体もアプリと一緒に配る。
+# exe に埋め込んだアイコンだけだと、エクスプローラーのキャッシュに古い絵が残ることがある。
+# windows.js がここに置いたファイルを BrowserWindow へ直接渡す。
+extraResources:
+  - from: build/icon.ico
+    to: icon.ico
+
 # out/ (electron-vite の成果物) と package.json だけがパッケージに入ればよい
 files:
   - '!**/.vscode/*'
@@ -34,7 +41,7 @@ files:
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml,yarn.lock}'
 
 win:
-  # build/icon.svg を元に生成したもの (scripts/make-icon は scratchpad 側)
+  # build/source/app-icon.jpg から build/make-icon.cjs が作ったもの
   icon: build/icon.ico
   # 配るのはインストーラだけ。ポータブル版は自動更新が効かず、
   # 「更新されない版」が出回るほうが困るのでやめた
@@ -47,9 +54,21 @@ win:
 nsis:
   # 管理者権限を求めず、現在のユーザーにだけ入れる。
   # 「アプリと機能」に載り、スタートメニューとデスクトップからも起動できる。
-  oneClick: false
+  #
+  # インストーラの画面は NSIS が描くもので、アプリのような曇りガラスにはできない
+  # （Windows の標準ダイアログ部品しか使えない）。
+  # 見た目を寄せられない以上、出す情報そのものを削るほうが早いので、
+  # ウィザードをやめて「進捗だけの 1 枚」にしてある。
+  # 置き場所の選択・ライセンス・完了ページはすべて出ない。
+  oneClick: true
   perMachine: false
-  allowToChangeInstallationDirectory: true
+  allowToChangeInstallationDirectory: false
+  # 進捗の窓に出る絵。アプリのアイコンと同じものを使う
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  # 入れ終わったらそのまま起動する（「完了」を押させない）
+  runAfterFinish: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
   # スタートメニュー直下に置く（フォルダを 1 段挟まない）

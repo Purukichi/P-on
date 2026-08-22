@@ -1,0 +1,89 @@
+/*
+ * ウィンドウを縦に狭めたときの詰め方。
+ *
+ * 高さが足りないと、ジャケット・再生中の情報・下の棚が同じ場所を取り合って
+ * 互いに切れてしまう。ジャケット自体は cover.css で「幅と高さの小さいほう」に
+ * 収まるようにしてあるので、ここでは余白と字面、棚の段の高さを段階的に詰めて
+ * 全体が収まる高さを下げていく。
+ *
+ * 幅の詰め方は base.css（.stage の列）が持っている。
+ */
+
+/* ふつうのノート PC の縦（768〜900 くらい）で、まず余白を削る */
+@media (height < 860px) {
+  :root {
+    --page-gutter: 16px;
+    --block-gap: 18px;
+  }
+
+  .nowplaying__title {
+    font-size: 26px;
+  }
+
+  /* カード 1 段（ジャケット 104 + 曲名 + 補助 + 上下の余白）が切れない高さ */
+  .shelf__body {
+    max-height: 168px;
+  }
+}
+
+/* さらに狭いとき。操作できることは変えず、寸法だけ落とす */
+@media (height < 720px) {
+  :root {
+    --page-gutter: 12px;
+    --block-gap: 14px;
+  }
+
+  .nowplaying {
+    gap: var(--space-2);
+  }
+
+  .nowplaying__title {
+    font-size: 22px;
+  }
+
+  .nowplaying__format {
+    margin: var(--space-1) 0 var(--space-2);
+  }
+
+  .transport {
+    margin-top: 0;
+  }
+
+  .transport__button {
+    width: 32px;
+    height: 32px;
+  }
+
+  .shelf {
+    gap: var(--space-2);
+    padding-bottom: var(--space-3);
+  }
+
+  /* 棚のカードも 1 段ぶんの高さを落とす（段数は JS が測り直す） */
+  .shelf[data-view='grid'] .shelf__list {
+    grid-auto-columns: 88px;
+    gap: var(--space-3);
+  }
+
+  .shelf__body {
+    max-height: 150px;
+  }
+}
+
+/*
+ * ここまで狭いと、ジャケットは案内文を出す余地がないほど小さくなる。
+ * それでも操作は全部残る（さらに詰めたいときは「もっと見る」で 1 行表示に畳める）。
+ */
+@media (height < 560px) {
+  .cover__hint {
+    display: none;
+  }
+
+  .shelf[data-view='grid'] .shelf__list {
+    grid-auto-columns: 72px;
+  }
+
+  .shelf__body {
+    max-height: 132px;
+  }
+}

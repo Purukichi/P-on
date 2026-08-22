@@ -11,10 +11,16 @@
   <body class="mini-body">
     <!--
       ミニプレイヤー。音は鳴らさず、メインウィンドウの再生状態を映して操作を送り返すだけ。
-      操作面はジャケットに重ねず、下に場所を取って常に出しておく。
+      形は正方形のひとつだけで、ジャケットを窓いっぱいに見せる。
+      操作面はその上に重ね、窓にマウスが入っているあいだだけ出す。
     -->
-    <div class="mini" id="mini" data-playing="false" data-has-track="false" data-shape="portrait">
-      <!-- ここを掴むとウィンドウを動かせる -->
+    <div
+      class="mini"
+      id="mini"
+      data-playing="false"
+      data-has-track="false"
+      data-hover="false"
+    >
       <div class="mini__stage" data-el="mini-stage">
         <img class="mini__art" data-el="mini-art" alt="" />
         <div class="mini__placeholder" aria-hidden="true">
@@ -22,6 +28,12 @@
             <path d="M2 12a2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 1 5 0 2.5 2.5 0 0 0 5 0" />
           </svg>
         </div>
+        <!--
+          ここを掴むとウィンドウを動かせる。
+          窓の縁は掴みしろとして空けてある（面ごと drag にすると、
+          縁を掴んでもリサイズにならず移動になってしまうため）。
+        -->
+        <div class="mini__drag" aria-hidden="true"></div>
       </div>
 
       <div class="mini__panel">
@@ -30,25 +42,6 @@
             <p class="mini__title" data-el="mini-title">曲が選ばれていません</p>
             <p class="mini__artist" data-el="mini-artist">—</p>
           </div>
-          <!-- 押すたびに 縦長 → 正方形 → 横長 と回る。出ている図形が今の形 -->
-          <button
-            class="mini__iconbutton"
-            type="button"
-            data-el="mini-shape"
-            title="表示の形を変える"
-            aria-label="表示の形を変える"
-          >
-            <svg class="shape--portrait" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <rect x="7.5" y="3.5" width="9" height="17" rx="2.5" />
-            </svg>
-            <svg class="shape--square" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <rect x="4.5" y="4.5" width="15" height="15" rx="2.5" />
-            </svg>
-            <svg class="shape--landscape" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <rect x="2.5" y="7" width="19" height="10" rx="2.5" />
-            </svg>
-          </button>
-
           <button
             class="mini__iconbutton"
             type="button"

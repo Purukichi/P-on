@@ -22,6 +22,13 @@
   display: flex;
 }
 
+/* 棚のカードを持ってきたとき。落とせる場所だと分かるように縁を光らせる */
+.tracklist[data-dropping='true'] {
+  border-color: var(--color-accent);
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
 .tracklist__head {
   display: flex;
   align-items: center;
@@ -76,6 +83,22 @@
   color: var(--color-text);
 }
 
+/* 再生キューを空にする。取り返しはつくが、押し間違えたくないので色で区別する */
+.tracklist__edit--danger {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+.tracklist__edit--danger:hover {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: #fff;
+}
+
+.tracklist__edit[hidden] {
+  display: none;
+}
+
 .tracklist__edit[data-active='true'] {
   background: var(--color-accent);
   border-color: var(--color-accent);
@@ -126,14 +149,25 @@
 /* ---- 1 行 ---- */
 
 .track {
+  position: relative;
   display: grid;
   grid-template-columns: 2.2em minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background var(--transition-fast);
+  /*
+   * 戻り（短冊 -> ふだんの行）もここの指定で動く。
+   * [data-settling] 側にだけ書くと、印を外した瞬間に対象から外れて
+   * 戻りだけが一瞬で終わってしまう。
+   */
+  transition:
+    background 240ms ease,
+    border-color 240ms ease,
+    box-shadow 240ms ease,
+    opacity 180ms ease;
 }
 
 .track:hover {
@@ -145,8 +179,71 @@
   color: var(--color-accent-contrast);
 }
 
+/* 持ち出しのドラッグ（ゴミ箱・棚のカードへ）。掴んでいる間は薄くする */
 .track[data-dragging='true'] {
   opacity: 0.4;
+}
+
+/*
+ * ---- 曲順の並べ替え ----
+ *
+ * 掴んだ行は短冊のパネルになって指について来る（.track--panel が指の下の絵）。
+ * 元あった場所は「行が抜けた空き」にしたいので、中身だけを消して高さは残す。
+ * ぱっと消えると何が起きたのか分からないので、少し時間をかけて薄れさせる。
+ */
+.track[data-lifted='true'] {
+  opacity: 0;
+  background: transparent;
+}
+
+/*
+ * 手を離したあと。
+ * 短冊の見た目からふだんの行へ戻る途中の姿で、
+ * JS が次のフレームでこの印を外すと、ここから元の見た目へ滑らかに戻る。
+ */
+.track[data-settling='true'] {
+  border-color: var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: var(--panel-shadow), var(--glass-sheen);
+  /*
+   * 落ちた瞬間から濃さは満たしておく（opacity は動かさない）。
+   * 薄いところから現れると、置いたはずの短冊が透けて見えてしまう。
+   */
+  opacity: 1;
+  transition:
+    background 240ms ease,
+    border-color 240ms ease,
+    box-shadow 240ms ease;
+}
+
+/*
+ * 指について来る短冊。行の写しなので、中身はそのまま見える。
+ *
+ * ブラウザが描くドラッグ画像は薄く透かされてしまい濃さを指定できないので、
+ * そちらは隠して（.dragblank）この板を自前で動かしている。
+ * 板は最後まで濃さを変えない。透かすと下の行と混ざって、どれを掴んでいるのか分からなくなる。
+ */
+.track--panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 90;
+  opacity: 1;
+  border-color: var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: var(--panel-shadow), var(--glass-sheen);
+  pointer-events: none;
+}
+
+/* ブラウザに写し取らせるだけの板。見えない場所に一瞬だけ置く */
+.dragblank {
+  position: fixed;
+  top: 0;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .track__index {
@@ -235,10 +332,30 @@
 
 /* ---- 編集モード ---- */
 
+/* 通し番号 / 掴み手 / 入力欄 */
 .app[data-list-edit='true'] .track {
-  grid-template-columns: 2.2em minmax(0, 1fr);
+  grid-template-columns: 2.2em auto minmax(0, 1fr);
   align-items: start;
   cursor: default;
+}
+
+/* 掴んで上下に動かすと曲順が変わる */
+.track__grip {
+  padding: 2px var(--space-1) 0;
+  color: var(--color-text-faint);
+  font-size: var(--font-size-lg);
+  line-height: 1.4;
+  cursor: grab;
+  user-select: none;
+  transition: color var(--transition-fast);
+}
+
+.track__grip:hover {
+  color: var(--color-text);
+}
+
+.track__grip:active {
+  cursor: grabbing;
 }
 
 .app[data-list-edit='true'] .track:hover {

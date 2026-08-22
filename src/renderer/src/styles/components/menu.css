@@ -9,11 +9,11 @@
   display: flex;
   flex-direction: column;
   padding: var(--space-1);
-  border: 1px solid var(--panel-border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
-  /* 半透明にせず、本体と同じ質感のパネルをそのまま重ねる */
-  background: var(--panel-bg);
-  box-shadow: var(--panel-shadow);
+  /* 下の文字が透けて重ならないよう、ここは単色で塗る（theme.css の --glass-bg） */
+  background: var(--glass-bg);
+  box-shadow: var(--panel-shadow), var(--glass-sheen);
   animation: menu-in 110ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
@@ -135,7 +135,7 @@
 
 .menu__track {
   display: grid;
-  grid-template-columns: 2.2em minmax(0, 1fr) auto;
+  grid-template-columns: 2.2em minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
@@ -167,4 +167,32 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* この曲だけをキューへ。場所を取らないよう、行に乗せたときだけ出す */
+.menu__queue {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--font-size-xs);
+  line-height: 1;
+  cursor: pointer;
+  visibility: hidden;
+}
+
+.menu__track:hover .menu__queue,
+.menu__track:focus-within .menu__queue {
+  visibility: visible;
+}
+
+.menu__queue:hover {
+  background: var(--color-accent-contrast);
+  border-color: var(--color-accent-contrast);
+  color: var(--color-accent);
 }

@@ -8,11 +8,28 @@ import {
   getTrackDragData,
   isCollectionDrag,
   isTrackDrag,
-  setCollectionDragData
+  setCollectionDragData,
+  setTrackDragData
 } from './drag.js'
 
 /** これ以上動かしたら矩形選択とみなす */
 const MARQUEE_THRESHOLD = 6
+
+/**
+ * ホイール 1 回で流す距離の倍率。
+ * 1 のままだと 1 段（およそカード 1 枚ぶん）が一瞬で飛んでしまうので、少し抑える。
+ */
+const WHEEL_STEP = 0.8
+
+/**
+ * 1 フレームで縮める距離の割合。
+ * 0.16 だとおよそ 15 フレーム（60fps で 250ms ほど）かけて目標に着く。
+ * 大きいほど機敏に、小さいほどゆったり滑る。
+ */
+const GLIDE_EASE = 0.16
+
+/** deltaMode が「行」のとき、1 行を何 px とみなすか */
+const WHEEL_LINE_HEIGHT = 40
 
 /**
  * 画面下のコレクション棚。
@@ -34,7 +51,10 @@ const MARQUEE_THRESHOLD = 6
  *         'edit-collection' (collectionId), 'delete-collection' (collectionId),
  *         'album-artist' (collectionId), 'track-artists' (collectionId),
  *         'group-selection' ({collectionIds, as: 'album'|'playlist'}),
- *         'delete-selection' (collectionIds)
+ *         'delete-selection' (collectionIds),
+ *         'drag-start', 'drag-end' (カードを掴んでいる間だけ受け皿を開くために使う),
+ *         'queue-collection' (collectionId), 'queue-track' ({collectionId, trackId}),
+ *         'source-change' ('collections'|'tracks')
  */
 export class CollectionShelf extends Emitter {
   #root
@@ -46,9 +66,19 @@ export class CollectionShelf extends Emitter {
   #visible = []
   #activeId = null
   #query = ''
+  /**
+   * いまの検索がアーティスト名のクリックで始まったものか。
+   * その場合は、棚を畳んだ時点で検索も解除する（元の眺めに戻す）。
+   */
+  #artistQuery = false
   /** @type {Set<string>} */
   #selected = new Set()
   #marquee = null
+  /** 横送りの着地点。滑っている最中だけ入る */
+  #glideTarget = null
+  #glideFrame = null
+  /** 直前に自分で置いた位置。ここから動いていたら、外から動かされたと判断する */
+  #glideLast = 0
 
   constructor(root) {
     super()
@@ -74,6 +104,9 @@ export class CollectionShelf extends Emitter {
       'shelf-add',
       'shelf-menu',
       'shelf-search',
+      'shelf-search-clear',
+      'shelf-src-collections',
+      'shelf-src-tracks',
       'shelf-view-grid',
       'shelf-view-list',
       'shelf-expand',
@@ -95,14 +128,143 @@ export class CollectionShelf extends Emitter {
     this.#bindDropTargets()
 
     this.#el.shelfList.addEventListener('scroll', () => this.#closeMenu())
+    this.#el.shelfBody.addEventListener('scroll', () => this.#closeMenu())
+
+    /*
+     * グリッドは縦に折り返さず、横へ並べ続ける。
+     * ホイールは既定では縦にしか効かないので、回した分を横送りに振り替える。
+     * 位置をその場で書き換えると一瞬で飛んで手応えが無いので、#glide が追いかける。
+     */
+    this.#el.shelfBody.addEventListener(
+      'wheel',
+      (event) => {
+        if (this.#view !== 'grid') return
+        // Shift + ホイールは既定で横に流れるので、そのまま任せる
+        if (event.shiftKey || event.deltaY === 0) return
+        event.preventDefault()
+        this.#glide(event.deltaY * (event.deltaMode === 1 ? WHEEL_LINE_HEIGHT : 1))
+      },
+      { passive: false }
+    )
+
+    // 高さが変わったら、その高さに収まる段数を取り直す
+    new ResizeObserver(() => this.#syncRows()).observe(this.#el.shelfBody)
 
     return this
+  }
+
+  /**
+   * ホイールで回したぶんを、滑らせながら横へ送る。
+   *
+   * 目標の位置だけを動かし、実際の位置は毎フレーム目標へ少しずつ近づける。
+   * 回し続けているあいだは目標が伸び続けるので、そのまま流れが続く。
+   *
+   * @param {number} delta 送りたい距離（px）
+   */
+  #glide(delta) {
+    const body = this.#el.shelfBody
+    const limit = Math.max(0, body.scrollWidth - body.clientWidth)
+
+    const from = this.#glideTarget ?? body.scrollLeft
+    this.#glideTarget = Math.min(Math.max(from + delta * WHEEL_STEP, 0), limit)
+    this.#glideLast = body.scrollLeft
+
+    if (this.#glideFrame !== null) return
+
+    const step = () => {
+      /*
+       * 自分が置いた位置から動いていたら、スクロールバーを掴まれた合図。
+       * そのまま追いかけると、掴んだ先から元の位置へ引き戻してしまう。
+       */
+      if (Math.abs(body.scrollLeft - this.#glideLast) > 1) {
+        this.#endGlide()
+        return
+      }
+
+      const distance = this.#glideTarget - body.scrollLeft
+      // 1px を切ったら着地させる（いつまでも小数を追いかけない）
+      if (Math.abs(distance) < 1) {
+        body.scrollLeft = this.#glideTarget
+        this.#endGlide()
+        return
+      }
+
+      /*
+       * 端に着いて動かせなくなったら、そこで終わり。
+       * scrollWidth から出した目標が実際に行ける位置をわずかに超えることがあり、
+       * これが無いと届かない目標を永久に追いかけ続ける。
+       */
+      const before = body.scrollLeft
+      body.scrollLeft += distance * GLIDE_EASE
+      if (body.scrollLeft === before) {
+        this.#endGlide()
+        return
+      }
+
+      this.#glideLast = body.scrollLeft
+      this.#glideFrame = requestAnimationFrame(step)
+    }
+    this.#glideFrame = requestAnimationFrame(step)
+  }
+
+  /** 横送りを終える。追いかけるのをやめて、目標も忘れる */
+  #endGlide() {
+    if (this.#glideFrame !== null) cancelAnimationFrame(this.#glideFrame)
+    this.#glideFrame = null
+    this.#glideTarget = null
+    this.#glideLast = 0
+  }
+
+  /**
+   * グリッドの段数。
+   * 面の高さに収まるぶんだけ縦に積み、あふれた分は横へ流す。
+   * 段数を決め打ちにすると、ウィンドウの高さによって余白が空いたり縦スクロールが出たりする。
+   */
+  #syncRows() {
+    const body = this.#el.shelfBody
+    const card = this.#el.shelfList.firstElementChild
+    if (!card) return
+
+    const styles = getComputedStyle(this.#el.shelfList)
+    const gap = parseFloat(styles.rowGap) || 0
+    const padding = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom)
+    const rowHeight = card.offsetHeight
+    if (rowHeight <= 0) return
+
+    const available = body.clientHeight - padding
+    const rows = Math.max(1, Math.floor((available + gap) / (rowHeight + gap)))
+    this.#el.shelfList.style.setProperty('--shelf-rows', String(rows))
   }
 
   /** @param {import('../core/Collections.js').Collection[]} collections */
   render(collections, { activeCollectionId = null } = {}) {
     this.#all = collections
     this.#activeId = activeCollectionId
+    this.#renderList()
+  }
+
+  /**
+   * 外から検索をかける（アーティスト名をクリックしたときなど）。
+   * 検索欄に入れて走らせるだけなので、見えるものは手で打ったときと同じ。
+   * 結果が数枚に絞られると畳んだ棚では窮屈なので、あわせて広げておく。
+   */
+  search(query, { expand = true, fromArtist = false } = {}) {
+    this.#query = query
+    this.#artistQuery = fromArtist
+    this.#el.shelfSearch.value = query
+    if (expand) this.#setExpanded(true)
+    this.#renderList()
+    this.#el.shelfBody.scrollLeft = 0
+    this.#el.shelfBody.scrollTop = 0
+    return this.#visible.length
+  }
+
+  /** 検索を解除して、全部が並んだ状態に戻す */
+  clearSearch() {
+    if (this.#query === '') return
+    this.#query = ''
+    this.#artistQuery = false
+    this.#el.shelfSearch.value = ''
     this.#renderList()
   }
 
@@ -113,20 +275,49 @@ export class CollectionShelf extends Emitter {
 
     this.#el.shelfSearch.addEventListener('input', () => {
       this.#query = this.#el.shelfSearch.value
+      // 手で打ち直した時点で、アーティスト名から来た検索ではなくなる
+      this.#artistQuery = false
       this.#renderList()
     })
+
+    this.#el.shelfSearchClear.addEventListener('click', () => {
+      this.clearSearch()
+      this.#el.shelfSearch.focus()
+    })
+
+    this.#el.shelfSrcCollections.addEventListener('click', () => this.#setSource('collections'))
+    this.#el.shelfSrcTracks.addEventListener('click', () => this.#setSource('tracks'))
 
     this.#el.shelfViewGrid.addEventListener('click', () => this.#setView('grid'))
     this.#el.shelfViewList.addEventListener('click', () => this.#setView('list'))
 
     this.#el.shelfExpand.addEventListener('click', () => {
-      const expanded = this.#shelf.dataset.expanded !== 'true'
-      this.#shelf.dataset.expanded = String(expanded)
-      // 展開中はメインUIをコンパクトな 1 行に切り替える（CSS 側が拾う）
-      this.#root.dataset.shelfExpanded = String(expanded)
-      this.#el.shelfExpandLabel.textContent = expanded ? '折りたたむ' : 'もっと見る'
-      this.#closeMenu()
+      this.#setExpanded(this.#shelf.dataset.expanded !== 'true')
     })
+  }
+
+  #setExpanded(expanded) {
+    this.#shelf.dataset.expanded = String(expanded)
+    // 展開中はメインUIをコンパクトな 1 行に切り替える（CSS 側が拾う）
+    this.#root.dataset.shelfExpanded = String(expanded)
+    this.#el.shelfExpandLabel.textContent = expanded ? '折りたたむ' : 'もっと見る'
+    this.#closeMenu()
+
+    /*
+     * アーティスト名から開いた検索は、畳んだ時点で解除する。
+     * 「広げて絞り込んだ状態」を見せるための一時的な表示なので、
+     * 畳んだあとも絞り込みが residual に残っていると、曲が消えたように見えてしまう。
+     */
+    if (!expanded && this.#artistQuery) this.clearSearch()
+  }
+
+  #setSource(source) {
+    if (this.#shelf.dataset.source === source) return
+    this.#shelf.dataset.source = source
+    this.#el.shelfSrcCollections.dataset.active = String(source === 'collections')
+    this.#el.shelfSrcTracks.dataset.active = String(source === 'tracks')
+    this.#closeMenu()
+    this.emit('source-change', source)
   }
 
   #setView(view) {
@@ -149,6 +340,10 @@ export class CollectionShelf extends Emitter {
     this.#el.shelfList.replaceChildren(
       ...this.#visible.map((collection) => this.#renderCard(collection))
     )
+
+    this.#el.shelfSearchClear.hidden = this.#query.length === 0
+    // 段数はカードの実寸から測るので、並べ終えてから取り直す
+    this.#syncRows()
 
     const nothing = this.#visible.length === 0
     this.#el.shelfEmpty.hidden = !nothing
@@ -177,8 +372,7 @@ export class CollectionShelf extends Emitter {
         'data-selected': String(this.#selected.has(collection.id)),
         draggable: 'true',
         role: 'button',
-        tabindex: '0',
-        title: `${collection.name}（${collection.subtitle}）`
+        tabindex: '0'
       }
     })
 
@@ -370,10 +564,13 @@ export class CollectionShelf extends Emitter {
         this.#cardOf(id)?.setAttribute('data-dragging', 'true')
       }
       this.#closeMenu()
+      // 掴んでいる間だけ、右の一覧を受け皿として開いてもらう
+      this.emit('drag-start')
     })
 
     list.addEventListener('dragend', () => {
       for (const card of this.#el.shelfList.children) card.dataset.dragging = 'false'
+      this.emit('drag-end')
     })
 
     list.addEventListener('dragover', (event) => {
@@ -445,11 +642,16 @@ export class CollectionShelf extends Emitter {
     menu.addEventListener('click', (event) => {
       const collectionId = menu.dataset.collectionId
 
-      // 収録曲を直接選んで再生する
+      // 収録曲の行。「＋」を押したときはキューへ、それ以外はその曲から再生する
       const row = event.target.closest('[data-track-id]')
       if (row) {
+        const rowAction = event.target.closest('[data-menu-action]')?.dataset.menuAction
         this.#closeMenu()
-        this.emit('play-collection', { collectionId, trackId: row.dataset.trackId })
+        if (rowAction === 'queue-track') {
+          this.emit('queue-track', { collectionId, trackId: row.dataset.trackId })
+        } else {
+          this.emit('play-collection', { collectionId, trackId: row.dataset.trackId })
+        }
         return
       }
 
@@ -462,6 +664,9 @@ export class CollectionShelf extends Emitter {
       switch (item.dataset.menuAction) {
         case 'play':
           this.emit('play-collection', { collectionId })
+          break
+        case 'queue':
+          this.emit('queue-collection', collectionId)
           break
         case 'edit':
           this.emit('edit-collection', collectionId)
@@ -491,6 +696,31 @@ export class CollectionShelf extends Emitter {
           this.emit('delete-collection', collectionId)
           break
       }
+    })
+
+    /*
+     * メニューの収録曲を掴んで運ぶ。
+     * 落とし先は右の一覧（再生キューに足す）と、棚のプレイリストのカード。
+     * 掴んでいる間だけ受け皿を開いてもらうため、カードのときと同じ合図を出す。
+     */
+    menu.addEventListener('dragstart', (event) => {
+      const row = event.target.closest('[data-track-id]')
+      if (!row) return
+
+      const collection = this.#find(menu.dataset.collectionId)
+      const track = collection?.tracks.find((t) => t.id === row.dataset.trackId)
+      setTrackDragData(event, row.dataset.trackId)
+      if (track) attachDragThumbnail(event, { coverUrl: track.coverUrl, label: track.displayTitle })
+      this.emit('drag-start')
+    })
+
+    /*
+     * 運び終えたらメニューは畳む。
+     * 掴んだ時点で消すと、ドラッグそのものが途中で切れてしまう。
+     */
+    menu.addEventListener('dragend', () => {
+      this.emit('drag-end')
+      this.#closeMenu()
     })
 
     window.addEventListener('pointerdown', (event) => {
@@ -533,7 +763,9 @@ export class CollectionShelf extends Emitter {
           create('span', { className: 'menu__sub', text: collection.subtitle })
         ]
       }),
-      item('play', '先頭から再生')
+      item('play', '先頭から再生'),
+      // 棚から右のリストへドラッグするのと同じこと。メニューからでも足せるようにしておく
+      item('queue', '再生キューに追加')
     ]
 
     if (collection.type === CollectionType.PLAYLIST) {
@@ -565,13 +797,24 @@ export class CollectionShelf extends Emitter {
         list.append(
           create('li', {
             className: 'menu__track',
-            attrs: { 'data-track-id': track.id, role: 'button', tabindex: '0' },
+            // 掴んで右の一覧（再生キュー）やプレイリストのカードへ運べる
+            attrs: { 'data-track-id': track.id, draggable: 'true', role: 'button', tabindex: '0' },
             children: [
               create('span', { className: 'menu__index', text: String(index + 1).padStart(2, '0') }),
               create('span', { className: 'menu__title', text: track.displayTitle }),
               create('span', {
                 className: 'menu__time',
                 text: Number.isFinite(track.duration) ? formatTime(track.duration) : '--:--'
+              }),
+              // この曲だけを再生キューへ。行そのものを押したときは今までどおり再生
+              create('button', {
+                className: 'menu__queue',
+                text: '＋',
+                attrs: {
+                  type: 'button',
+                  'data-menu-action': 'queue-track',
+                  'data-tip': 'この曲を再生キューに追加'
+                }
               })
             ]
           })

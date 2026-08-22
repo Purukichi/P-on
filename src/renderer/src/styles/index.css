@@ -19,6 +19,11 @@
 @import './components/shelf.css';
 @import './components/compact.css';
 @import './components/menu.css';
+@import './components/tooltip.css';
+@import './components/artist.css';
 @import './components/dialog.css';
 @import './components/draghost.css';
 @import './components/overlay.css';
+
+/* 最後に読む。ウィンドウが狭いときだけ、上の指定を詰めた値で上書きする */
+@import './responsive.css';

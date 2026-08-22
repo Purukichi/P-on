@@ -3,6 +3,19 @@ import { Emitter } from './Emitter.js'
 /** @typedef {'idle'|'loading'|'playing'|'paused'|'stopped'} PlaybackState */
 
 /**
+ * 再生中に現在位置を配る間隔。24fps 相当。
+ *
+ * <audio> の timeupdate は 4 回/秒ほどしか来ないので、シークバーがその刻みで
+ * カクついて進む。曲の長さぶんを細い帯で表すぶん 1 秒あたりの移動量はごく小さく、
+ * 60fps まで上げても見た目は変わらない一方で、この間隔なら滑らかに見える。
+ *
+ * setInterval で回しているのは、requestAnimationFrame だと画面が隠れている間
+ * 止まってしまうため。ミニプレイヤーに切り替えるとメインウィンドウは hide される
+ * ので、そこで止まるとミニ側のシークバーまで固まってしまう。
+ */
+const TICK_INTERVAL = 1000 / 24
+
+/**
  * HTMLAudioElement を包んだ再生エンジン。
  *
  * DOM には挿さず `new Audio()` を内部で持つだけにしてあるので、
@@ -26,6 +39,8 @@ export class AudioEngine extends Emitter {
   #track = null
   /** @type {PlaybackState} */
   #state = 'idle'
+  /** 再生中だけ回る、現在位置を配るためのタイマー */
+  #tick = null
 
   constructor({ volume = 0.8 } = {}) {
     super()
@@ -137,6 +152,7 @@ export class AudioEngine extends Emitter {
   }
 
   dispose() {
+    this.#stopTick()
     this.unload()
     this.removeAllListeners()
   }
@@ -186,7 +202,21 @@ export class AudioEngine extends Emitter {
   #setState(next) {
     if (this.#state === next) return
     this.#state = next
+    // 鳴っているあいだだけ細かく配る
+    if (next === 'playing') this.#startTick()
+    else this.#stopTick()
     this.emit('state-change', next)
+  }
+
+  #startTick() {
+    if (this.#tick !== null) return
+    this.#tick = setInterval(() => this.#emitTime(), TICK_INTERVAL)
+  }
+
+  #stopTick() {
+    if (this.#tick === null) return
+    clearInterval(this.#tick)
+    this.#tick = null
   }
 
   #emitTime() {

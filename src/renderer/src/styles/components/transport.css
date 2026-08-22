@@ -58,6 +58,38 @@
   border-color: var(--color-accent-hover);
 }
 
+/*
+ * ループ。off / all / one の 3 状態を data-repeat で持つ。
+ * off のときは他のボタンより控えめにし、効いている間だけアクセント色で示す。
+ */
+.transport__button--repeat .icon--repeat-one,
+.transport__button--repeat[data-repeat='one'] .icon--repeat {
+  display: none;
+}
+
+.transport__button--repeat[data-repeat='one'] .icon--repeat-one {
+  display: block;
+}
+
+.transport__button--repeat[data-repeat='off'] {
+  color: var(--color-text-faint);
+}
+
+.transport__button--repeat:not([data-repeat='off']) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* シャッフル。ループと同じで、効いている間だけアクセント色で示す */
+.transport__button--shuffle[data-shuffle='false'] {
+  color: var(--color-text-faint);
+}
+
+.transport__button--shuffle[data-shuffle='true'] {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
 /* data-playing に応じて ▶ / ⏸ を差し替える */
 .transport__button--play .icon--pause,
 .transport__button--play[data-playing='true'] .icon--play {

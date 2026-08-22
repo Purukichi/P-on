@@ -3,7 +3,7 @@
  * 通常（ライト）は :root、ナイトモードは [data-theme='night'] を上書きするだけ。
  * Theme クラスが <html data-theme="..."> を書き換える。
  *
- * 白をベースに、黒と蛍光グリーンの 3 色で組み立てている。
+ * 白をベースに、黒と緑の 3 色で組み立てている。
  */
 :root {
   /*
@@ -20,14 +20,6 @@
    * ウィンドウの外側のぼかしは OS のアクリルが担当している。
    */
   --surface-alpha: 0.25;
-  --accent-hue: 151;
-
-  /*
-   * ページ内に重なるガラス面（ポップアップ・メニュー・ダイアログ・ドロップ時の覆い）。
-   * こちらは backdrop-filter が効くので、下の文字が読めなくなるまで強くぼかす。
-   * 本体の透け具合とは独立させ、重なったときに必ず読めるようにしている。
-   */
-  --glass-blur: 40px;
 
   /*
    * --- 面 ---
@@ -49,10 +41,10 @@
   --color-ink: #0a0a0c;
   --color-ink-contrast: #ffffff;
 
-  /* --- アクセント。色相だけスライダーで動かす（既定の 151 は #00c853 相当） --- */
-  --color-accent: hsl(var(--accent-hue) 100% 42%);
-  --color-accent-hover: hsl(var(--accent-hue) 100% 50%);
-  /* 明度から黒 / 白を選んで Settings が上書きする */
+  /* --- アクセント。少し沈んだ緑。hover は同じ色相のまま明るくしたもの --- */
+  --color-accent: #17a45a;
+  --color-accent-hover: #1dc96e;
+  /* アクセントの上に置く文字色。明度から黒 / 白を選んで Settings が上書きする */
   --color-accent-contrast: #0a0a0c;
 
   --color-track: rgb(10 10 12 / 14%);
@@ -68,6 +60,19 @@
   --panel-shadow: 0 18px 44px rgb(10 10 12 / 24%);
   /* ドロップ時に画面全体へかぶせる面 */
   --color-veil: #f6f6f8;
+
+  /*
+   * --- メインUIの上に浮くもの（メニュー・吹き出し）の面 ---
+   *
+   * アクリル（透過）の窓では backdrop-filter が下の絵をぼかしてくれない。
+   * 透かすと下の文字がそのまま重なって、どちらも読めなくなるので、
+   * ここだけは透けさせず単色で塗る。
+   * 縁と内側の光だけを残して、板が浮いている見え方にしている。
+   */
+  --glass-bg: #f6f6f8;
+  --glass-border: rgb(255 255 255 / 70%);
+  /* 縁の内側に置く細い光。厚みに見える */
+  --glass-sheen: inset 0 1px 0 rgb(255 255 255 / 65%);
 
   --shadow-cover: 0 24px 60px rgb(10 10 12 / 14%);
   --shadow-soft: 0 2px 10px rgb(10 10 12 / 6%);
@@ -152,6 +157,10 @@
   --panel-border: rgb(255 255 255 / 14%);
   --panel-shadow: 0 18px 44px rgb(0 0 0 / 55%);
   --color-veil: #17171b;
+
+  --glass-bg: #17171b;
+  --glass-border: rgb(255 255 255 / 16%);
+  --glass-sheen: inset 0 1px 0 rgb(255 255 255 / 10%);
 
   --shadow-cover: 0 24px 60px rgb(0 0 0 / 55%);
   --shadow-soft: 0 2px 10px rgb(0 0 0 / 35%);

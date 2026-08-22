@@ -1,5 +1,6 @@
 import { join } from 'node:path'
-import { BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, screen, shell } from 'electron'
+import { IPC } from '../shared/ipc-channels.js'
 
 /**
  * ウィンドウの生成と、メイン / ミニの切り替えを受け持つ。
@@ -11,6 +12,21 @@ import { BrowserWindow, shell } from 'electron'
 
 const PRELOAD = () => join(__dirname, '../preload/index.js')
 
+/**
+ * タスクバーとウィンドウ左上に出すアイコン。
+ *
+ * 指定しなければ exe に埋め込んだアイコンが使われるが、
+ * それだとエクスプローラーのアイコンキャッシュに引きずられて古い絵が残ることがある。
+ * 実行時に自分で渡せばキャッシュを経由しないので、更新した絵がそのまま出る。
+ * 開発中（electron.exe で動かしているとき）に Electron の既定アイコンにならない利点もある。
+ *
+ * パッケージ後は resources/ に置かれる（electron-builder.yml の extraResources）。
+ */
+const ICON = () =>
+  app.isPackaged
+    ? join(process.resourcesPath, 'icon.ico')
+    : join(app.getAppPath(), 'build/icon.ico')
+
 /** hide() 中もタイマーを間引かせない（シークバーの更新が飛ぶため） */
 const SHARED_WEB_PREFERENCES = () => ({
   preload: PRELOAD(),
@@ -21,15 +37,20 @@ const SHARED_WEB_PREFERENCES = () => ({
 })
 
 /**
- * ミニプレイヤーの形。
- * 縦長 / 正方形 / 横長 の 3 通りで、レンダラー側の data-shape と対になっている。
- * 高さは操作面（およそ 132px）を見込んだ寸法。
+ * ミニプレイヤーの一辺（既定）。
+ * 形は正方形のひとつだけで、ジャケットをそのまま窓いっぱいに見せる。
  */
-const MINI_SHAPES = {
-  portrait: { width: 300, height: 452 },
-  square: { width: 384, height: 384 },
-  landscape: { width: 560, height: 268 }
-}
+const MINI_SIZE = 384
+
+/** ミニをこれ以上小さくしない一辺 */
+const MINI_MIN_SIZE = 240
+
+/**
+ * いまの一辺。
+ * 手を離した時点で正方形へ戻すとき、「どちらの辺を動かしたのか」を
+ * 直前の一辺と比べて見分けるために覚えておく。
+ */
+let miniSquareSide = MINI_SIZE
 
 /** @type {BrowserWindow|null} */
 let mainWindow = null
@@ -51,6 +72,7 @@ export function createMainWindow() {
     minWidth: 960,
     minHeight: 660,
     show: false,
+    icon: ICON(),
     // 本文の下からデスクトップが透けるよう、メインもアクリル素材にする
     backgroundMaterial: 'acrylic',
     backgroundColor: '#00000000',
@@ -89,6 +111,7 @@ export function openMiniPlayer() {
   const mini = getMiniWindow() ?? createMiniWindow()
   if (mini.isMinimized()) mini.restore()
   mini.show()
+  watchMiniHover()
   /*
    * 最前面かどうかはここで決め打ちしない。
    * 生成時は true で始まり、以降はミニ側のピン留めボタンが持ち主になる。
@@ -97,33 +120,64 @@ export function openMiniPlayer() {
   main.hide()
 }
 
-/**
- * ミニプレイヤーの形を変える。
- * 位置は中心を保つ。左上を固定すると、横長にしたときだけ画面の端へ寄って見える。
- */
-export function setMiniShape(shape) {
-  const size = MINI_SHAPES[shape]
-  const mini = getMiniWindow()
-  if (!mini || !size) return
-
-  const [width, height] = mini.getSize()
-  const [x, y] = mini.getPosition()
-
-  mini.setBounds({
-    x: Math.round(x + (width - size.width) / 2),
-    y: Math.round(y + (height - size.height) / 2),
-    width: size.width,
-    height: size.height
-  })
-}
-
 /** 常に手前に出すかどうか */
 export function setMiniAlwaysOnTop(onTop) {
   getMiniWindow()?.setAlwaysOnTop(Boolean(onTop), 'floating')
 }
 
+/*
+ * ミニプレイヤーにマウスが入っているかを見張る。
+ *
+ * ジャケットの面は -webkit-app-region: drag（掴んで窓を動かす領域）なので、
+ * その上ではページ側に mouseover が届かない。CSS の :hover に任せると
+ * 「操作面そのものに触れたときしか出てこない」ことになってしまう。
+ * そこでカーソルの位置を main 側で見て、窓の矩形に入ったかどうかで知らせる。
+ *
+ * 動くのはミニを出しているあいだだけ。畳んだら止める。
+ */
+const HOVER_POLL_MS = 120
+
+let hoverTimer = null
+let hoverInside = false
+
+function watchMiniHover() {
+  stopMiniHoverWatch()
+  hoverInside = false
+
+  hoverTimer = setInterval(() => {
+    const mini = getMiniWindow()
+    if (!mini || !mini.isVisible()) {
+      stopMiniHoverWatch()
+      return
+    }
+
+    const point = screen.getCursorScreenPoint()
+    const { x, y, width, height } = mini.getBounds()
+    const inside = point.x >= x && point.x < x + width && point.y >= y && point.y < y + height
+
+    if (inside === hoverInside) return
+    hoverInside = inside
+    mini.webContents.send(IPC.WINDOW_MINI_HOVER, inside)
+  }, HOVER_POLL_MS)
+}
+
+function stopMiniHoverWatch() {
+  if (!hoverTimer) return
+  clearInterval(hoverTimer)
+  hoverTimer = null
+
+  // 出しっぱなしで畳むと、次に開いたときに出たままになる
+  const mini = getMiniWindow()
+  if (hoverInside && mini && !mini.isDestroyed()) {
+    mini.webContents.send(IPC.WINDOW_MINI_HOVER, false)
+  }
+  hoverInside = false
+}
+
 /** ミニプレイヤーを畳んでメインに戻す */
 export function closeMiniPlayer() {
+  stopMiniHoverWatch()
+
   const mini = getMiniWindow()
   if (mini) {
     // 最小化されたまま hide すると次に出したときも畳まれたままになる
@@ -153,13 +207,15 @@ export function focusExistingWindow() {
 
 function createMiniWindow() {
   miniWindow = new BrowserWindow({
-    // ジャケットの下に操作面を常時出すぶん、既定を縦長にしている
-    width: MINI_SHAPES.portrait.width,
-    height: MINI_SHAPES.portrait.height,
-    minWidth: 240,
-    minHeight: 230,
+    // 正方形ひとつだけ。大きさは変えられるが、形は変えられない
+    width: MINI_SIZE,
+    height: MINI_SIZE,
+    minWidth: MINI_MIN_SIZE,
+    minHeight: MINI_MIN_SIZE,
     show: false,
     frame: false,
+    // ミニもタスクバーに出る（skipTaskbar: false）ので、同じアイコンを渡しておく
+    icon: ICON(),
     // 自由にリサイズできる。ジャケットで埋まらない余白はレンダラー側が
     // ジャケットの主要色で塗る（mini.js の dominant color 抽出を参照）
     resizable: true,
@@ -176,10 +232,51 @@ function createMiniWindow() {
   miniWindow.setAlwaysOnTop(true, 'floating')
   keepBackdropAlive(miniWindow)
 
+  /*
+   * ジャケットだけを見せる形なので、大きさを変えても正方形のまま。
+   * 縦横が崩れると絵の外側に地の色の帯が出てしまい、狙いから外れる。
+   */
+  try {
+    // OS 側の制約。効けばドラッグ中もずっと正方形のまま動く
+    miniWindow.setAspectRatio(1)
+  } catch (error) {
+    // 効かない環境では下の 'resized' が手を離した時点に戻す
+    console.error('[windows] 縦横比を固定できません:', error?.message ?? error)
+  }
+
+  /*
+   * 正方形に戻す受け皿。
+   *
+   * ドラッグの最中には触らない。'will-resize' を preventDefault して寸法を
+   * 入れ直すやり方は、Windows だとリサイズのループを毎フレーム打ち消すことになり、
+   * 掴んだ辺がカーソルに付いてこなくなる。
+   *
+   * ふだんは setAspectRatio（OS 側の制約）が効いてドラッグ中も正方形のままなので、
+   * ここは効かなかったときに手を離した時点で正方形へ戻すための保険。
+   */
+  miniWindow.on('resized', () => {
+    if (miniWindow.isDestroyed()) return
+
+    const { x, y, width, height } = miniWindow.getBounds()
+    if (width === height) {
+      miniSquareSide = width
+      return
+    }
+
+    // 動かした辺のほうに合わせる（横を引っ張ったら横、縦なら縦）
+    const movedHorizontally =
+      Math.abs(width - miniSquareSide) >= Math.abs(height - miniSquareSide)
+    const side = Math.max(MINI_MIN_SIZE, movedHorizontally ? width : height)
+
+    miniSquareSide = side
+    miniWindow.setBounds({ x, y, width: side, height: side })
+  })
+
   // タスクバーから最小化された場合もメインに戻す
   miniWindow.on('minimize', () => closeMiniPlayer())
 
   miniWindow.on('closed', () => {
+    stopMiniHoverWatch()
     miniWindow = null
   })
 

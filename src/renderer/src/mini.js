@@ -24,7 +24,6 @@ const el = {
   volume: pick(root, 'mini-volume'),
   restore: pick(root, 'mini-restore'),
   close: pick(root, 'mini-close'),
-  shape: pick(root, 'mini-shape'),
   pin: pick(root, 'mini-pin')
 }
 
@@ -41,23 +40,14 @@ el.next.addEventListener('click', () => send('next'))
 el.restore.addEventListener('click', () => window.hamon.windows.closeMini())
 el.close.addEventListener('click', () => window.hamon.windows.quit())
 
-// ---- 形とピン留め ----------------------------------------------------------
+// ---- ピン留め --------------------------------------------------------------
 
 /*
- * どちらも次に開いたときのために覚えておく。
+ * 次に開いたときのために覚えておく。
  * ミニのウィンドウは畳んでも壊さず hide するだけなので、
  * 読み書きするのはこの画面が最初に読み込まれたときだけになる。
  */
-const SHAPE_KEY = 'hamon.mini.shape'
 const ON_TOP_KEY = 'hamon.mini.onTop'
-const SHAPES = ['portrait', 'square', 'landscape']
-
-function applyShape(shape) {
-  const next = SHAPES.includes(shape) ? shape : 'portrait'
-  root.dataset.shape = next
-  localStorage.setItem(SHAPE_KEY, next)
-  window.hamon.windows.setMiniShape(next)
-}
 
 function applyAlwaysOnTop(onTop) {
   el.pin.dataset.active = String(onTop)
@@ -67,16 +57,28 @@ function applyAlwaysOnTop(onTop) {
   window.hamon.windows.setMiniAlwaysOnTop(onTop)
 }
 
-el.shape.addEventListener('click', () => {
-  const current = SHAPES.indexOf(root.dataset.shape)
-  applyShape(SHAPES[(current + 1) % SHAPES.length])
+/*
+ * 操作面はジャケットに重ねてあるので、普段は引っ込めておき、
+ * 窓にマウスが入っているあいだだけ出す。
+ * ジャケットの面は窓を動かすための drag 領域で、その上ではページに
+ * マウスイベントが届かない（＝CSS の :hover では「操作面に触れたときだけ」に
+ * なってしまう）ので、窓に入ったかどうかは main 側から受け取る。
+ */
+window.hamon.windows.onMiniHover((inside) => {
+  root.dataset.hover = String(Boolean(inside))
+
+  /*
+   * 出ていった時点で、操作面に残ったフォーカスも外す。
+   * ボタンを押したあとフォーカスがそこに留まると、
+   * キーボード操作中とみなして操作面が出たままになってしまう。
+   */
+  if (!inside && root.contains(document.activeElement)) document.activeElement.blur()
 })
 
 el.pin.addEventListener('click', () => {
   applyAlwaysOnTop(el.pin.dataset.active !== 'true')
 })
 
-applyShape(localStorage.getItem(SHAPE_KEY) ?? 'portrait')
 // 既定は手前に出す。生成時のウィンドウ設定と揃えてある
 applyAlwaysOnTop(localStorage.getItem(ON_TOP_KEY) !== 'off')
 

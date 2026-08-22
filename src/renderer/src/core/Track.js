@@ -103,8 +103,13 @@ export function splitArtists(value) {
 
 /**
  * 表示用の形式名。
+ *
  * music-metadata は container に 'MPEG'、codec に 'MPEG 1 Layer 3' のような値を返すので、
  * そのまま出すと MP3 が「MPEG」になってしまう。よく使う形式は言い慣れた名前へ寄せる。
+ *
+ * MPEG-4 系は 'M4A/mp42/isom' のように中身のブランドまで並べて返ってくる。
+ * 他の形式が MP3 / FLAC と拡張子ひとつで並ぶ中でここだけ長いと不揃いなので、
+ * 拡張子と同じ「M4A」に切り詰める。
  */
 function formatName(format) {
   const container = (format.container ?? '').toUpperCase()
@@ -114,11 +119,12 @@ function formatName(format) {
   if (/LAYER\s*2/.test(codec)) return 'MP2'
   if (/LAYER\s*1/.test(codec)) return 'MP1'
   if (container === 'MPEG') return codec.includes('AAC') ? 'AAC' : 'MP3'
-  if (container.includes('MPEG-4') || container === 'M4A') return codec.includes('ALAC') ? 'ALAC' : 'AAC'
-  if (container === 'WAVE') return 'WAV'
-  if (container === 'OGG') return codec.includes('OPUS') ? 'Opus' : 'Ogg Vorbis'
+  if (container.includes('MPEG-4') || container.includes('M4A') || container.includes('MP4')) return 'M4A'
+  if (container.includes('WAVE')) return 'WAV'
+  if (container.includes('OGG')) return codec.includes('OPUS') ? 'Opus' : 'Ogg Vorbis'
 
-  return container || codec
+  // 'M4A/mp42/isom' のように連なっている場合は、先頭のひとつだけを出す
+  return (container || codec).split('/')[0]
 }
 
 function round(value) {

@@ -416,6 +416,39 @@ export async function setArtistForTracks(trackIds, artist) {
 }
 
 /**
+ * 曲の並びを入れ替える。
+ *
+ * アルバムの曲順は library.json に並んでいる順がそのまま出るので、
+ * ここを直せばアルバムの中身の順番が変わる。
+ *
+ * 渡された曲が今おさえている「枠」（配列の中での位置）は動かさず、
+ * その枠へ新しい順で入れ直すだけにしてある。
+ * こうするとアルバムの中だけが並び替わり、無関係な曲の位置は 1 つも動かない。
+ *
+ * @param {string[]} orderedTrackIds 並べたい順に並んだ id
+ */
+export async function reorderTracks(orderedTrackIds) {
+  await update((data) => {
+    const byId = new Map(data.tracks.map((track) => [track.id, track]))
+    const wanted = orderedTrackIds.filter((id) => byId.has(id))
+    const moving = new Set(wanted)
+
+    const slots = []
+    data.tracks.forEach((track, index) => {
+      if (moving.has(track.id)) slots.push(index)
+    })
+    // 数が合わないときは触らない（削除と行き違ったとき）
+    if (slots.length !== wanted.length) return
+
+    slots.forEach((slot, i) => {
+      data.tracks[slot] = byId.get(wanted[i])
+    })
+  })
+
+  return snapshot()
+}
+
+/**
  * アルバムのアーティストを設定する。
  * 収録曲の artist には一切触らない。
  * アルバムとしての表記（V.A. など）と、曲ごとの演奏者を別々に持たせるための入口。
@@ -620,6 +653,30 @@ export async function addToPlaylist(playlistId, trackIds) {
       if (exists && !playlist.trackIds.includes(trackId)) playlist.trackIds.push(trackId)
     }
   })
+  return snapshot()
+}
+
+/**
+ * プレイリストの中の曲順を入れ替える。
+ * 画面に出ていなかった曲（行き違いで足されたものなど）は落とさず、うしろに残す。
+ *
+ * @param {string} playlistId
+ * @param {string[]} orderedTrackIds 並べたい順に並んだ id
+ */
+export async function reorderPlaylist(playlistId, orderedTrackIds) {
+  await update((data) => {
+    const playlist = data.playlists.find((p) => p.id === playlistId)
+    if (!playlist) throw new Error('プレイリストが見つかりません')
+
+    const known = new Set(playlist.trackIds)
+    const next = orderedTrackIds.filter((id) => known.has(id))
+    const placed = new Set(next)
+    for (const id of playlist.trackIds) {
+      if (!placed.has(id)) next.push(id)
+    }
+    playlist.trackIds = next
+  })
+
   return snapshot()
 }
 

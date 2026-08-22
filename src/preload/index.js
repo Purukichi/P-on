@@ -33,6 +33,8 @@ const api = {
     setAlbum: (trackIds, albumName) => ipcRenderer.invoke(IPC.LIBRARY_SET_ALBUM, trackIds, albumName),
     /** 複数の曲にまとめて収録曲側のアーティストを書き込む。null で未設定に戻す */
     setArtist: (trackIds, artist) => ipcRenderer.invoke(IPC.LIBRARY_SET_ARTIST, trackIds, artist),
+    /** 曲の並びを入れ替える（アルバムの曲順） */
+    reorderTracks: (trackIds) => ipcRenderer.invoke(IPC.LIBRARY_REORDER_TRACKS, trackIds),
     deleteTrack: (trackId) => ipcRenderer.invoke(IPC.LIBRARY_DELETE_TRACK, trackId),
     openFolder: () => ipcRenderer.invoke(IPC.LIBRARY_OPEN_FOLDER),
     /**
@@ -52,6 +54,8 @@ const api = {
     remove: (id) => ipcRenderer.invoke(IPC.PLAYLIST_DELETE, id),
     addTracks: (id, trackIds) => ipcRenderer.invoke(IPC.PLAYLIST_ADD_TRACKS, id, trackIds),
     removeTrack: (id, trackId) => ipcRenderer.invoke(IPC.PLAYLIST_REMOVE_TRACK, id, trackId),
+    /** 収録曲の並びを入れ替える */
+    reorder: (id, trackIds) => ipcRenderer.invoke(IPC.PLAYLIST_REORDER, id, trackIds),
     /** プレイリストのジャケット。null を渡すと外す */
     setCover: (id, imagePath) => ipcRenderer.invoke(IPC.PLAYLIST_SET_COVER, id, imagePath),
     pickCover: (id, name) => ipcRenderer.invoke(IPC.PLAYLIST_PICK_COVER, id, name)
@@ -89,10 +93,14 @@ const api = {
     closeMini: () => ipcRenderer.send(IPC.WINDOW_CLOSE_MINI),
     /** アプリごと終了する */
     quit: () => ipcRenderer.send(IPC.WINDOW_QUIT),
-    /** ミニプレイヤーの形（'portrait' | 'square' | 'landscape'） */
-    setMiniShape: (shape) => ipcRenderer.send(IPC.WINDOW_MINI_SHAPE, shape),
     /** ミニプレイヤーを常に手前に出すか */
     setMiniAlwaysOnTop: (onTop) => ipcRenderer.send(IPC.WINDOW_MINI_ON_TOP, onTop),
+    /**
+     * ミニの窓にマウスが入った / 出たときに呼ばれる。
+     * ジャケットの面は drag 領域でページにマウスイベントが届かないので、
+     * :hover の代わりにこれを使う。
+     */
+    onMiniHover: (callback) => subscribe(IPC.WINDOW_MINI_HOVER, callback),
     /** OS が描くタイトルバーの色を本文と揃える */
     setTitleBar: (colors) => ipcRenderer.send(IPC.WINDOW_SET_TITLEBAR, colors)
   },

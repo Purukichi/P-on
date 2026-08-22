@@ -7,8 +7,7 @@ import {
   getMainWindow,
   getMiniWindow,
   openMiniPlayer,
-  setMiniAlwaysOnTop,
-  setMiniShape
+  setMiniAlwaysOnTop
 } from './windows.js'
 import { appInfo, checkForUpdatesManually } from './updater.js'
 
@@ -70,6 +69,10 @@ export function registerIpcHandlers() {
 
   handle(IPC.LIBRARY_SET_ARTIST, (_event, trackIds, artist) =>
     library.setArtistForTracks(asArray(trackIds), artist ?? null)
+  )
+
+  handle(IPC.LIBRARY_REORDER_TRACKS, (_event, trackIds) =>
+    library.reorderTracks(asArray(trackIds))
   )
 
   handle(IPC.LIBRARY_PICK_ALBUM_COVER, async (event, albumName) => {
@@ -172,6 +175,9 @@ export function registerIpcHandlers() {
     library.addToPlaylist(id, asArray(trackIds))
   )
   handle(IPC.PLAYLIST_REMOVE_TRACK, (_event, id, trackId) => library.removeFromPlaylist(id, trackId))
+  handle(IPC.PLAYLIST_REORDER, (_event, id, trackIds) =>
+    library.reorderPlaylist(id, asArray(trackIds))
+  )
 
   handle(IPC.PLAYLIST_SET_COVER, (_event, id, imagePath) =>
     library.setPlaylistCover(id, imagePath ?? null)
@@ -225,7 +231,6 @@ function registerPlayerRelay() {
   ipcMain.on(IPC.WINDOW_OPEN_MINI, () => openMiniPlayer())
   ipcMain.on(IPC.WINDOW_CLOSE_MINI, () => closeMiniPlayer())
   ipcMain.on(IPC.WINDOW_QUIT, () => app.quit())
-  ipcMain.on(IPC.WINDOW_MINI_SHAPE, (_event, shape) => setMiniShape(shape))
   ipcMain.on(IPC.WINDOW_MINI_ON_TOP, (_event, onTop) => setMiniAlwaysOnTop(onTop))
 
   ipcMain.on(IPC.WINDOW_SET_TITLEBAR, (_event, { color, symbolColor, theme } = {}) => {

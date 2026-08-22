@@ -20,6 +20,8 @@ export const IPC = {
   LIBRARY_SET_ALBUM: 'library:set-album',
   /** 複数の曲にまとめてアーティストを書き込む（収録曲側の一括変更） */
   LIBRARY_SET_ARTIST: 'library:set-artist',
+  /** 曲の並びを入れ替える（アルバムの曲順は library.json の並びがそのまま出る） */
+  LIBRARY_REORDER_TRACKS: 'library:reorder-tracks',
   LIBRARY_DELETE_TRACK: 'library:delete-track',
   LIBRARY_OPEN_FOLDER: 'library:open-folder',
   /** 保存先のフォルダとデータの移し方を選ばせる（ダイアログは main 側で出す） */
@@ -35,6 +37,8 @@ export const IPC = {
   PLAYLIST_DELETE: 'playlist:delete',
   PLAYLIST_ADD_TRACKS: 'playlist:add-tracks',
   PLAYLIST_REMOVE_TRACK: 'playlist:remove-track',
+  /** プレイリストの中の曲順を入れ替える */
+  PLAYLIST_REORDER: 'playlist:reorder',
   /** プレイリストのジャケット。id に紐づくので改名しても外れない */
   PLAYLIST_SET_COVER: 'playlist:set-cover',
   PLAYLIST_PICK_COVER: 'playlist:pick-cover',
@@ -63,10 +67,14 @@ export const IPC = {
   WINDOW_CLOSE_MINI: 'window:close-mini',
   /** ミニプレイヤーからアプリごと終了する */
   WINDOW_QUIT: 'window:quit',
-  /** ミニプレイヤーの形（縦長 / 正方形 / 横長） */
-  WINDOW_MINI_SHAPE: 'window:mini-shape',
   /** ミニプレイヤーを常に手前に出すか */
   WINDOW_MINI_ON_TOP: 'window:mini-on-top',
+  /**
+   * ミニプレイヤーの窓にマウスが入ったか（main -> ミニ）。
+   * ジャケットの面は窓を動かすための drag 領域で、その上ではページに
+   * マウスイベントが届かない。位置は main 側で見て知らせる。
+   */
+  WINDOW_MINI_HOVER: 'window:mini-hover',
   /** テーマ変更時に、OS が描くタイトルバーの色を本文と揃える */
   WINDOW_SET_TITLEBAR: 'window:set-titlebar'
 }

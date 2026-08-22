@@ -63,6 +63,29 @@ export function buildCollections(library) {
   return [...playlistsOf(library), ...albumsOf(library), ...singlesOf(library)]
 }
 
+/**
+ * 楽曲単位のカード。アルバムに入っている曲も 1 曲ずつ並べる。
+ *
+ * 再生キューへ 1 曲だけドラッグしたいときのための見せ方で、
+ * 実体は「1 曲だけのコレクション」。棚の操作（再生・編集・削除）はシングルと同じに働く。
+ *
+ * @param {import('./Library.js').Library} library
+ * @returns {Collection[]}
+ */
+export function buildTrackCards(library) {
+  return library.tracks.map(
+    (track) =>
+      new Collection({
+        type: CollectionType.SINGLE,
+        id: `track:${track.id}`,
+        name: track.displayTitle,
+        // どのアルバムの曲かが分かるように、アーティストのうしろに添える
+        subtitle: track.album ? `${track.displayArtist} · ${track.album}` : track.displayArtist,
+        tracks: [track]
+      })
+  )
+}
+
 /** id からコレクションを引く */
 export function findCollection(collections, collectionId) {
   return collections.find((collection) => collection.id === collectionId) ?? null

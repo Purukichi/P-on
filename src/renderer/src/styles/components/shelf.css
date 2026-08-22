@@ -63,8 +63,37 @@
   color: var(--color-text-faint);
 }
 
+/* 既定の × は形も位置も揃えられないので消し、自前のボタンを置く */
 .search__input::-webkit-search-cancel-button {
   appearance: none;
+}
+
+.search__clear {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-faint);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.search__clear:hover {
+  color: var(--color-text);
+}
+
+.search__clear[hidden] {
+  display: none;
+}
+
+.search__clear svg {
+  width: 14px;
+  height: 14px;
 }
 
 .viewswitch {
@@ -115,6 +144,21 @@
 }
 
 /*
+ * グリッドは高さに収まる段数だけ積んで横へ流す作りなので、縦には溢れない。
+ * 縦のスクロールバーは出しっぱなしでも掴むものが無く、幅を食うだけなので畳む。
+ * リスト表示は今までどおり縦に伸びるので、そちらは縦だけ出す。
+ */
+.shelf[data-view='grid'] .shelf__body {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.shelf[data-view='list'] .shelf__body {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/*
  * 展開時の高さは compact.css 側（.app[data-shelf-expanded]）が決める。
  * ここで data-view ごとに書き分けると詳細度が勝ってしまい、
  * 展開しても伸びなくなるので、表示種別では分けない。
@@ -152,16 +196,33 @@
   padding: 8px;
 }
 
+/*
+ * グリッドは縦に折り返さず、横へ並べ続ける。
+ * 高さに収まる段数（--shelf-rows）は CollectionShelf が実寸から測って入れる。
+ * ホイールの縦回転も横送りに振り替えてあるので、カードの列を一直線にたどれる。
+ */
 .shelf[data-view='grid'] .shelf__list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  grid-auto-flow: column;
+  grid-template-rows: repeat(var(--shelf-rows, 1), auto);
+  grid-auto-columns: 104px;
+  align-content: start;
   gap: var(--space-4);
+  /* 列が増えても縮まないよう、中身の幅どおりに広がってよい */
+  width: max-content;
+  min-width: 100%;
 }
 
+/*
+ * リストは横に 2 列並べる。
+ * 1 列だと行が短いぶん中央がぽっかり空いてしまい、目が左右に飛んで読みにくい。
+ * 幅が足りないウィンドウでは自動で 1 列に戻る（1 列ぶんの下限は 320px）。
+ */
 .shelf[data-view='list'] .shelf__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-content: start;
+  gap: var(--space-1) var(--space-4);
 }
 
 .shelf__empty {
@@ -425,7 +486,18 @@
 
 /* ---- 複数選択したときに出る操作バー ---- */
 
+/*
+ * 棚の上に浮かせる。
+ * 行として挟むと、出たり消えたりするたびに棚そのものが上下して、
+ * カードを選んでいる最中に狙いがずれてしまう。
+ */
 .selectionbar {
+  position: absolute;
+  left: 50%;
+  bottom: var(--page-gutter);
+  transform: translateX(-50%);
+  z-index: 40;
+  max-width: calc(100% - var(--page-gutter) * 2);
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -433,7 +505,7 @@
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-pill);
   background: var(--panel-bg);
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--panel-shadow);
 }
 
 .selectionbar[hidden] {

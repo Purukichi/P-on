@@ -18,20 +18,21 @@
         <!--
           ブランドマーク。押すとバージョンと更新の確認が出る。
           図形は build/icon.svg と同じもの（viewBox も揃えてある）。
+          色は currentColor 任せなので、設定の色相スライダーに追従する。
         -->
         <button
           class="brandmark"
           type="button"
           data-el="about-open"
-          title="バージョン情報"
+          data-tip="バージョン情報"
           aria-label="バージョン情報"
           aria-expanded="false"
         >
-          <svg class="brandmark__icon" viewBox="0 0 100 110" aria-hidden="true">
+          <svg class="brandmark__icon" viewBox="0 0 100 108.67" aria-hidden="true">
             <path
               fill="currentColor"
               fill-rule="evenodd"
-              d="M0.4 49.8 L0.4 96 C0.4 104 2.5 110 9 110 C18 110 28 104.5 35.5 97.4 A49.8 49.8 0 1 0 0.4 49.8 Z M24.6 57 A34.1 34.1 0 1 1 92.8 57 A34.1 34.1 0 1 1 24.6 57 Z"
+              d="M0 50 L0 105.6 C0 107.5 1.3 108.7 3.1 108.7 C3.9 108.7 4.6 108.4 5.2 108 C7.5 103.5 14 98.5 25.5 93.6 A50 50 0 1 0 0 50 Z M23.5 58 A34.3 34.3 0 1 1 92.1 58 A34.3 34.3 0 1 1 23.5 58 Z"
             />
           </svg>
         </button>
@@ -52,7 +53,7 @@
             data-el="volume-value"
             role="button"
             tabindex="0"
-            title="ダブルクリックで数値を入力"
+            data-tip="ダブルクリックで数値を入力"
             >80</span
           >
           <input
@@ -74,7 +75,7 @@
             class="iconbutton"
             type="button"
             data-el="open-mini"
-            title="ミニプレイヤーに切り替え"
+            data-tip="ミニプレイヤーに切り替え"
             aria-label="ミニプレイヤーに切り替え"
           >
             <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -87,7 +88,7 @@
             class="iconbutton"
             type="button"
             data-el="open-folder"
-            title="保存フォルダを開く"
+            data-tip="保存フォルダを開く"
             aria-label="保存フォルダを開く"
           >
             <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -99,7 +100,7 @@
             class="iconbutton"
             type="button"
             data-el="change-library"
-            title="ライブラリの保存先を変更"
+            data-tip="ライブラリの保存先を変更"
             aria-label="ライブラリの保存先を変更"
           >
             <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -112,7 +113,7 @@
             class="iconbutton"
             type="button"
             data-el="theme-toggle"
-            title="ナイトモード切替"
+            data-tip="ナイトモード切替"
             aria-label="ナイトモード切替"
             aria-pressed="false"
           >
@@ -129,7 +130,7 @@
             type="button"
             data-el="trash"
             data-dropping="false"
-            title="曲をここにドラッグすると音源とジャケットを削除します"
+            data-tip="曲をここにドラッグすると音源とジャケットを削除します"
             aria-label="ゴミ箱"
           >
             <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -141,16 +142,40 @@
 
       <main class="stage">
         <section class="cover">
+          <!--
+            いま鳴らしている単位（アルバム / プレイリスト）の札。
+            下のジャケットは「その曲」のもの、この札は「その入れ物」のもの。
+            アルバムの中に単独配信のジャケットを持つ曲が混ざっていても、
+            どのアルバムを聴いているのか分かるようにするための表示。
+            この札に画像を落とすと、入れ物側のジャケットが変わる。
+          -->
+          <div class="cover__album" data-el="cover-album" data-dropping="false" hidden>
+            <span class="cover__album-art" data-el="cover-album-art" data-empty="true">
+              <img class="cover__album-image" data-el="cover-album-image" alt="" />
+            </span>
+            <span class="cover__album-text">
+              <span class="cover__album-name" data-el="cover-album-name"></span>
+              <span class="cover__album-sub" data-el="cover-album-sub"></span>
+            </span>
+          </div>
+
           <div class="cover__frame" data-el="cover-frame" data-empty="true" data-dropping="false">
             <img class="cover__image" data-el="cover-image" alt="" />
+            <!-- 曲を選んでいないときの目印。連桁でつないだ 2 つの音符（♬） -->
             <div class="cover__placeholder" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
-                <path d="M2 12c1.6-4 3.2-4 4.8 0s3.2 4 4.8 0 3.2-4 4.8 0 3.2 4 4.8 0" />
-                <path d="M2 17c1.6-2.6 3.2-2.6 4.8 0s3.2 2.6 4.8 0 3.2-2.6 4.8 0 3.2 2.6 4.8 0" opacity=".45" />
-                <path d="M2 7c1.6-2.6 3.2-2.6 4.8 0s3.2 2.6 4.8 0 3.2-2.6 4.8 0 3.2 2.6 4.8 0" opacity=".45" />
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <!-- 桁 -->
+                <path d="M9 4.4 20 2.4V5L9 7z" />
+                <path d="M9 7.6 20 5.6v2.6L9 10.2z" />
+                <!-- 符幹 -->
+                <rect x="8" y="4.4" width="1.8" height="12.8" rx=".9" />
+                <rect x="18.2" y="2.4" width="1.8" height="11.8" rx=".9" />
+                <!-- 符頭 -->
+                <ellipse cx="6.4" cy="17.6" rx="3.2" ry="2.5" transform="rotate(-18 6.4 17.6)" />
+                <ellipse cx="16.6" cy="14.6" rx="3.2" ry="2.5" transform="rotate(-18 16.6 14.6)" />
               </svg>
             </div>
-            <p class="cover__hint">クリックまたは画像をドロップでジャケットを設定</p>
+            <p class="cover__hint">クリックまたは画像をドロップで、この曲のジャケットを設定</p>
           </div>
         </section>
 
@@ -181,7 +206,7 @@
           </div>
 
           <div class="transport">
-            <button class="transport__button" type="button" data-el="prev" title="前の曲" aria-label="前の曲" disabled>
+            <button class="transport__button" type="button" data-el="prev" data-tip="前の曲" aria-label="前の曲" disabled>
               <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M7 6h2v12H7zm11 0v12l-8-6z" />
               </svg>
@@ -203,31 +228,116 @@
               </svg>
             </button>
 
-            <button class="transport__button" type="button" data-el="stop" title="停止" aria-label="停止" disabled>
+            <button class="transport__button" type="button" data-el="stop" data-tip="停止" aria-label="停止" disabled>
               <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <rect x="7" y="7" width="10" height="10" rx="1.5" />
               </svg>
             </button>
 
-            <button class="transport__button" type="button" data-el="next" title="次の曲" aria-label="次の曲" disabled>
+            <button class="transport__button" type="button" data-el="next" data-tip="次の曲" aria-label="次の曲" disabled>
               <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M15 6h2v12h-2zM6 6l8 6-8 6z" />
+              </svg>
+            </button>
+
+            <!--
+              ループ。押すたびに しない -> 全曲 -> 1曲 と切り替わる。
+              アルバム・プレイリスト・再生キューのどれを鳴らしていても同じように効く。
+            -->
+            <button
+              class="transport__button transport__button--repeat"
+              type="button"
+              data-el="repeat"
+              data-repeat="off"
+              data-tip="ループしない"
+              aria-label="ループしない"
+            >
+              <svg
+                class="icon icon--repeat"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 11V9a3 3 0 0 1 3-3h11" />
+                <path d="m16 3 3 3-3 3" />
+                <path d="M19 13v2a3 3 0 0 1-3 3H5" />
+                <path d="m8 15-3 3 3 3" />
+              </svg>
+              <svg
+                class="icon icon--repeat-one"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 11V9a3 3 0 0 1 3-3h11" />
+                <path d="m16 3 3 3-3 3" />
+                <path d="M19 13v2a3 3 0 0 1-3 3H5" />
+                <path d="m8 15-3 3 3 3" />
+                <path d="M11 10.5 12.6 9.6V15" stroke-width="2" />
+              </svg>
+            </button>
+
+            <!-- シャッフル。並びはそのままで、次に鳴らす曲だけを散らす -->
+            <button
+              class="transport__button transport__button--shuffle"
+              type="button"
+              data-el="shuffle"
+              data-shuffle="false"
+              data-tip="順番どおりに再生"
+              aria-label="順番どおりに再生"
+            >
+              <svg
+                class="icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M4 7h3.5l9 10H20" />
+                <path d="m17 4 3 3-3 3" />
+                <path d="M4 17h3.5l2.6-2.9" />
+                <path d="M13.9 9.9 16.5 7H20" />
+                <path d="m17 14 3 3-3 3" />
               </svg>
             </button>
           </div>
         </section>
 
-        <!-- アルバム / プレイリストを再生しているときだけ出る -->
-        <aside class="tracklist">
+        <!--
+          アルバム / プレイリストを再生しているときと、
+          棚のカードを掴んでいる間（再生キューの受け皿）に出る。
+        -->
+        <aside class="tracklist" data-el="list-panel" data-dropping="false">
           <header class="tracklist__head">
             <h3 class="tracklist__title" data-el="list-title">リスト</h3>
             <span class="tracklist__count" data-el="list-count">0曲</span>
+            <!-- 再生キューを鳴らしているときだけ出る -->
+            <button
+              class="tracklist__edit tracklist__edit--danger"
+              type="button"
+              data-el="list-clear"
+              data-tip="再生キューを空にする"
+              hidden
+            >
+              空にする
+            </button>
             <button
               class="tracklist__edit"
               type="button"
               data-el="list-edit"
               data-active="false"
-              title="タイトル・アーティスト・アルバムを直接編集する"
+              data-tip="タイトル・アーティスト・アルバムを直接編集する"
             >
               編集
             </button>
@@ -237,7 +347,7 @@
         </aside>
       </main>
 
-      <footer class="shelf" data-view="grid" data-expanded="false">
+      <footer class="shelf" data-view="grid" data-source="collections" data-expanded="false">
         <div class="shelf__toolbar">
           <label class="search">
             <svg class="search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -251,10 +361,55 @@
               placeholder="アルバム・曲名・アーティストで検索"
               aria-label="検索"
             />
+            <!-- 入力があるときだけ出る。押すと検索を解除する -->
+            <button
+              class="search__clear"
+              type="button"
+              data-el="shelf-search-clear"
+              data-tip="検索をクリア"
+              aria-label="検索をクリア"
+              hidden
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m3.5 12.1-1.4 1.4L12 13.4l-2.1 2.1-1.4-1.4L10.6 12 8.5 9.9l1.4-1.4L12 10.6l2.1-2.1 1.4 1.4L13.4 12z" />
+              </svg>
+            </button>
           </label>
 
+          <!-- 棚に並べるものの単位。曲単位にすると 1 曲ずつキューへ運べる -->
+          <div class="viewswitch" role="group" aria-label="並べる単位の切り替え">
+            <button
+              class="viewswitch__button"
+              type="button"
+              data-el="shelf-src-collections"
+              data-active="true"
+              data-tip="アルバム・プレイリスト単位で並べる"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="15.5" cy="12" r="6" opacity=".5" />
+                <circle cx="9" cy="12" r="6.5" />
+                <circle cx="9" cy="12" r="1.8" fill="currentColor" stroke="none" />
+              </svg>
+            </button>
+            <button
+              class="viewswitch__button"
+              type="button"
+              data-el="shelf-src-tracks"
+              data-active="false"
+              data-tip="曲単位で並べる"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M10 5.5 20 3.6v2.5L10 8z" />
+                <rect x="9" y="5.5" width="1.7" height="11.5" rx=".85" />
+                <rect x="18.3" y="3.6" width="1.7" height="10.5" rx=".85" />
+                <ellipse cx="7.5" cy="17.4" rx="3" ry="2.4" transform="rotate(-18 7.5 17.4)" />
+                <ellipse cx="16.8" cy="14.5" rx="3" ry="2.4" transform="rotate(-18 16.8 14.5)" />
+              </svg>
+            </button>
+          </div>
+
           <div class="viewswitch" role="group" aria-label="表示の切り替え">
-            <button class="viewswitch__button" type="button" data-el="shelf-view-grid" data-active="true" title="グリッド表示">
+            <button class="viewswitch__button" type="button" data-el="shelf-view-grid" data-active="true" data-tip="グリッド表示">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />
                 <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" />
@@ -262,7 +417,7 @@
                 <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" />
               </svg>
             </button>
-            <button class="viewswitch__button" type="button" data-el="shelf-view-list" data-active="false" title="リスト表示">
+            <button class="viewswitch__button" type="button" data-el="shelf-view-list" data-active="false" data-tip="リスト表示">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <rect x="3" y="4" width="4" height="4" rx="1" />
                 <rect x="9" y="5" width="12" height="2" rx="1" />
@@ -311,11 +466,11 @@
       <!-- ブランドマークを押すと出る。バージョンと更新の確認だけ -->
       <div class="about" data-el="about" role="dialog" aria-label="バージョン情報" hidden>
         <div class="about__head">
-          <svg class="about__mark" viewBox="0 0 100 110" aria-hidden="true">
+          <svg class="about__mark" viewBox="0 0 100 108.67" aria-hidden="true">
             <path
               fill="currentColor"
               fill-rule="evenodd"
-              d="M0.4 49.8 L0.4 96 C0.4 104 2.5 110 9 110 C18 110 28 104.5 35.5 97.4 A49.8 49.8 0 1 0 0.4 49.8 Z M24.6 57 A34.1 34.1 0 1 1 92.8 57 A34.1 34.1 0 1 1 24.6 57 Z"
+              d="M0 50 L0 105.6 C0 107.5 1.3 108.7 3.1 108.7 C3.9 108.7 4.6 108.4 5.2 108 C7.5 103.5 14 98.5 25.5 93.6 A50 50 0 1 0 0 50 Z M23.5 58 A34.3 34.3 0 1 1 92.1 58 A34.3 34.3 0 1 1 23.5 58 Z"
             />
           </svg>
           <div>

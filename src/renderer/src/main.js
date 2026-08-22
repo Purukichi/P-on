@@ -1,17 +1,24 @@
 import './styles/index.css'
 import { AudioEngine } from './core/AudioEngine.js'
 import { Library } from './core/Library.js'
-import { PlayQueue } from './core/PlayQueue.js'
+import { PlayQueue, RepeatMode } from './core/PlayQueue.js'
 import { Theme } from './core/Theme.js'
 import { applyAppearance } from './core/Settings.js'
-import { CollectionType, buildCollections, findCollection } from './core/Collections.js'
+import {
+  CollectionType,
+  buildCollections,
+  buildTrackCards,
+  findCollection
+} from './core/Collections.js'
 import { AboutPanel } from './ui/AboutPanel.js'
+import { bindArtistLinks } from './ui/ArtistLinks.js'
 import { CollectionShelf } from './ui/CollectionShelf.js'
 import { DropZones } from './ui/DropZones.js'
 import { NameDialog } from './ui/NameDialog.js'
 import { NowPlaying } from './ui/NowPlaying.js'
 import { TrackEditor } from './ui/TrackEditor.js'
 import { TrackList } from './ui/TrackList.js'
+import { Tooltip } from './ui/Tooltip.js'
 import { pick } from './ui/dom.js'
 
 const root = document.querySelector('#app')
@@ -29,52 +36,120 @@ const editor = new TrackEditor(root).mount()
 const nameDialog = new NameDialog(root).mount()
 const dropZones = new DropZones(root).mount()
 const about = new AboutPanel(root).mount()
+// data-tip を持つものすべての説明を受け持つ（OS 標準の title は使わない）
+new Tooltip(root).mount()
 
-/** @type {import('./core/Collections.js').Collection[]} */
+/** アルバム / プレイリスト / シングル @type {import('./core/Collections.js').Collection[]} */
 let collections = []
+/** 1 曲ずつのカード（棚を「曲単位」にしたときに並べる） @type {import('./core/Collections.js').Collection[]} */
+let trackCards = []
+/** 棚に並べているもの: 'collections' | 'tracks' */
+let shelfSource = 'collections'
 /** いま再生している単位（アルバム / プレイリスト / シングル） */
 let activeCollectionId = null
+/** 棚から曲を寄せ集めて組んだキューを鳴らしているか（アルバム等を丸ごと鳴らしているときは false） */
+let queueMode = false
+/** 棚のカードを掴んでいる間だけ true。空でも受け皿を開いておくために使う */
+let draggingCollection = false
 
 // ---- 表示 ----------------------------------------------------------------
 
+/**
+ * id からカードを引く。
+ * 棚に並んでいるものは表示の単位によって変わるので、両方から探す
+ * （曲単位で並べている最中でも、アルバムの id を渡されたら解決できるように）。
+ */
+function lookup(collectionId) {
+  return findCollection(collections, collectionId) ?? findCollection(trackCards, collectionId)
+}
+
 function activeCollection() {
-  return findCollection(collections, activeCollectionId)
+  return lookup(activeCollectionId)
 }
 
 /**
  * リストのプレビュー。
  * キューに曲が入っていれば、シングル 1 曲でも開く。
  * （1 曲のときも、そこから編集や削除ができたほうが都合がよい）
+ *
+ * 棚のカードを掴んでいる間は、空でも開く。
+ * 落とす先が見えていないと、再生キューに足しようがないため。
  */
 function shouldShowList() {
-  return queue.tracks.length > 0
+  return queue.tracks.length > 0 || draggingCollection
+}
+
+/** 一覧の見出しと、行に出す操作を決める */
+function listPresentation() {
+  const current = activeCollection()
+  if (current) {
+    return {
+      title: current.name,
+      mode: current.type === CollectionType.PLAYLIST ? 'playlist' : 'library'
+    }
+  }
+  // 棚から寄せ集めたキュー。行から「外す」で 1 曲ずつ抜ける
+  if (queueMode) return { title: '再生キュー', mode: 'queue' }
+  return { title: '再生キュー', mode: 'library' }
+}
+
+/**
+ * ジャケットの上に出す「いま鳴らしている単位」の札。
+ *
+ * アルバムとプレイリストのときだけ出す。
+ * シングルや寄せ集めのキューでは、大きいジャケットがそのまま曲のものなので添える意味がない。
+ *
+ * 札に出す絵はアルバム / プレイリストに設定されたジャケット。
+ * 大きい枠は曲ごとのジャケットを優先して出すので、
+ * 単独配信のジャケットを持つ曲では 2 つが別の絵になる。
+ */
+function playingContext() {
+  const current = activeCollection()
+  if (!current) return null
+  if (current.type !== CollectionType.ALBUM && current.type !== CollectionType.PLAYLIST) return null
+
+  return {
+    name: current.name,
+    // アルバムは（アルバムの）アーティスト、プレイリストは曲数
+    sub: current.subtitle,
+    coverUrl: current.coverUrl
+  }
+}
+
+/**
+ * 右の一覧だけを描き直す。
+ * 棚には触らない。カードを掴んでいる最中に棚を組み直すと、
+ * 掴んでいる当のカードが差し替わってドラッグごと落ちてしまうため。
+ */
+function paintList() {
+  const listVisible = shouldShowList()
+  root.dataset.list = listVisible ? 'visible' : 'hidden'
+  if (!listVisible) return
+
+  // 編集中でも最新を渡しておく（TrackList 側が控えて、編集を終えた時点で反映する）
+  const { title, mode } = listPresentation()
+  trackList.render({
+    title,
+    mode,
+    tracks: queue.tracks,
+    emptyMessage: '棚のカードをここにドロップすると、再生キューに追加できます'
+  })
+  trackList.setActive(queue.current?.id ?? null)
 }
 
 function render() {
   collections = buildCollections(library)
+  trackCards = buildTrackCards(library)
 
   if (activeCollectionId && !activeCollection()) activeCollectionId = null
 
-  const current = activeCollection()
-  const listVisible = shouldShowList()
+  paintList()
 
-  root.dataset.list = listVisible ? 'visible' : 'hidden'
-
-  // 編集中でも最新を渡しておく（TrackList 側が控えて、編集を終えた時点で反映する）
-  if (listVisible) {
-    trackList.render({
-      title: current?.name ?? '再生キュー',
-      mode: current?.type === CollectionType.PLAYLIST ? 'playlist' : 'library',
-      tracks: queue.tracks,
-      emptyMessage: ''
-    })
-    trackList.setActive(queue.current?.id ?? null)
-  }
-
-  shelf.render(collections, { activeCollectionId })
+  shelf.render(shelfSource === 'tracks' ? trackCards : collections, { activeCollectionId })
+  nowPlaying.renderContext(playingContext())
   nowPlaying.setNavigation({ hasPrevious: queue.hasPrevious, hasNext: queue.hasNext })
   // いまどこに保存しているかは、変更ボタンに触れれば分かるようにしておく
-  changeLibraryButton.title = `ライブラリの保存先を変更\n現在: ${library.libraryPath}`
+  changeLibraryButton.dataset.tip = `ライブラリの保存先を変更\n現在: ${library.libraryPath}`
   publishPlayerState()
 }
 
@@ -104,14 +179,67 @@ function playTrack(track, { autoplay = true } = {}) {
   render()
 }
 
-/** 棚のカード（またはポップアップの曲）から再生を始める */
+/** 棚のカード（またはメニューの曲）から再生を始める */
 function playCollection(collectionId, trackId = null) {
-  const collection = findCollection(collections, collectionId)
+  const collection = lookup(collectionId)
   if (!collection || collection.tracks.length === 0) return
 
   const index = trackId ? collection.tracks.findIndex((track) => track.id === trackId) : 0
   activeCollectionId = collectionId
+  queueMode = false
   playTrack(queue.replace(collection.tracks, Math.max(index, 0)))
+}
+
+// ---- 再生キュー ------------------------------------------------------------
+
+/**
+ * 棚のカードを右の一覧へ落としたとき。
+ * アルバムを丸ごと鳴らしている途中でも、落としたぶんを足して「寄せ集めのキュー」に移る。
+ * すでに入っている曲は重ねない（同じ曲が並ぶと、外すときにどちらか分からなくなる）。
+ */
+function enqueueCollections(collectionIds) {
+  enqueueTracks(collectionIds.map((id) => lookup(id)).flatMap((c) => c?.tracks ?? []))
+}
+
+/** 右クリックメニューの「＋」。収録曲のうち 1 曲だけをキューへ */
+function enqueueTrack(collectionId, trackId) {
+  const track = lookup(collectionId)?.tracks.find((t) => t.id === trackId)
+  if (track) enqueueTracks([track])
+}
+
+/** キューの末尾に足す。すでに入っている曲は重ねない（外すときにどちらか分からなくなる） */
+function enqueueTracks(tracks) {
+  const known = new Set(queue.tracks.map((track) => track.id))
+  const added = []
+  for (const track of tracks) {
+    if (known.has(track.id)) continue
+    known.add(track.id)
+    added.push(track)
+  }
+
+  if (added.length === 0) {
+    setStatus('すべてキューに入っています')
+    return
+  }
+
+  activeCollectionId = null
+  queueMode = true
+
+  const started = queue.enqueue(added)
+  if (started) playTrack(started)
+  else render()
+
+  setStatus(`再生キューに${added.length}曲を追加しました`)
+}
+
+/** キューを空にして、曲を選んでいない状態に戻す */
+function clearQueue() {
+  engine.unload()
+  queue.clear()
+  activeCollectionId = null
+  queueMode = false
+  render()
+  setStatus('再生キューを空にしました')
 }
 
 // ---- ミニプレイヤーとの同期 ------------------------------------------------
@@ -173,7 +301,62 @@ nowPlaying.on('previous', () => {
   else playTrack(queue.previous())
 })
 
+// ---- 配線: ループ ---------------------------------------------------------
+
+const REPEAT_KEY = 'hamon.repeat'
+
+nowPlaying.on('repeat', () => {
+  const mode = queue.cycleRepeat()
+  localStorage.setItem(REPEAT_KEY, mode)
+  setStatus(
+    mode === RepeatMode.ONE
+      ? 'この曲だけを繰り返します'
+      : mode === RepeatMode.ALL
+        ? 'キューの最後まで来たら先頭に戻ります'
+        : 'ループを解除しました'
+  )
+})
+
+queue.on('repeat-change', (mode) => {
+  nowPlaying.renderRepeat(mode)
+  // 端でも進めるようになる（全曲ループ）ので、前後ボタンの活性も取り直す
+  nowPlaying.setNavigation({ hasPrevious: queue.hasPrevious, hasNext: queue.hasNext })
+})
+
+// 前回の設定を戻す。同じ値なら 'repeat-change' は飛ばないので、描画はここで明示的に行う
+queue.repeat = localStorage.getItem(REPEAT_KEY) ?? RepeatMode.OFF
+nowPlaying.renderRepeat(queue.repeat)
+
+// ---- 配線: シャッフル -----------------------------------------------------
+
+const SHUFFLE_KEY = 'hamon.shuffle'
+
+nowPlaying.on('shuffle', () => {
+  const on = queue.toggleShuffle()
+  localStorage.setItem(SHUFFLE_KEY, String(on))
+  setStatus(on ? 'キューの中からランダムに再生します' : '並んでいる順に再生します')
+})
+
+queue.on('shuffle-change', (on) => {
+  nowPlaying.renderShuffle(on)
+  // 巡り順が変わると「次があるか」も変わる
+  nowPlaying.setNavigation({ hasPrevious: queue.hasPrevious, hasNext: queue.hasNext })
+})
+
+queue.shuffle = localStorage.getItem(SHUFFLE_KEY) === 'true'
+nowPlaying.renderShuffle(queue.shuffle)
+
 engine.on('ended', () => {
+  /*
+   * 1曲ループは曲を積み替えず、同じ音源を頭から鳴らし直す。
+   * 全曲ループのぶんは queue.next() が端で先頭へ回してくれるので、ここでは何もしない。
+   */
+  if (queue.repeat === RepeatMode.ONE && engine.track) {
+    engine.seek(0)
+    engine.play()
+    return
+  }
+
   const next = queue.next()
   if (next) playTrack(next)
   else setStatus('キューの最後まで再生しました')
@@ -211,11 +394,112 @@ trackList.on('update', async ({ trackId, patch }) => {
 
 trackList.on('detach', async (trackId) => {
   const collection = activeCollection()
-  if (collection?.type !== CollectionType.PLAYLIST) return
-  await library.removeFromPlaylist(collection.sourceId, trackId)
+
+  // 寄せ集めのキューでは、曲そのものではなくキューから 1 曲抜くだけ
+  if (!collection) {
+    queue.remove(trackId)
+    if (queue.tracks.length === 0) queueMode = false
+    render()
+    return
+  }
+
+  if (collection.type !== CollectionType.PLAYLIST) return
+  if (!(await library.removeFromPlaylist(collection.sourceId, trackId))) return
+
+  // 画面に出ている一覧はキューそのもの。
+  // プレイリストから抜いただけでは曲自体は残るので、キューからも抜かないと行が消えない
+  queue.remove(trackId)
+  render()
+})
+
+// 棚のカードを右の一覧へ落とす -> 再生キューに足す
+trackList.on('drop-collections', (collectionIds) => enqueueCollections(collectionIds))
+
+// 右クリックメニューの収録曲を右の一覧へ落とす -> その 1 曲だけキューに足す
+trackList.on('drop-track', (trackId) => {
+  const track = library.getTrack(trackId)
+  if (track) enqueueTracks([track])
+})
+
+trackList.on('clear-queue', () => clearQueue())
+
+/*
+ * 編集中の並び替え。
+ * 画面の並びはキューそのものなので、キューは必ず動かす。
+ * そのうえで、アルバムとプレイリストは順番を保存して次に開いたときも残るようにする。
+ * （再生キューは、その場かぎりの並びなので保存しない）
+ */
+trackList.on('reorder', async ({ trackIds }) => {
+  queue.reorder(trackIds)
+
+  const collection = activeCollection()
+
+  if (collection?.type === CollectionType.PLAYLIST) {
+    await library.reorderPlaylist(collection.sourceId, trackIds)
+    setStatus(`「${collection.name}」の曲順を変更しました`)
+    return
+  }
+
+  if (collection?.type === CollectionType.ALBUM) {
+    await library.reorderTracks(trackIds)
+    setStatus(`「${collection.name}」の曲順を変更しました`)
+    return
+  }
+
+  render()
+  setStatus('再生キューの順番を変更しました')
 })
 
 shelf.on('play-collection', ({ collectionId, trackId }) => playCollection(collectionId, trackId))
+
+// 右クリックメニューから。ドラッグしなくてもキューに足せる経路
+shelf.on('queue-collection', (collectionId) => enqueueCollections([collectionId]))
+shelf.on('queue-track', ({ collectionId, trackId }) => enqueueTrack(collectionId, trackId))
+
+// 棚に並べる単位（アルバム / 曲）の切り替え
+shelf.on('source-change', (source) => {
+  shelfSource = source
+  render()
+  setStatus(source === 'tracks' ? '曲単位で並べています' : 'アルバム・プレイリスト単位で並べています')
+})
+
+/*
+ * カードを掴んでいる間は、キューが空でも受け皿を開いておく。
+ * dragend はドロップの後に来るので、開いたまま落としても取りこぼさない。
+ */
+shelf.on('drag-start', () => {
+  draggingCollection = true
+  paintList()
+})
+shelf.on('drag-end', () => {
+  draggingCollection = false
+  paintList()
+})
+
+/*
+ * 落ちた先が棚を組み直す操作（キューへ追加、ゴミ箱など）だと、
+ * 掴んでいたカードごと差し替わって dragend が届かないことがある。
+ * どこに落ちても必ず通る capture フェーズで、受け皿の状態を戻しておく。
+ */
+window.addEventListener(
+  'drop',
+  () => {
+    if (!draggingCollection) return
+    draggingCollection = false
+    paintList()
+  },
+  true
+)
+
+// アーティスト名のクリック -> その名前で棚を検索する（手で打ったときと同じ画面）
+bindArtistLinks(root, (artist) => {
+  // fromArtist を立てておくと、棚を畳んだ時点で検索も解除される
+  const hits = shelf.search(artist, { fromArtist: true })
+  setStatus(
+    hits > 0 ? `「${artist}」で検索しました（${hits}件）` : `「${artist}」は見つかりませんでした`,
+    { tone: hits > 0 ? 'info' : 'error' }
+  )
+})
 
 shelf.on('create-playlist', async () => {
   const name = await nameDialog.ask({ heading: '新しいプレイリスト', confirmLabel: '作成' })
@@ -283,7 +567,7 @@ shelf.on('rename-album', async (albumName) => {
  * 「アルバムは V.A.、曲ごとの演奏者はそれぞれ別」といった持ち方ができる。
  */
 shelf.on('album-artist', async (collectionId) => {
-  const collection = findCollection(collections, collectionId)
+  const collection = lookup(collectionId)
   if (!collection) return
 
   const artist = await nameDialog.ask({
@@ -304,7 +588,7 @@ shelf.on('album-artist', async (collectionId) => {
 
 // 収録曲そのもののアーティストを一括で書き換える（アルバムアーティストとは別）
 shelf.on('track-artists', async (collectionId) => {
-  const collection = findCollection(collections, collectionId)
+  const collection = lookup(collectionId)
   if (!collection) return
 
   const artist = await nameDialog.ask({
@@ -324,7 +608,7 @@ shelf.on('track-artists', async (collectionId) => {
 
 // 右クリックメニューの「編集」
 shelf.on('edit-collection', (collectionId) => {
-  const collection = findCollection(collections, collectionId)
+  const collection = lookup(collectionId)
   const track = collection?.tracks[0]
   if (track) editor.open(track)
 })
@@ -338,7 +622,7 @@ shelf.on('delete-selection', (collectionIds) => deleteCollections(collectionIds)
 // 複数選択してアルバム化 / プレイリスト化
 shelf.on('group-selection', async ({ collectionIds, as }) => {
   const chosen = collectionIds
-    .map((id) => findCollection(collections, id))
+    .map((id) => lookup(id))
     .filter((collection) => collection && collection.type !== CollectionType.PLAYLIST)
   const trackIds = [...new Set(chosen.flatMap((c) => c.tracks.map((track) => track.id)))]
 
@@ -389,8 +673,8 @@ shelf.on('add-track', async ({ playlistId, trackId }) => {
 
 // アルバム / シングルを別のアルバム / シングルに重ねる -> まとめてプレイリストを作る
 shelf.on('merge-collections', async ({ sourceIds, targetId }) => {
-  const target = findCollection(collections, targetId)
-  const sources = sourceIds.map((id) => findCollection(collections, id)).filter(Boolean)
+  const target = lookup(targetId)
+  const sources = sourceIds.map((id) => lookup(id)).filter(Boolean)
   if (!target || sources.length === 0) return
 
   const name = await nameDialog.ask({
@@ -416,7 +700,7 @@ shelf.on('merge-collections', async ({ sourceIds, targetId }) => {
 // コレクションをプレイリストに重ねる -> 束ごと追加
 shelf.on('add-collection', async ({ playlistId, collectionId }) => {
   const playlist = library.getPlaylist(playlistId)
-  const source = findCollection(collections, collectionId)
+  const source = lookup(collectionId)
   if (!playlist || !source) return
 
   const trackIds = source.tracks.map((track) => track.id)
@@ -456,6 +740,7 @@ changeLibraryButton.addEventListener('click', async () => {
   engine.unload()
   queue.clear()
   activeCollectionId = null
+  queueMode = false
   render()
 
   setStatus('ライブラリを移しています…', { duration: 600000 })
@@ -487,6 +772,7 @@ function handleImported({ added, skipped }) {
   if (startedTrack) {
     // ドロップで始まった再生は特定のコレクションに属さない
     activeCollectionId = null
+    queueMode = false
     playTrack(startedTrack)
   } else {
     render()
@@ -503,7 +789,7 @@ dropZones.on('trash-collection', (collectionIds) => deleteCollections(collection
 
 /** 複数のコレクションをまとめて消す。確認は 1 回だけ取る */
 async function deleteCollections(collectionIds) {
-  const targets = collectionIds.map((id) => findCollection(collections, id)).filter(Boolean)
+  const targets = collectionIds.map((id) => lookup(id)).filter(Boolean)
   if (targets.length === 0) return
   if (targets.length === 1) {
     await deleteCollection(targets[0].id)
@@ -543,7 +829,7 @@ async function deleteCollections(collectionIds) {
  * アルバム / シングルは収録曲の実ファイルごと消す。
  */
 async function deleteCollection(collectionId) {
-  const collection = findCollection(collections, collectionId)
+  const collection = lookup(collectionId)
   if (!collection) return
 
   if (collection.type === CollectionType.PLAYLIST) {
@@ -596,6 +882,7 @@ async function deleteTracks(trackIds, { confirm = true, label = null } = {}) {
     engine.unload()
     queue.clear()
     activeCollectionId = null
+    queueMode = false
     render()
   }
 
@@ -629,17 +916,6 @@ nowPlaying.on('cover-dropped', async ({ imagePath }) => {
 
 // ジャケット未設定の枠をクリック -> 画像選択ダイアログ（ドロップと同じ行き先に登録する）
 nowPlaying.on('cover-request', async () => {
-  const current = activeCollection()
-
-  if (current?.type === CollectionType.ALBUM) {
-    await library.pickAlbumCover(current.name)
-    return
-  }
-  if (current?.type === CollectionType.PLAYLIST) {
-    await library.pickPlaylistCover(current.sourceId, current.name)
-    return
-  }
-
   const trackId = engine.track?.id
   if (!trackId) {
     setStatus('先に曲を選んでください', { tone: 'error' })
@@ -654,42 +930,51 @@ dropZones.on('images-dropped', async (imagePaths) => {
 })
 
 /**
- * ジャケット枠へのドロップ。
- * いま鳴らしている単位に合わせて、登録先を選び分ける。
- *   アルバム       … アルバム共通のジャケット
- *   プレイリスト   … プレイリストのジャケット
- *   それ以外       … その曲だけのジャケット
+ * ジャケット枠へのドロップは、いつでも「その曲」のジャケットになる。
+ * アルバムを鳴らしている最中でも曲ごとに設定できるので、
+ * 単独配信のジャケットを持つ曲だけ差し替える、といった持ち方ができる。
+ * アルバム / プレイリスト側を変えたいときは、枠の左上の札に落とす。
  */
 async function setCoverOfCurrentTrack(imagePath) {
-  const current = activeCollection()
-
-  if (current?.type === CollectionType.ALBUM) {
-    await library.setAlbumCoverFromPath(current.name, imagePath)
-    setStatus(`「${current.name}」のジャケットを設定しました`)
-    return
-  }
-
-  if (current?.type === CollectionType.PLAYLIST) {
-    await library.setPlaylistCoverFromPath(current.sourceId, imagePath)
-    setStatus(`「${current.name}」のジャケットを設定しました`)
-    return
-  }
-
   const trackId = engine.track?.id
   if (!trackId) {
     setStatus('先に曲を再生してから、ジャケットをドロップしてください', { tone: 'error' })
     return
   }
   await library.setCoverFromPath(trackId, imagePath)
-  setStatus('ジャケットを設定しました')
+  setStatus(`「${engine.track.displayTitle}」のジャケットを設定しました`)
 }
+
+// ---- 配線: アルバム / プレイリストの札 -------------------------------------
+
+nowPlaying.on('album-cover-dropped', async ({ imagePath }) => {
+  const current = activeCollection()
+  if (!current) return
+
+  if (current.type === CollectionType.ALBUM) {
+    await library.setAlbumCoverFromPath(current.name, imagePath)
+  } else if (current.type === CollectionType.PLAYLIST) {
+    await library.setPlaylistCoverFromPath(current.sourceId, imagePath)
+  } else {
+    return
+  }
+  setStatus(`「${current.name}」のジャケットを設定しました`)
+})
+
+nowPlaying.on('album-cover-request', async () => {
+  const current = activeCollection()
+  if (current?.type === CollectionType.ALBUM) await library.pickAlbumCover(current.name)
+  else if (current?.type === CollectionType.PLAYLIST) {
+    await library.pickPlaylistCover(current.sourceId, current.name)
+  }
+})
 
 // ---- 配線: テーマ / キーボード --------------------------------------------
 
 const themeButton = pick(root, 'theme-toggle')
 function renderTheme() {
   themeButton.setAttribute('aria-pressed', String(theme.isNight))
-  themeButton.title = theme.isNight ? 'ライトモードに戻す' : 'ナイトモードにする'
+  themeButton.dataset.tip = theme.isNight ? 'ライトモードに戻す' : 'ナイトモードにする'
 
   // ボタン領域は透明にしてアクリルを透かし、記号の色だけ本文に合わせる
   const styles = getComputedStyle(document.documentElement)
@@ -767,6 +1052,7 @@ if (import.meta.env.DEV) {
       return collections
     },
     playCollection,
+    enqueueCollections,
     deleteTracks,
     deleteCollection,
     views: { nowPlaying, trackList, shelf, editor, nameDialog, about }
