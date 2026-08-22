@@ -41,9 +41,9 @@
   --color-ink: #0a0a0c;
   --color-ink-contrast: #ffffff;
 
-  /* --- アクセント。少し沈んだ緑。hover は同じ色相のまま明るくしたもの --- */
-  --color-accent: #17a45a;
-  --color-accent-hover: #1dc96e;
+  /* --- アクセント。淡い緑。hover は同じ色相のまま明るくしたもの --- */
+  --color-accent: #72e887;
+  --color-accent-hover: #91eda2;
   /* アクセントの上に置く文字色。明度から黒 / 白を選んで Settings が上書きする */
   --color-accent-contrast: #0a0a0c;
 

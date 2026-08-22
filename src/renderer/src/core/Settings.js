@@ -9,7 +9,7 @@ export const APPEARANCE = {
   /** 本体の面の不透明度。小さいほどデスクトップが透ける */
   surfaceAlpha: 0.25,
   /** アクセント色。theme.css の --color-accent と同じ値にしておくこと */
-  accent: '#17a45a'
+  accent: '#72e887'
 }
 
 /** :root に CSS 変数として書き込む */
