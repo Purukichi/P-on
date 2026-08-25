@@ -48,11 +48,6 @@ export class Collection {
   get trackArtists() {
     return [...new Set(this.tracks.flatMap((track) => track.artists))]
   }
-
-  /** アルバムとプレイリストは中身が複数ある前提なので、再生中にリストを出す */
-  get showsTrackList() {
-    return this.type !== CollectionType.SINGLE
-  }
 }
 
 /**
@@ -110,15 +105,6 @@ export function filterCollections(collections, query) {
       return track.artists.some((artist) => artist.toLowerCase().includes(needle))
     })
   })
-}
-
-/** ある曲を含むコレクションのうち、再生の文脈として最も自然なものを返す */
-export function collectionContaining(collections, trackId, preferredId = null) {
-  if (preferredId) {
-    const preferred = findCollection(collections, preferredId)
-    if (preferred?.tracks.some((track) => track.id === trackId)) return preferred
-  }
-  return collections.find((collection) => collection.tracks.some((t) => t.id === trackId)) ?? null
 }
 
 function playlistsOf(library) {

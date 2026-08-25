@@ -77,10 +77,6 @@ export class TrackList extends Emitter {
     this.#root = root
   }
 
-  get isEditing() {
-    return this.#editing
-  }
-
   mount() {
     this.#el = collect(this.#root, [
       'list-panel',

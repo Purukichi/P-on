@@ -36,10 +36,6 @@ export function setReorderDragData(event, trackId) {
   event.dataTransfer.effectAllowed = 'move'
 }
 
-export function getReorderDragData(event) {
-  return event.dataTransfer.getData(REORDER_MIME) || null
-}
-
 /**
  * コレクションのドラッグ。複数選択したままでも掴めるよう、
  * 中身は常に id の配列（改行区切り）として持つ。

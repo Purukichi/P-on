@@ -78,12 +78,6 @@ export class Track {
     const name = String(this.audioFile ?? '').split(/[\\/]/).pop() ?? ''
     return name.replace(/\.[^.]+$/, '')
   }
-
-  /** アルバム名が無い曲はシングル扱いで表示する */
-  get displayAlbum() {
-    return this.album || 'シングル'
-  }
-
   get hasCover() {
     return Boolean(this.coverUrl)
   }

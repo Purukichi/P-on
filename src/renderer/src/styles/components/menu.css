@@ -50,6 +50,7 @@
   color: var(--color-accent-contrast);
 }
 
+/* 削除の項目。クラス名は CollectionShelf.js が menu__item--${variant} で組み立てる */
 .menu__item--danger {
   color: var(--color-danger);
 }

@@ -43,6 +43,31 @@ files:
 win:
   # build/source/app-icon.jpg から build/make-icon.cjs が作ったもの
   icon: build/icon.ico
+  # 電子署名。exe とインストーラの両方に付き、配布後に中身が
+  # すり替えられていないことを利用者が確かめられるようにする。
+  # 鍵は Windows の証明書ストア（現在のユーザー / 個人）にある
+  # 「CN=Yushi Hiyama」を名前で引く。pfx とパスワードをリポジトリに
+  # 置かずに済むので、鍵が漏れる経路をひとつ減らせる。
+  # 証明書が無い環境では electron-builder が署名で止まるため、
+  # ビルドする端末には同じ証明書を入れておくこと。
+  #
+  # 自動更新のとき、落としてきたインストーラの署名を検証するか。
+  # 有効にすると証明書の名義が app-update.yml に焼き込まれ、
+  # electron-updater が Get-AuthenticodeSignature で「有効な署名か」を確かめる。
+  # ところがこの証明書は自己署名なので、他人の PC では
+  # 「信頼されたルートに繋がらない」= 無効と判定され、更新が全部弾かれてしまう。
+  # 落としたものが本物かは latest.yml の sha512（HTTPS 経由）で照合しているので、
+  # ここは切っておく。公的な認証局の証明書に替えたら true に戻すこと
+  verifyUpdateCodeSignature: false
+  signtoolOptions:
+    certificateSubjectName: Yushi Hiyama
+    # 既定は sha1 との二重署名だが、この証明書は sha256 で作ってある。
+    # 古い Windows 向けの sha1 は今どこでも不要なので付けない
+    signingHashAlgorithms:
+      - sha256
+    # 署名した時刻を第三者に記録してもらう。
+    # これが無いと、証明書の期限が切れた日に署名まで無効になる
+    rfc3161TimeStampServer: http://timestamp.digicert.com
   # 配るのはインストーラだけ。ポータブル版は自動更新が効かず、
   # 「更新されない版」が出回るほうが困るのでやめた
   target:

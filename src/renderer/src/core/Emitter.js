@@ -11,14 +11,6 @@ export class Emitter {
     return () => this.off(type, listener)
   }
 
-  once(type, listener) {
-    const dispose = this.on(type, (payload) => {
-      dispose()
-      listener(payload)
-    })
-    return dispose
-  }
-
   off(type, listener) {
     this.#listeners.get(type)?.delete(listener)
   }
