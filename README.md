@@ -1,3 +1,4 @@
+[README.md](https://github.com/user-attachments/files/31398865/README.md)
 # P-on
 
 β2.0.0のMac・iOS・Android準備は [β2.0.0開発状況](docs/BETA-2.0.0.md)、音源ZIPを更新に同梱する手順は [音源の納入・配布](docs/CONTENT-DELIVERY.md) を参照してください。アプリ内の会員認証はありません。以下は従来のWindows版の利用説明です。
