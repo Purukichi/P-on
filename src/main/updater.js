@@ -1,6 +1,5 @@
 import { app, dialog } from 'electron'
 import electronUpdater from 'electron-updater'
-import { DISPLAY_VERSION } from '../shared/version.js'
 import { getMainWindow, getMiniWindow } from './windows.js'
 
 /**
@@ -35,7 +34,7 @@ let downloadedVersion = null
 
 /** バージョン情報のパネルに出す内容 */
 export function appInfo() {
-  return { version: DISPLAY_VERSION, buildVersion: app.getVersion(), ...support }
+  return { version: app.getVersion(), buildVersion: app.getVersion(), ...support }
 }
 
 /**

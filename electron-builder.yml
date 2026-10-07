@@ -18,8 +18,9 @@ publish:
   provider: github
   owner: Purukichi
   repo: P-on
-  # β2.0.0 は先行公開。既存の安定版利用者には自動配信しない。
-  releaseType: prerelease
+  # 下書きや先行公開は配らない。正式公開したものだけを更新として扱う。
+  # Windows 版は 1.3 系の安定版として出す（β2.0.0 はスマホ版だけ）
+  releaseType: release
 
 directories:
   buildResources: build

@@ -1,6 +1,6 @@
 # P-on β2.0.0 — Mac・iOS・Androidと音源同梱配信の準備
 
-調査日: 2026-09-23。表示は **β2.0.0**、npm/Electronは `2.0.0-beta.0`、iOSの数値バージョンは `2.0.0`（TestFlightでβ配布）。
+調査日: 2026-09-23。表示は **β2.0.0**、Androidの versionName は `2.0.0-beta.0`、iOSの数値バージョンは `2.0.0`（TestFlightでβ配布）。いずれも `src/shared/version.js` で持つ。Windows版はβにせず、`package.json` の `1.3.0` 系の安定版として出す。
 
 ## 今回の範囲と現状
 
@@ -77,7 +77,7 @@ XcodeでSigning Teamと利用可能なBundle Identifierを設定し、実機で�
 
 ### β更新の扱い
 
-`releaseType: prerelease` とβ側の `allowPrerelease` を設定。今回のβを安定版利用者へ強制配信しない。GitHubでは `v2.0.0-beta.0` のPre-releaseとして公開し、生成されたβ用更新情報と各成果物を一緒に置く。旧版からβへの移行は手動インストールを想定。アプリ本体の更新と楽曲カタログの更新を別に扱う。
+Windows版はβにせず 1.3.0 の安定版として出すことにしたため、`electron-builder.yml` の `releaseType` は `release` に戻した（Windows版の自動更新は従来どおり安定版だけを見る）。スマホ版のβはストア側（TestFlight など）で配る。アプリ本体の更新と楽曲カタログの更新を別に扱う。
 
 ## この環境で確認したこと
 

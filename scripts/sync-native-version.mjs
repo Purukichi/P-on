@@ -1,6 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises'
-import { NATIVE_VERSION } from '../src/shared/version.js'
-const { version } = JSON.parse(await readFile('package.json', 'utf8'))
+import { MOBILE_VERSION as version, NATIVE_VERSION } from '../src/shared/version.js'
 const gradle = 'android/app/build.gradle'
 await writeFile(gradle, (await readFile(gradle, 'utf8')).replace(/versionName "[^"]+"/, `versionName "${version}"`))
 const xcode = 'ios/App/App.xcodeproj/project.pbxproj'
