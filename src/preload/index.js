@@ -8,6 +8,7 @@ import { IPC } from '../shared/ipc-channels.js'
  * 変更系はどれも「操作後の最新スナップショット」を返す。
  */
 const api = {
+  platform: process.platform,
   library: {
     /** @returns {Promise<{libraryPath: string, tracks: object[], playlists: object[]}>} */
     snapshot: () => ipcRenderer.invoke(IPC.LIBRARY_SNAPSHOT),
@@ -35,6 +36,14 @@ const api = {
     setArtist: (trackIds, artist) => ipcRenderer.invoke(IPC.LIBRARY_SET_ARTIST, trackIds, artist),
     /** 曲の並びを入れ替える（アルバムの曲順） */
     reorderTracks: (trackIds) => ipcRenderer.invoke(IPC.LIBRARY_REORDER_TRACKS, trackIds),
+    /**
+     * 鳴らす音源だけを入れ替える。曲情報とジャケットは残る。
+     * @returns {Promise<{snapshot: object, replaced: boolean}>}
+     */
+    replaceAudio: (trackId, filePath) =>
+      ipcRenderer.invoke(IPC.LIBRARY_REPLACE_AUDIO, trackId, filePath),
+    /** ダイアログで選ばせてから差し替える。キャンセルなら replaced: false */
+    pickAudio: (trackId) => ipcRenderer.invoke(IPC.LIBRARY_PICK_AUDIO, trackId),
     deleteTrack: (trackId) => ipcRenderer.invoke(IPC.LIBRARY_DELETE_TRACK, trackId),
     openFolder: () => ipcRenderer.invoke(IPC.LIBRARY_OPEN_FOLDER),
     /**
@@ -68,7 +77,14 @@ const api = {
     /** @returns {Promise<{version: string, supported: boolean, reason: string}>} */
     info: () => ipcRenderer.invoke(IPC.APP_INFO),
     /** @returns {Promise<{status: string, version?: string, message?: string}>} */
-    checkUpdate: () => ipcRenderer.invoke(IPC.APP_CHECK_UPDATE)
+    checkUpdate: () => ipcRenderer.invoke(IPC.APP_CHECK_UPDATE),
+    /**
+     * エクスプローラーから開かれたファイルを取り込む。無ければ added は空。
+     * @returns {Promise<{snapshot: object, added: string[], skipped: string[]}>}
+     */
+    openPendingFiles: () => ipcRenderer.invoke(IPC.APP_OPEN_PENDING_FILES),
+    /** エクスプローラーからファイルを開かれたときに呼ばれる */
+    onFilesOpened: (callback) => subscribe(IPC.APP_FILES_OPENED, callback)
   },
 
   /**

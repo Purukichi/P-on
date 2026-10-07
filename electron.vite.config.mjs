@@ -13,6 +13,7 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin()]
   },
   renderer: {
+    define: { __P_ON_MOBILE__: 'false' },
     root: r('./src/renderer'),
     resolve: {
       alias: {

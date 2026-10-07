@@ -30,3 +30,15 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .claude/settings.local.json
+
+# Native signing and local member catalog (never distribute with the app)
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+catalog/catalog.private.json
+
+# Artist delivery ZIPs and prepared music are local build inputs, not source code.
+generated/
+deliveries/
+catalog/*.zip

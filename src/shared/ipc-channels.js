@@ -22,6 +22,9 @@ export const IPC = {
   LIBRARY_SET_ARTIST: 'library:set-artist',
   /** 曲の並びを入れ替える（アルバムの曲順は library.json の並びがそのまま出る） */
   LIBRARY_REORDER_TRACKS: 'library:reorder-tracks',
+  /** 鳴らす音源だけを入れ替える。曲情報とジャケットは残す */
+  LIBRARY_REPLACE_AUDIO: 'library:replace-audio',
+  LIBRARY_PICK_AUDIO: 'library:pick-audio',
   LIBRARY_DELETE_TRACK: 'library:delete-track',
   LIBRARY_OPEN_FOLDER: 'library:open-folder',
   /** 保存先のフォルダとデータの移し方を選ばせる（ダイアログは main 側で出す） */
@@ -50,6 +53,10 @@ export const IPC = {
   APP_INFO: 'app:info',
   /** 手動での更新確認 */
   APP_CHECK_UPDATE: 'app:check-update',
+  /** エクスプローラーからファイルを開かれた（main -> レンダラー。中身は APP_TAKE_OPENED_FILES で取る） */
+  APP_FILES_OPENED: 'app:files-opened',
+  /** 開かれたファイルを取り込み、取り込んだ曲 id を開いた順に返す */
+  APP_OPEN_PENDING_FILES: 'app:open-pending-files',
 
   /*
    * ミニプレイヤー。

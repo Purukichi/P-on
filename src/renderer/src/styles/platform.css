@@ -1,0 +1,63 @@
+/* Desktop layout is unchanged except for macOS window button clearance. */
+html[data-platform='darwin'] .topbar {
+  padding-left: 90px;
+  padding-right: var(--page-gutter);
+}
+html[data-platform='mobile'] {
+  --surface-alpha: 1 !important;
+  --caption-width: 12px;
+  -webkit-touch-callout: none;
+}
+html[data-platform='mobile'] body {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+html[data-platform='mobile'] .app { overflow: clip; }
+html[data-platform='mobile'] .topbar { -webkit-app-region: no-drag; }
+html[data-platform='mobile'] [data-el='open-mini'],
+html[data-platform='mobile'] [data-el='open-folder'],
+html[data-platform='mobile'] [data-el='change-library'] { display: none; }
+html[data-platform='mobile'] button { touch-action: manipulation; }
+@media (max-width: 700px) {
+  html[data-platform='mobile'] .stage,
+  html[data-platform='mobile'] .app[data-list='visible'] .stage {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  html[data-platform='mobile'] .cover {
+    align-items: center;
+    flex: none;
+    padding: 12px;
+  }
+  html[data-platform='mobile'] .cover__frame { width: min(52vw, 240px); flex: none; }
+  html[data-platform='mobile'] .nowplaying { flex: none; padding: 12px 24px; }
+  html[data-platform='mobile'] .nowplaying__meta,
+  html[data-platform='mobile'] .nowplaying .seekbar,
+  html[data-platform='mobile'] .nowplaying .transport { max-width: none; }
+  html[data-platform='mobile'] .tracklist { flex: 0 0 220px; margin: 12px; }
+  html[data-platform='mobile'] .topbar { gap: 8px; }
+  html[data-platform='mobile'] .volume--inline { width: clamp(75px, 25vw, 115px); }
+  html[data-platform='mobile'] .topbar__spacer { min-width: 0; }
+  html[data-platform='mobile'] .shelf__toolbar { flex-wrap: wrap; }
+  html[data-platform='mobile'] .search { flex: 1 0 100%; max-width: none; }
+  html[data-platform='mobile'] .menu { max-width: calc(100vw - 16px); max-height: 80dvh; overflow-y: auto; }
+  html[data-platform='mobile'] .app[data-shelf-expanded='true'] .stage {
+    flex-direction: row;
+    max-height: 240px;
+    align-items: center;
+  }
+  html[data-platform='mobile'] .app[data-shelf-expanded='true'] .cover { padding: 8px; }
+  html[data-platform='mobile'] .app[data-shelf-expanded='true'] .cover__frame { width: 48px; height: 48px; }
+  html[data-platform='mobile'] .app[data-shelf-expanded='true'] .nowplaying {
+    display: flex;
+    flex: 1;
+    padding: 12px;
+    gap: 8px;
+  }
+  html[data-platform='mobile'] .app[data-shelf-expanded='true'] .transport { width: 100%; }
+  html[data-platform='mobile'] .app[data-shelf-expanded='true'] .transport__button { width: 32px; height: 32px; }
+  html[data-platform='mobile'] .transport__button { width: 44px; height: 44px; }
+  html[data-platform='mobile'] .dialog { width: calc(100vw - 24px); max-height: 85dvh; overflow-y: auto; }
+  html[data-platform='mobile'] .dialog__body { flex-wrap: wrap; }
+}

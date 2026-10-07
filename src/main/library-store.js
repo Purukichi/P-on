@@ -25,7 +25,7 @@ import { app } from 'electron'
  * 「アルバムとしての表記（例: V.A. や バンド名）」と
  * 「収録曲ごとの演奏者」を別々に持てる。
  */
-const EMPTY = { version: 1, tracks: [], playlists: [], albumCovers: {}, albumArtists: {} }
+const EMPTY = { version: 1, tracks: [], playlists: [], albumCovers: {}, albumArtists: {}, deliveredContent: [] }
 
 let rootPath = null
 /** @type {typeof EMPTY | null} */
@@ -180,12 +180,14 @@ export async function load() {
       version: parsed.version ?? 1,
       tracks: Array.isArray(parsed.tracks) ? parsed.tracks : [],
       playlists: Array.isArray(parsed.playlists) ? parsed.playlists : [],
+      deliveredContent: Array.isArray(parsed.deliveredContent) ? parsed.deliveredContent : [],
       albumCovers: isPlainObject(parsed.albumCovers) ? parsed.albumCovers : {},
       albumArtists: isPlainObject(parsed.albumArtists) ? parsed.albumArtists : {}
     }
   } catch (error) {
     if (error.code !== 'ENOENT') {
-      console.error('[library] library.json を読めませんでした。空の状態で起動します:', error)
+      console.error('[library] library.json を読めませんでした。既存データは上書きしません:', error)
+      throw error
     }
     cache = structuredClone(EMPTY)
   }
@@ -199,10 +201,11 @@ export async function load() {
  * @param {(data: typeof EMPTY) => void | Promise<void>} mutator
  */
 export function update(mutator) {
-  writeChain = writeChain.then(async () => {
-    const data = await load()
+  writeChain = writeChain.catch(() => {}).then(async () => {
+    const data = structuredClone(await load())
     await mutator(data)
     await persist(data)
+    cache = data
     return data
   })
   return writeChain

@@ -1,4 +1,6 @@
 import './styles/index.css'
+import './platform/bootstrap.js'
+import './styles/platform.css'
 import { AudioEngine } from './core/AudioEngine.js'
 import { Library } from './core/Library.js'
 import { PlayQueue, RepeatMode } from './core/PlayQueue.js'
@@ -782,6 +784,30 @@ function handleImported({ added, skipped }) {
   setStatus(`${added.length}曲をキューに追加しました${skippedNote}`)
 }
 
+/**
+ * エクスプローラーの「プログラムから開く」やダブルクリックで渡されたファイル。
+ * ドロップ（キューの後ろに足す）と違い、開いたものをすぐ鳴らしたいので、
+ * キューを開いた曲だけに入れ替えて先頭から再生する。
+ */
+async function openPendingFiles() {
+  const { added, skipped } = await library.openPendingFiles()
+  if (added.length === 0) {
+    if (skipped.length > 0) setStatus('開いたファイルを読み込めませんでした', { tone: 'error' })
+    return
+  }
+
+  activeCollectionId = null
+  queueMode = false
+  playTrack(queue.replace(added, 0))
+
+  const skippedNote = skipped.length > 0 ? `（${skipped.length}件はスキップ）` : ''
+  setStatus(
+    added.length === 1 ? `「${added[0].title}」を再生します${skippedNote}` : `${added.length}曲を再生します${skippedNote}`
+  )
+}
+
+library.onFilesOpened(() => openPendingFiles())
+
 dropZones.on('trash-track', (trackId) => deleteTracks([trackId]))
 
 // 棚のカードをゴミ箱へ落としたとき（選択中ならまとめて）
@@ -856,7 +882,12 @@ async function deleteCollection(collectionId) {
   )
 }
 
-/** 曲の実体を消す。再生中のものが含まれていたら空の状態に戻す */
+/**
+ * 曲の実体を消す。
+ * 鳴らしていたものを消しても、キューに次が残っていればそのまま続きを鳴らす
+ * （アルバムを聴いている途中の 1 曲削除で、キューごと閉じてしまわないように）。
+ * キューが空になったときだけ、曲を選んでいない状態へ戻す。
+ */
 async function deleteTracks(trackIds, { confirm = true, label = null } = {}) {
   const tracks = trackIds.map((id) => library.getTrack(id)).filter(Boolean)
   if (tracks.length === 0) return
@@ -871,19 +902,25 @@ async function deleteTracks(trackIds, { confirm = true, label = null } = {}) {
   }
 
   const hitPlaying = tracks.some((track) => track.id === engine.track?.id)
+  const wasPlaying = engine.state === 'playing'
 
   for (const track of tracks) {
     await library.deleteTrack(track.id)
+    // ライブラリの更新で queue.refresh が走るので、ここは行き違い用の念押し
     queue.remove(track.id)
   }
 
-  // 再生していたものを消したら、既定の空の状態に戻す
   if (hitPlaying) {
-    engine.unload()
-    queue.clear()
-    activeCollectionId = null
-    queueMode = false
-    render()
+    // refresh / remove が「消した曲の次」を指し直してくれている
+    const next = queue.current
+    if (next) playTrack(next, { autoplay: wasPlaying })
+    else {
+      engine.unload()
+      queue.clear()
+      activeCollectionId = null
+      queueMode = false
+      render()
+    }
   }
 
   setStatus(`「${label ?? tracks[0].displayTitle}」を削除しました`)
@@ -908,6 +945,23 @@ editor.on('drop-cover', async ({ trackId, imagePath }) => {
 editor.on('clear-cover', async (trackId) => {
   await library.clearCover(trackId)
   editor.renderCover(library.getTrack(trackId))
+})
+
+/*
+ * 鳴らす音源だけを入れ替える。曲情報とジャケットはそのまま。
+ * 差し替えるとライブラリ内のファイル名が変わるので、その曲を鳴らしている最中なら
+ * 読み込み直さないと古い音源を掴んだままになる。
+ */
+editor.on('replace-audio', async (trackId) => {
+  const replaced = await library.pickAudio(trackId)
+  if (!replaced) return
+
+  const track = library.getTrack(trackId)
+  if (!track) return
+  editor.renderAudio(track)
+
+  if (engine.track?.id === trackId) playTrack(track, { autoplay: engine.state === 'playing' })
+  setStatus(`「${track.displayTitle}」の音源を差し替えました`)
 })
 
 nowPlaying.on('cover-dropped', async ({ imagePath }) => {
@@ -1023,7 +1077,11 @@ library.on('change', () => {
   const playing = engine.track ? library.getTrack(engine.track.id) : null
   if (playing) nowPlaying.renderTrack(playing)
 
-  if (editor.isOpen && editor.trackId) editor.renderCover(library.getTrack(editor.trackId))
+  if (editor.isOpen && editor.trackId) {
+    const editing = library.getTrack(editor.trackId)
+    editor.renderCover(editing)
+    editor.renderAudio(editing)
+  }
 
   render()
 })
@@ -1034,6 +1092,9 @@ library.on('error', (error) => setStatus(error.message, { tone: 'error' }))
 
 await library.load()
 render()
+
+// 「プログラムから開く」で起動されたときは、その曲をすぐ鳴らす
+openPendingFiles()
 
 // フォーマット表示を後から足したので、既存のライブラリにも埋めて回る（データは消さない）
 library.backfillFormats().then((filled) => {

@@ -1,0 +1,8 @@
+{
+  "appId": "com.hamon.player",
+  "appName": "P-on",
+  "webDir": "dist/mobile",
+  "backgroundColor": "#ffffff",
+  "ios": { "contentInset": "never" },
+  "android": { "allowMixedContent": false }
+}

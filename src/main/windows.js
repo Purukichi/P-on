@@ -24,8 +24,12 @@ const PRELOAD = () => join(__dirname, '../preload/index.js')
  */
 const ICON = () =>
   app.isPackaged
-    ? join(process.resourcesPath, 'icon.ico')
-    : join(app.getAppPath(), 'build/icon.ico')
+    ? join(process.resourcesPath, process.platform === 'win32' ? 'icon.ico' : 'icon.png')
+    : join(app.getAppPath(), 'build', process.platform === 'win32' ? 'icon.ico' : 'icon.png')
+
+const BACKDROP = () => process.platform === 'darwin'
+  ? { vibrancy: 'under-window', visualEffectState: 'active' }
+  : process.platform === 'win32' ? { backgroundMaterial: 'acrylic' } : {}
 
 /** hide() 中もタイマーを間引かせない（シークバーの更新が飛ぶため） */
 const SHARED_WEB_PREFERENCES = () => ({
@@ -74,11 +78,12 @@ export function createMainWindow() {
     show: false,
     icon: ICON(),
     // 本文の下からデスクトップが透けるよう、メインもアクリル素材にする
-    backgroundMaterial: 'acrylic',
+    ...BACKDROP(),
     backgroundColor: '#00000000',
     // タイトルバーは自前の面に溶け込ませる（操作ボタンだけ OS が上に描く）
     titleBarStyle: 'hidden',
-    titleBarOverlay: {
+    trafficLightPosition: process.platform === 'darwin' ? { x: 16, y: 17 } : undefined,
+    titleBarOverlay: process.platform === 'darwin' ? false : {
       color: '#00000000',
       symbolColor: '#0a0a0a',
       height: 48
@@ -103,6 +108,13 @@ export function createMainWindow() {
   return mainWindow
 }
 
+/**
+ * 常に手前に出すかどうか。
+ * 持ち主はミニ側のピン留めボタンで、ここはその答えを覚えておく置き場。
+ * 覚えておかないと、開き直すたびに指定を出し直せない（openMiniPlayer を参照）。
+ */
+let miniOnTop = true
+
 /** ミニプレイヤーを出してメインを隠す */
 export function openMiniPlayer() {
   const main = getMainWindow()
@@ -112,17 +124,33 @@ export function openMiniPlayer() {
   if (mini.isMinimized()) mini.restore()
   mini.show()
   watchMiniHover()
-  /*
-   * 最前面かどうかはここで決め打ちしない。
-   * 生成時は true で始まり、以降はミニ側のピン留めボタンが持ち主になる。
-   * ここで true に戻すと、切っておいた設定が開き直すたびに復活してしまう。
-   */
   main.hide()
+
+  /*
+   * 最前面の指定は show() のあとに貼り直す。
+   *
+   * ミニの窓は畳んでも壊さず hide するだけなので、ピン留めの状態を読むミニ側の
+   * スクリプトは最初に読み込まれたときしか走らない。つまり二回目以降の切り替えでは
+   * 誰も指定を出し直さない。ところが Windows は hide → show のあいだに最前面を
+   * 落とすことがあり、そのまま他のアプリの下に潜ってしまう。
+   *
+   * メインを隠すと Windows は別のアプリを前に出すので、貼り直すのは main.hide()
+   * のあと。決め打ちの true ではなく、ピン留めボタンが決めた miniOnTop を使う。
+   */
+  applyMiniOnTop()
 }
 
-/** 常に手前に出すかどうか */
 export function setMiniAlwaysOnTop(onTop) {
-  getMiniWindow()?.setAlwaysOnTop(Boolean(onTop), 'floating')
+  miniOnTop = Boolean(onTop)
+  applyMiniOnTop()
+}
+
+function applyMiniOnTop() {
+  const mini = getMiniWindow()
+  if (!mini) return
+  mini.setAlwaysOnTop(miniOnTop, 'floating')
+  // 指定を貼り直しただけでは、すでに前にいる窓の下に留まったままのことがある
+  if (miniOnTop && mini.isVisible()) mini.moveTop()
 }
 
 /*
@@ -222,14 +250,15 @@ function createMiniWindow() {
     maximizable: false,
     fullscreenable: false,
     skipTaskbar: false,
-    alwaysOnTop: true,
+    // 起動直後の既定は手前。以降はピン留めボタンが決めた値をそのまま使う
+    alwaysOnTop: miniOnTop,
     // Windows 11 のアクリル。背景を透明にしておくと、デスクトップ側がぼけて透ける
-    backgroundMaterial: 'acrylic',
+    ...BACKDROP(),
     backgroundColor: '#00000000',
     webPreferences: SHARED_WEB_PREFERENCES()
   })
 
-  miniWindow.setAlwaysOnTop(true, 'floating')
+  miniWindow.setAlwaysOnTop(miniOnTop, 'floating')
   keepBackdropAlive(miniWindow)
 
   /*
@@ -290,6 +319,7 @@ function createMiniWindow() {
  * フォーカスが外れたタイミングで素材を貼り直して透過を維持する。
  */
 function keepBackdropAlive(window) {
+  if (process.platform !== 'win32') return
   const reapply = () => {
     if (window.isDestroyed()) return
     try {

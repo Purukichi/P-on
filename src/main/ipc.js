@@ -10,6 +10,7 @@ import {
   setMiniAlwaysOnTop
 } from './windows.js'
 import { appInfo, checkForUpdatesManually } from './updater.js'
+import { takeOpenedFiles } from './opened-files.js'
 
 export function registerIpcHandlers() {
   const handle = (channel, fn) => ipcMain.handle(channel, fn)
@@ -22,6 +23,9 @@ export function registerIpcHandlers() {
   handle(IPC.LIBRARY_SNAPSHOT, () => library.snapshot())
 
   handle(IPC.LIBRARY_IMPORT, (_event, filePaths) => library.importFiles(asArray(filePaths)))
+
+  // エクスプローラーから開かれたファイル。前に開いたことのあるものは取り込み直さない
+  handle(IPC.APP_OPEN_PENDING_FILES, () => library.openFiles(takeOpenedFiles()))
 
   handle(IPC.LIBRARY_PICK_FILES, async (event) => {
     const { canceled, filePaths } = await dialog.showOpenDialog(windowOf(event), {
@@ -90,6 +94,25 @@ export function registerIpcHandlers() {
     })
     return canceled ? null : filePaths[0]
   }
+
+  handle(IPC.LIBRARY_REPLACE_AUDIO, async (_event, trackId, filePath) => ({
+    snapshot: await library.replaceAudio(trackId, filePath),
+    replaced: true
+  }))
+
+  handle(IPC.LIBRARY_PICK_AUDIO, async (event, trackId) => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(windowOf(event), {
+      title: '差し替える音源を選択',
+      buttonLabel: '差し替える',
+      properties: ['openFile'],
+      filters: [
+        { name: '音声ファイル', extensions: AUDIO_EXTENSIONS },
+        { name: 'すべてのファイル', extensions: ['*'] }
+      ]
+    })
+    if (canceled) return { snapshot: await library.snapshot(), replaced: false }
+    return { snapshot: await library.replaceAudio(trackId, filePaths[0]), replaced: true }
+  })
 
   handle(IPC.LIBRARY_DELETE_TRACK, (_event, trackId) => library.deleteTrack(trackId))
 

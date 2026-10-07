@@ -4,6 +4,7 @@ import { registerMediaProtocol, registerMediaScheme } from './media-protocol.js'
 import { ensureDirectories } from './library-store.js'
 import { createMainWindow, focusExistingWindow } from './windows.js'
 import { initUpdater } from './updater.js'
+import { audioPathsFromArgv, queueOpenedFiles } from './opened-files.js'
 
 /**
  * Windows にこのアプリを名乗るための ID。electron-builder.yml の appId と揃えること。
@@ -25,7 +26,20 @@ registerMediaScheme()
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
-  app.on('second-instance', () => focusExistingWindow())
+  // 「プログラムから開く」で起動されたとき。レンダラーが準備できたら取りに来る
+  queueOpenedFiles(audioPathsFromArgv(process.argv))
+
+  // 起動中にさらにファイルを開かれたときは、2 つ目のプロセスの argv がここに届く
+  app.on('second-instance', (_event, argv, workingDirectory) => {
+    queueOpenedFiles(audioPathsFromArgv(argv, workingDirectory))
+    focusExistingWindow()
+  })
+
+  // macOS はパスを引数ではなくイベントで渡してくる（起動前にも来る）
+  app.on('open-file', (event, filePath) => {
+    event.preventDefault()
+    queueOpenedFiles([filePath])
+  })
 
   app.whenReady().then(async () => {
     registerMediaProtocol()

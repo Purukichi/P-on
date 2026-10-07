@@ -8,7 +8,8 @@ import { filePathsFrom, isFileDrag, splitByExtension } from './drag.js'
  * タイトル / アーティスト / アルバムの入力と、ジャケットの差し替えを行う。
  *
  * events: 'save' ({trackId, title, artist, album}),
- *         'pick-cover' (trackId), 'drop-cover' ({trackId, imagePath}), 'clear-cover' (trackId)
+ *         'pick-cover' (trackId), 'drop-cover' ({trackId, imagePath}), 'clear-cover' (trackId),
+ *         'replace-audio' (trackId)
  */
 export class TrackEditor extends Emitter {
   #root
@@ -32,6 +33,9 @@ export class TrackEditor extends Emitter {
       'editor-pick-cover',
       'editor-clear-cover',
       'editor-cover-note',
+      'editor-audio-name',
+      'editor-audio-note',
+      'editor-replace-audio',
       'editor-cancel'
     ])
 
@@ -54,6 +58,9 @@ export class TrackEditor extends Emitter {
     this.#el.editorClearCover.addEventListener('click', () => {
       if (this.#trackId) this.emit('clear-cover', this.#trackId)
     })
+    this.#el.editorReplaceAudio.addEventListener('click', () => {
+      if (this.#trackId) this.emit('replace-audio', this.#trackId)
+    })
 
     this.#bindThumbDrop()
     return this
@@ -73,6 +80,7 @@ export class TrackEditor extends Emitter {
     this.#el.editorArtist.value = track.artist ?? ''
     this.#el.editorAlbum.value = track.album ?? ''
     this.renderCover(track)
+    this.renderAudio(track)
     this.#el.editor.showModal()
     this.#el.editorTitle.focus()
   }
@@ -90,6 +98,13 @@ export class TrackEditor extends Emitter {
     this.#el.editorCoverNote.textContent = usingAlbumCover
       ? 'いまはアルバム共通のジャケットを表示中。ここで設定するとこの曲だけ差し替わります。'
       : ''
+  }
+
+  /** 音源を差し替えたあと、開いたまま表示だけ更新する */
+  renderAudio(track) {
+    this.#el.editorAudioName.textContent = fileNameOf(track?.audioFile)
+    // 音質は音源そのものの性質なので、差し替えたことがここに出る
+    this.#el.editorAudioNote.textContent = track?.formatSummary ?? ''
   }
 
   close() {
@@ -121,4 +136,9 @@ export class TrackEditor extends Emitter {
       }
     })
   }
+}
+
+/** 'audio/かくかく.mp3' から 'かくかく.mp3' だけを取り出す */
+function fileNameOf(relativePath) {
+  return String(relativePath ?? '').split(/[\\/]/).pop() ?? ''
 }

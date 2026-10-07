@@ -145,6 +145,23 @@
   display: none;
 }
 
+/* 音源のファイル名と差し替えボタン。名前が長くても行を割らずに省略する */
+.editor__audio {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.editor__audio-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
 .editor__fields {
   display: flex;
   flex-direction: column;

@@ -96,6 +96,20 @@ export class Library extends Emitter {
     return this.#runImport(() => this.#api.library.import(filePaths))
   }
 
+  /**
+   * エクスプローラーから開かれたファイルを取り込む（開いたことのあるものは既存の曲を返す）。
+   * 開かれていなければ added は空。
+   */
+  async openPendingFiles() {
+    if (!this.#api.app?.openPendingFiles) return { added: [], skipped: [] }
+    return this.#runImport(() => this.#api.app.openPendingFiles())
+  }
+
+  /** エクスプローラーからファイルを開かれたときに呼ばれる。戻り値で購読を解除できる */
+  onFilesOpened(callback) {
+    return this.#api.app?.onFilesOpened?.(callback) ?? (() => {})
+  }
+
   /** ダイアログから取り込む */
   async pickFiles() {
     return this.#runImport(() => this.#api.library.pickFiles())
@@ -155,6 +169,18 @@ export class Library extends Emitter {
    */
   async reorderTracks(trackIds) {
     return this.#run(() => this.#api.library.reorderTracks(trackIds))
+  }
+
+  /**
+   * 鳴らす音源だけを入れ替える。曲情報とジャケットはそのまま残る。
+   * @returns {Promise<boolean>} 実際に差し替えたか（ダイアログを閉じられたら false）
+   */
+  async pickAudio(trackId) {
+    return this.#runReplace(() => this.#api.library.pickAudio(trackId))
+  }
+
+  async replaceAudioFromPath(trackId, filePath) {
+    return this.#runReplace(() => this.#api.library.replaceAudio(trackId, filePath))
   }
 
   async deleteTrack(trackId) {
@@ -243,6 +269,17 @@ export class Library extends Emitter {
     }
   }
 
+  async #runReplace(operation) {
+    try {
+      const { snapshot, replaced } = await operation()
+      this.#apply(snapshot)
+      return replaced
+    } catch (error) {
+      this.emit('error', error)
+      return false
+    }
+  }
+
   async #runImport(operation) {
     try {
       const { snapshot, added, skipped } = await operation()
@@ -261,6 +298,7 @@ export class Library extends Emitter {
     this.#albumCovers = snapshot.albumCovers ?? {}
     this.#albumArtists = snapshot.albumArtists ?? {}
     this.emit('change', this)
+    if (snapshot.contentError) this.emit('error', new Error(snapshot.contentError))
     return this
   }
 }

@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto'
 import { AUDIO_EXTENSIONS } from '../shared/ipc-channels.js'
 import { isSupportedImageExtension, readFormat, readMetadata } from './metadata.js'
 import { toMediaUrl } from './media-protocol.js'
+import { ensureBundledContent } from './bundled-content.js'
 import {
   AUDIO_DIR,
   COVER_DIR,
@@ -30,6 +31,12 @@ import {
 // ---- 読み取り ------------------------------------------------------------
 
 export async function snapshot() {
+  let contentError = null
+  try { await ensureBundledContent() }
+  catch (error) {
+    console.error('[content] 同梱音源を追加できませんでした:', error)
+    contentError = '同梱音源を追加できませんでした。空き容量を確認し、アプリを再起動してください。'
+  }
   const data = await load()
   const albumCovers = Object.fromEntries(
     Object.entries(data.albumCovers).map(([album, file]) => [
@@ -40,6 +47,7 @@ export async function snapshot() {
 
   return {
     libraryPath: libraryRoot(),
+    contentError,
     tracks: data.tracks.map((track) => toTrackDto(track, data.albumCovers)),
     playlists: data.playlists.map(toPlaylistDto),
     albumCovers,
@@ -265,6 +273,48 @@ export async function importFiles(filePaths) {
   return { snapshot: await snapshot(), added, skipped }
 }
 
+/**
+ * エクスプローラーから開かれたファイルを、開かれた順のまま曲 id にする。
+ *
+ * 取り込みはドロップと同じ（ライブラリへコピーして登録）。
+ * ただしダブルクリックは何度でも起こるので、前に同じ場所から取り込んだ曲が
+ * ライブラリに残っていれば、コピーし直さずにその曲を使う。
+ *
+ * @param {string[]} filePaths
+ * @returns {Promise<{snapshot: object, added: string[], skipped: string[]}>}
+ */
+export async function openFiles(filePaths) {
+  if (filePaths.length === 0) return { snapshot: await snapshot(), added: [], skipped: [] }
+
+  const { tracks } = await load()
+  /** 取り込み元 -> 曲 id。音源が消えているものは使わない */
+  const known = new Map()
+  for (const track of tracks) {
+    if (!track.sourcePath) continue
+    const absolute = resolveInLibrary(track.audioFile)
+    if (absolute && existsSync(absolute)) known.set(normalizePath(track.sourcePath), track.id)
+  }
+
+  const added = []
+  const skipped = []
+  // 1 曲ずつ取り込むと、どのパスがどの曲になったかが取り違えなく分かる。
+  // 開かれる数は多くないので、まとめて取り込まなくても困らない
+  for (const path of filePaths) {
+    const key = normalizePath(path)
+    if (!known.has(key)) {
+      const result = await importFiles([path])
+      if (result.added.length === 0) {
+        skipped.push(...result.skipped)
+        continue
+      }
+      known.set(key, result.added[0])
+    }
+    added.push(known.get(key))
+  }
+
+  return { snapshot: await snapshot(), added, skipped }
+}
+
 /** ファイルのコピーとタグ読み取りまでを済ませ、library.json に入れるレコードを組み立てる */
 async function stageOne(sourcePath, extension, { wantsCover }) {
   const originalName = basename(sourcePath, extension)
@@ -291,6 +341,8 @@ async function stageOne(sourcePath, extension, { wantsCover }) {
       duration: meta.duration,
       format: meta.format,
       audioFile: `${AUDIO_DIR}/${audioName}`,
+      /** 取り込み元。同じファイルをエクスプローラーから開き直したときに二重に取り込まないため */
+      sourcePath,
       coverFile: null,
       addedAt: new Date().toISOString()
     },
@@ -370,6 +422,54 @@ export async function setCover(trackId, imagePath) {
   })
 
   await removeFile(previousCoverFile)
+  return snapshot()
+}
+
+/**
+ * 鳴らす音源だけを入れ替える。
+ * タイトル・アーティスト・アルバム・ジャケットはそのまま残し、
+ * 音源ファイルと、そこから読み直した長さ・音質の表示だけを差し替える。
+ *
+ * 取り込みと同じく、選ばれたファイルはライブラリへコピーする。
+ * 元の置き場所とは切り離されるので、あとで移動・削除されても鳴らなくならない。
+ *
+ * 順番が肝。コピーし終えてから library.json を書き換え、古い音源を消すのは最後。
+ * 途中で失敗しても、元の音源のまま鳴り続ける。
+ */
+export async function replaceAudio(trackId, filePath) {
+  await ensureDirectories()
+
+  const data = await load()
+  const track = data.tracks.find((t) => t.id === trackId)
+  if (!track) throw new Error('トラックが見つかりません')
+
+  const extension = extname(filePath).toLowerCase()
+  if (!AUDIO_EXTENSIONS.includes(extension.slice(1))) {
+    throw new Error(`対応していない音声形式です (${AUDIO_EXTENSIONS.join(' / ')})`)
+  }
+
+  const audioName = await uniqueName(
+    audioDir(),
+    sanitize(basename(filePath, extension)),
+    extension
+  )
+  await copyFile(filePath, join(audioDir(), audioName))
+
+  // 長さと音質は新しい音源のもの。タグの曲名やジャケットは読まない（差し替えるのは音だけ）
+  const meta = await readMetadata(join(audioDir(), audioName))
+  const previousAudioFile = track.audioFile
+
+  await update((current) => {
+    const target = current.tracks.find((t) => t.id === trackId)
+    if (!target) return
+    target.audioFile = `${AUDIO_DIR}/${audioName}`
+    // 古い取り込み元を開き直したときに、差し替え後の音が鳴らないように
+    target.sourcePath = filePath
+    target.duration = meta.duration
+    target.format = meta.format
+  })
+
+  await removeFile(previousAudioFile)
   return snapshot()
 }
 

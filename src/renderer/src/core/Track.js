@@ -78,6 +78,7 @@ export class Track {
     const name = String(this.audioFile ?? '').split(/[\\/]/).pop() ?? ''
     return name.replace(/\.[^.]+$/, '')
   }
+
   get hasCover() {
     return Boolean(this.coverUrl)
   }

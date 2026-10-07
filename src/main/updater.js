@@ -1,5 +1,6 @@
 import { app, dialog } from 'electron'
 import electronUpdater from 'electron-updater'
+import { DISPLAY_VERSION } from '../shared/version.js'
 import { getMainWindow, getMiniWindow } from './windows.js'
 
 /**
@@ -34,7 +35,7 @@ let downloadedVersion = null
 
 /** バージョン情報のパネルに出す内容 */
 export function appInfo() {
-  return { version: app.getVersion(), ...support }
+  return { version: DISPLAY_VERSION, buildVersion: app.getVersion(), ...support }
 }
 
 /**
@@ -96,6 +97,8 @@ export function initUpdater() {
   support = { supported: true, reason: '' }
 
   autoUpdater.autoDownload = true
+  autoUpdater.allowPrerelease = app.getVersion().includes('-beta.')
+  autoUpdater.allowDowngrade = false
   autoUpdater.autoInstallOnAppQuit = true
   // 更新の記録はコンソールにだけ残す。画面に出すのは「用意ができた」ときだけ
   autoUpdater.logger = null
@@ -113,7 +116,7 @@ export function initUpdater() {
       type: 'info',
       message: `新しいバージョン ${info.version} を用意しました`,
       detail:
-        '再起動すると更新が適用されます。\n「あとで」を選んだ場合は、次にアプリを終了したときに自動で適用されます。',
+        '再起動すると更新が適用されます。音源を含む更新では、新しい楽曲もライブラリに追加されます。\n「あとで」を選んだ場合は、次にアプリを終了したときに自動で適用されます。',
       buttons: ['いま再起動して更新', 'あとで'],
       defaultId: 0,
       cancelId: 1

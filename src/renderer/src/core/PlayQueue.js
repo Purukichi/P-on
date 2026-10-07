@@ -184,20 +184,44 @@ export class PlayQueue extends Emitter {
     return true
   }
 
-  /** ライブラリ更新後に、キュー内の Track を新しい実体へ貼り替える */
+  /**
+   * ライブラリ更新後に、キュー内の Track を新しい実体へ貼り替える。
+   * 消えた曲は落とすが、キューそのものは畳まない。
+   * 鳴らしていた曲が消えていたら、その**次**に残っている曲を指し直す
+   * （アルバムを聴いている途中で 1 曲消しても、続きから鳴らせるように）。
+   */
   refresh(resolveTrack) {
     let changed = false
     const next = []
-    for (const track of this.#tracks) {
+    /** 残った曲が、消える前の並びで何番目にいたか */
+    const survivedFrom = []
+
+    this.#tracks.forEach((track, index) => {
       const resolved = resolveTrack(track.id)
-      if (resolved) next.push(resolved)
-      else changed = true
-    }
+      if (resolved) {
+        next.push(resolved)
+        survivedFrom.push(index)
+      } else {
+        changed = true
+      }
+    })
     if (!changed && next.every((track, i) => track === this.#tracks[i])) return
-    const currentId = this.current?.id
+
+    const previousIndex = this.#index
     this.#tracks = next
-    this.#index = currentId ? next.findIndex((track) => track.id === currentId) : -1
-    if (this.#index < 0 && next.length > 0) this.#index = 0
+
+    if (next.length === 0) {
+      this.#index = -1
+    } else {
+      /*
+       * 元の位置以降で最初に残っているもの。
+       * 鳴らしていた曲が残っていればそれ自身が見つかり、
+       * 消えていれば次の曲になる。末尾を消したときだけ後ろが無いので最後の曲へ。
+       */
+      const at = survivedFrom.findIndex((from) => from >= previousIndex)
+      this.#index = at >= 0 ? at : next.length - 1
+    }
+
     this.#emit()
   }
 

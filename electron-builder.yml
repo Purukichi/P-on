@@ -18,8 +18,8 @@ publish:
   provider: github
   owner: Purukichi
   repo: P-on
-  # 下書きや先行公開は配らない。正式公開したものだけを更新として扱う
-  releaseType: release
+  # β2.0.0 は先行公開。既存の安定版利用者には自動配信しない。
+  releaseType: prerelease
 
 directories:
   buildResources: build
@@ -29,16 +29,42 @@ directories:
 # exe に埋め込んだアイコンだけだと、エクスプローラーのキャッシュに古い絵が残ることがある。
 # windows.js がここに置いたファイルを BrowserWindow へ直接渡す。
 extraResources:
+  - from: generated/content
+    to: content
   - from: build/icon.ico
     to: icon.ico
+  - from: build/icon.png
+    to: icon.png
 
 # out/ (electron-vite の成果物) と package.json だけがパッケージに入ればよい
 files:
+  - 'out/**/*'
+  - 'package.json'
   - '!**/.vscode/*'
   - '!src/*'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{.editorconfig,.gitignore,README.md,CHANGELOG.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml,yarn.lock}'
+  - '!{android,ios,server,catalog,tests,scripts,docs}/**/*'
+  - '!generated/**/*'
+
+mac:
+  icon: build/icon.png
+  category: public.app-category.music
+  hardenedRuntime: true
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+  artifactName: ${productName}-${version}-mac-${arch}.${ext}
+  # 「このアプリケーションで開く」に出す。ファイルのアイコンは Finder の標準のまま
+  fileAssociations:
+    - ext: [mp3, wav, flac, m4a, aac, ogg, opus, webm]
+      name: Audio
+      role: Viewer
 
 win:
   # build/source/app-icon.jpg から build/make-icon.cjs が作ったもの
@@ -75,6 +101,48 @@ win:
       arch:
         - x64
   artifactName: ${productName}-${version}-${arch}.${ext}
+  # 音声ファイルとの関連付け。インストーラがレジストリに登録し、
+  # エクスプローラーの「プログラムから開く」の一覧に P-on が出るようになる。
+  # 開かれたファイルのパスは起動引数で届く（src/main/opened-files.js）。
+  #
+  # Windows 10 以降は、アプリ側から勝手に「既定のアプリ」にはできない
+  # （利用者が一覧で選んで「常に使う」を押したときだけ既定になる）。
+  #
+  # アイコンは build/make-file-icons.cjs が作った、拡張子入りのシンプルな紙の絵。
+  # 拡張子は src/shared/ipc-channels.js の AUDIO_EXTENSIONS と揃えること。
+  fileAssociations:
+    - ext: mp3
+      name: MP3 Audio
+      description: MP3 オーディオ
+      icon: build/file-icons/mp3.ico
+    - ext: wav
+      name: WAV Audio
+      description: WAV オーディオ
+      icon: build/file-icons/wav.ico
+    - ext: flac
+      name: FLAC Audio
+      description: FLAC オーディオ
+      icon: build/file-icons/flac.ico
+    - ext: m4a
+      name: M4A Audio
+      description: M4A オーディオ
+      icon: build/file-icons/m4a.ico
+    - ext: aac
+      name: AAC Audio
+      description: AAC オーディオ
+      icon: build/file-icons/aac.ico
+    - ext: ogg
+      name: OGG Audio
+      description: OGG オーディオ
+      icon: build/file-icons/ogg.ico
+    - ext: opus
+      name: Opus Audio
+      description: Opus オーディオ
+      icon: build/file-icons/opus.ico
+    - ext: webm
+      name: WebM Audio
+      description: WebM オーディオ
+      icon: build/file-icons/webm.ico
 
 nsis:
   # 管理者権限を求めず、現在のユーザーにだけ入れる。
