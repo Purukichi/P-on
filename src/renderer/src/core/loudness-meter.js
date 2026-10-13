@@ -11,6 +11,10 @@
  * - トゥルーピークは Annex 2 の 4 倍オーバーサンプリング（48 kHz 前提）で、サンプル間の山を拾う
  *
  * 音はまとめて渡さず push() で少しずつ流し込める。長い曲でも複製を抱え込まずに済むように。
+ *
+ * 結果にはブロックごとの大きさの分布（ヒストグラム）も付ける。
+ * アルバム全体のラウドネスは「全曲をつなげて 1 本として測った値」なので、
+ * 曲ごとの分布を足し合わせてからゲートをかけ直せば、音を読み直さずに求められる（combineLoudness）。
  */
 
 const SEGMENT_SECONDS = 0.1
@@ -18,6 +22,8 @@ const SEGMENT_SECONDS = 0.1
 const SEGMENTS_PER_BLOCK = 4
 const ABSOLUTE_GATE_LUFS = -70
 const RELATIVE_GATE_LU = -10
+/** ブロックの分布を残すときの刻み（LU）。libebur128 のヒストグラム方式と同じ 0.1 LU */
+const HISTOGRAM_STEP = 0.1
 
 /**
  * Annex 2 のオーバーサンプリング用 FIR（48 タップを 4 位相に分けたもの）。
@@ -153,17 +159,20 @@ export class LoudnessMeter {
   }
 
   /**
-   * @returns {{integrated: number, truePeak: number}}
+   * @returns {{integrated: number, truePeak: number, histogram: Histogram}}
    *   integrated: LUFS（無音などで測れなければ -Infinity）/ truePeak: dBTP
    */
   get result() {
+    const blocks = this.#blocks()
     return {
-      integrated: this.#integrated(),
-      truePeak: this.#peak > 0 ? 20 * Math.log10(this.#peak) : -Infinity
+      integrated: gatedLoudness(blocks),
+      truePeak: this.#peak > 0 ? 20 * Math.log10(this.#peak) : -Infinity,
+      histogram: toHistogram(blocks)
     }
   }
 
-  #integrated() {
+  /** 400 ms ブロックごとのパワー */
+  #blocks() {
     // 最後の、100 ms に満たない区間はブロックに含めない
     const complete = Math.floor(this.#samples / this.#segmentLength)
     const blockLength = this.#segmentLength * SEGMENTS_PER_BLOCK
@@ -173,13 +182,7 @@ export class LoudnessMeter {
       for (let i = 0; i < SEGMENTS_PER_BLOCK; i += 1) energy += this.#segments[start + i]
       blocks.push(energy / blockLength)
     }
-
-    const aboveAbsolute = blocks.filter((power) => powerToLufs(power) > ABSOLUTE_GATE_LUFS)
-    if (aboveAbsolute.length === 0) return -Infinity
-
-    const relativeGate = powerToLufs(mean(aboveAbsolute)) + RELATIVE_GATE_LU
-    const gated = aboveAbsolute.filter((power) => powerToLufs(power) > relativeGate)
-    return gated.length > 0 ? powerToLufs(mean(gated)) : -Infinity
+    return blocks
   }
 
   /** K 特性を通しながら二乗和を取る。フィルタの状態は次の呼び出しへ持ち越す */
@@ -234,6 +237,90 @@ export class LoudnessMeter {
     this.#peak = peak
     history.set(buffer.subarray(buffer.length - keep))
   }
+}
+
+/** ブロックのパワーの列に、絶対ゲートと相対ゲートをかけて積分ラウドネスを出す */
+function gatedLoudness(blocks) {
+  const aboveAbsolute = blocks.filter((power) => powerToLufs(power) > ABSOLUTE_GATE_LUFS)
+  if (aboveAbsolute.length === 0) return -Infinity
+
+  const relativeGate = powerToLufs(mean(aboveAbsolute)) + RELATIVE_GATE_LU
+  const gated = aboveAbsolute.filter((power) => powerToLufs(power) > relativeGate)
+  return gated.length > 0 ? powerToLufs(mean(gated)) : -Infinity
+}
+
+/**
+ * @typedef {{start: number, counts: number[], energy: number[]}} Histogram
+ *   -70 LUFS から 0.1 LU 刻みの棚に、ブロックが何個入ったか（counts）と、
+ *   入ったブロックのパワーの合計（energy）。
+ *   合計を持っておくと、ゲートの境目以外は棚の幅に丸めずに平均を出せる。
+ *   空の棚が続く両端は省き、start 番目の棚から並べる（保存する量を減らすため）
+ */
+
+/** 絶対ゲートを越えたブロックだけを棚に振り分ける */
+function toHistogram(blocks) {
+  const bins = new Map()
+  for (const power of blocks) {
+    const loudness = powerToLufs(power)
+    if (!(loudness > ABSOLUTE_GATE_LUFS)) continue
+    const bin = Math.floor((loudness - ABSOLUTE_GATE_LUFS) / HISTOGRAM_STEP)
+    const entry = bins.get(bin) ?? { count: 0, energy: 0 }
+    entry.count += 1
+    entry.energy += power
+    bins.set(bin, entry)
+  }
+  if (bins.size === 0) return { start: 0, counts: [], energy: [] }
+
+  const start = Math.min(...bins.keys())
+  const end = Math.max(...bins.keys())
+  const counts = []
+  const energy = []
+  for (let bin = start; bin <= end; bin += 1) {
+    counts.push(bins.get(bin)?.count ?? 0)
+    energy.push(bins.get(bin)?.energy ?? 0)
+  }
+  return { start, counts, energy }
+}
+
+/** 棚の下端の大きさ。ゲートの判定はこの値で行う */
+function binFloor(bin) {
+  return ABSOLUTE_GATE_LUFS + bin * HISTOGRAM_STEP
+}
+
+/**
+ * 何曲かの分布を足し合わせて、全体を 1 本として測った積分ラウドネスを出す。
+ * アルバム単位の補正に使う。
+ * @param {Histogram[]} histograms
+ * @returns {number} LUFS（測れなければ -Infinity）
+ */
+export function combineLoudness(histograms) {
+  const totals = new Map()
+  for (const { start, counts, energy } of histograms) {
+    counts.forEach((count, i) => {
+      if (!count) return
+      const entry = totals.get(start + i) ?? { count: 0, energy: 0 }
+      entry.count += count
+      entry.energy += energy[i]
+      totals.set(start + i, entry)
+    })
+  }
+
+  const meanPower = (minimumLufs) => {
+    let sum = 0
+    let count = 0
+    for (const [bin, entry] of totals) {
+      // 棚の中身は丸ごと残すか捨てるかで判定する（境目の棚だけ 0.1 LU の誤差が出うる）
+      if (binFloor(bin) + HISTOGRAM_STEP <= minimumLufs) continue
+      sum += entry.energy
+      count += entry.count
+    }
+    return count > 0 ? sum / count : 0
+  }
+
+  // 棚に入っているのは絶対ゲートを越えたブロックだけなので、ここからは相対ゲートだけでよい
+  const ungated = meanPower(-Infinity)
+  if (ungated === 0) return -Infinity
+  return powerToLufs(meanPower(powerToLufs(ungated) + RELATIVE_GATE_LU))
 }
 
 function mean(values) {

@@ -1,5 +1,6 @@
 import { Emitter } from '../core/Emitter.js'
 import { IMAGE_EXTENSIONS } from '@shared/ipc-channels.js'
+import { formatDb } from '../utils/decibel.js'
 import { formatTime } from '../utils/time.js'
 import { artistLinks } from './ArtistLinks.js'
 import { collect, setMarqueeText } from './dom.js'
@@ -109,18 +110,18 @@ export class NowPlaying extends Emitter {
   renderLoudness(status) {
     const button = this.#el.loudness
     const { mode, profile, state } = status
+    const on = mode !== 'off'
     button.dataset.mode = mode
     button.dataset.state = state
-    this.#el.loudnessLabel.textContent = profile ? profile.label : 'オフ'
-    this.#el.loudnessLabel.dataset.short = profile ? profile.shortLabel : 'オフ'
+    const label = on ? profile.label : 'オフ'
+    this.#el.loudnessLabel.textContent = label
 
-    const heading = profile
+    const heading = on
       ? `音量の自動調整: ${profile.label} 準拠（${formatDb(profile.target, { digits: 0 })} LUFS）`
       : '音量の自動調整: オフ'
     const detail = loudnessDetail(status)
-    const nextLabel =
-      mode === 'off' ? 'Spotify 準拠に' : mode === 'spotify' ? 'Apple Music 準拠に' : 'オフに'
-    button.dataset.tip = [heading, detail, `押すと${nextLabel}切り替え`].filter(Boolean).join('\n')
+    const hint = on ? '押すとオフに切り替え' : '押すと Spotify 準拠に切り替え'
+    button.dataset.tip = [heading, detail, hint].filter(Boolean).join('\n')
     button.setAttribute('aria-label', heading)
   }
 
@@ -379,7 +380,7 @@ export class NowPlaying extends Emitter {
 }
 
 /** この曲をどれだけ動かしているかの一文 */
-function loudnessDetail({ state, measurement, gainDb, reason }) {
+function loudnessDetail({ state, basis, albumName, measurement, gainDb, reason }) {
   switch (state) {
     case 'pending':
       return 'この曲の音量を測っています…'
@@ -387,18 +388,14 @@ function loudnessDetail({ state, measurement, gainDb, reason }) {
       return reason === 'too-long'
         ? 'この曲は長すぎるため、そのままの音量で鳴らしています'
         : 'この曲は測れなかったため、そのままの音量で鳴らしています'
-    case 'ready':
+    case 'ready': {
       if (!Number.isFinite(measurement?.integrated)) return 'この曲はほぼ無音のため、そのままの音量です'
-      return `この曲: ${formatDb(measurement.integrated)} LUFS → ${formatDb(gainDb, { sign: true })} dB`
+      const change = `${formatDb(measurement.integrated)} LUFS → ${formatDb(gainDb, { sign: true })} dB`
+      return basis === 'album'
+        ? `アルバム単位（${albumName}）: ${change}`
+        : `曲単位: ${change}`
+    }
     default:
       return ''
   }
-}
-
-/** 既定は小数 1 桁。負の数はハイフンでなくマイナス記号（−）で出す */
-function formatDb(value, { sign = false, digits = 1 } = {}) {
-  const rounded = Number(value.toFixed(digits))
-  const text = Math.abs(rounded).toFixed(digits)
-  if (rounded < 0) return `−${text}`
-  return sign ? `+${text}` : text
 }

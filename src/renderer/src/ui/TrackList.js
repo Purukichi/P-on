@@ -1,4 +1,5 @@
 import { Emitter } from '../core/Emitter.js'
+import { formatDb } from '../utils/decibel.js'
 import { formatTime } from '../utils/time.js'
 import { artistLinks } from './ArtistLinks.js'
 import { collect, create } from './dom.js'
@@ -71,6 +72,12 @@ export class TrackList extends Emitter {
   #panelGrip = { x: 0, y: 0 }
   /** この一覧の中に落とされたか。外で終わったときは並びを元に戻す */
   #dropped = false
+  /**
+   * 曲ごとのラウドネスの測定状況を返す関数（LoudnessNormalizer#infoOf）。
+   * 渡されるまでは「i」に形式だけを出す
+   * @type {((track: import('../core/Track.js').Track) => object)|null}
+   */
+  #loudnessInfo = null
 
   constructor(root) {
     super()
@@ -103,6 +110,8 @@ export class TrackList extends Emitter {
       const trackId = row.dataset.trackId
       const action = event.target.closest('[data-action]')?.dataset.action
 
+      // 「i」は説明を出すだけ。押しても再生は始めない
+      if (action === 'info') return
       if (action === 'edit') this.emit('edit', trackId)
       else if (action === 'detach') this.emit('detach', trackId)
       else if (!this.#editing) this.emit('play', trackId)
@@ -470,6 +479,48 @@ export class TrackList extends Emitter {
     }
   }
 
+  /** 曲ごとのラウドネスの引き方を渡す。以後の行の「i」に測定値が出る */
+  setLoudnessInfo(lookup) {
+    this.#loudnessInfo = lookup
+    this.refreshInfo()
+  }
+
+  /**
+   * 「i」の説明だけを書き直す（測り終えるたびに呼ばれる）。
+   * 行は組み直さないので、編集中や並べ替えの最中でも邪魔をしない。
+   */
+  refreshInfo() {
+    const byId = new Map(this.#tracks.map((track) => [track.id, track]))
+    for (const button of this.#el.list.querySelectorAll('[data-action="info"]')) {
+      const track = byId.get(button.closest('[data-track-id]')?.dataset.trackId)
+      if (track) button.dataset.tip = this.#describe(track)
+    }
+  }
+
+  /** 「i」に出す説明。ファイル形式 / ラウドネス（積分値）/ トゥルーピーク */
+  #describe(track) {
+    const format = track.formatSummary || fileExtension(track.audioFile) || '不明'
+    const lines = [`ファイル形式: ${format}`]
+    const info = this.#loudnessInfo?.(track) ?? { state: 'pending' }
+
+    if (info.state === 'ready') {
+      const { integrated, truePeak } = info.measurement
+      lines.push(
+        `ラウドネス (INT): ${Number.isFinite(integrated) ? `${formatDb(integrated)} LUFS` : '測れる音がありません'}`,
+        `True Peak: ${Number.isFinite(truePeak) ? `${formatDb(truePeak, { sign: true })} dBTP` : '—'}`
+      )
+    } else if (info.state === 'skipped') {
+      lines.push(
+        info.reason === 'too-long'
+          ? 'ラウドネス: 20 分を超える曲は測っていません'
+          : 'ラウドネス: この音源は読み込めませんでした'
+      )
+    } else {
+      lines.push('ラウドネス: 測定中…')
+    }
+    return lines.join('\n')
+  }
+
   /** 再生中の行にマークを付ける */
   setActive(trackId) {
     this.#activeTrackId = trackId
@@ -540,6 +591,16 @@ export class TrackList extends Emitter {
           })
         ]
       }),
+      create('button', {
+        className: 'track__info',
+        attrs: {
+          type: 'button',
+          'data-action': 'info',
+          'data-tip': this.#describe(track),
+          'aria-label': '音源の情報'
+        },
+        children: [infoIcon()]
+      }),
       create('span', {
         className: 'track__duration',
         text: Number.isFinite(track.duration) ? formatTime(track.duration) : '--:--'
@@ -589,4 +650,32 @@ export class TrackList extends Emitter {
     input.value = value
     return input
   }
+}
+
+/** 丸に i の印 */
+function infoIcon() {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svg.setAttribute('viewBox', '0 0 24 24')
+  svg.setAttribute('fill', 'none')
+  svg.setAttribute('stroke', 'currentColor')
+  svg.setAttribute('stroke-width', '1.8')
+  svg.setAttribute('stroke-linecap', 'round')
+  svg.setAttribute('aria-hidden', 'true')
+  svg.setAttribute('class', 'track__info-icon')
+  for (const [tag, attrs] of [
+    ['circle', { cx: 12, cy: 12, r: 9 }],
+    ['path', { d: 'M12 11v5.5' }],
+    ['path', { d: 'M12 7.6v.1' }]
+  ]) {
+    const node = document.createElementNS('http://www.w3.org/2000/svg', tag)
+    for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value))
+    svg.append(node)
+  }
+  return svg
+}
+
+/** 形式を読み取れていない曲は、拡張子だけでも出す */
+function fileExtension(path) {
+  const match = /\.([^./\\]+)$/.exec(String(path ?? ''))
+  return match ? match[1].toUpperCase() : ''
 }

@@ -1,58 +1,41 @@
 import { Emitter } from './Emitter.js'
-import { LoudnessMeter } from './loudness-meter.js'
+import { LoudnessMeter, combineLoudness } from './loudness-meter.js'
+import { openLoudnessStore } from './loudness-store.js'
 
 /**
- * ラウドネスノーマライズ（曲ごとの音量差をならす再生）。
+ * ラウドネスノーマライズ（曲ごとの音量差をならす再生）。Spotify の「標準」設定に合わせている。
  *
- * どちらも ITU-R BS.1770 の積分ラウドネスで曲を測り、目標との差だけ音量を上げ下げする。
+ * - 曲は ITU-R BS.1770 の積分ラウドネスで測り、-14 LUFS との差だけ音量を上げ下げする
+ *   （Spotify for Artists「Loudness normalization」）
+ * - 小さい曲を持ち上げるときはトゥルーピークを見て上げ幅を抑え、
+ *   非可逆圧縮の音源では 1 dB の余白を残す（= -1 dBTP まで）。可逆の音源は 0 dBTP まで
+ * - リミッターを掛けるのは Spotify でも「大」設定だけなので、ここでは掛けない
+ * - アルバムを曲順どおりに通して聴くときは、アルバム全体を 1 本として測った値で揃え、
+ *   アルバムの中では音量を動かさない（静かな曲は静かなまま）。
+ *   シャッフルやプレイリスト、寄せ集めのキューでは 1 曲ずつ揃える。これも Spotify と同じ
  *
- * Spotify（既定の「標準」設定）
- *   - 目標 -14 LUFS（Spotify for Artists「Loudness normalization」）
- *   - 小さい曲を持ち上げるときはトゥルーピークを見て上げ幅を抑え、
- *     非可逆圧縮の音源では 1 dB の余白を残す（= -1 dBTP まで）。可逆の音源は 0 dBTP まで
- *   - リミッターを掛けるのは「大」設定だけなので、ここでは掛けない
- *
- * Apple Music（サウンドチェック）
- *   - 目標 -16 LUFS。Apple は数値を公式に文書化していないが、
- *     2022 年に LUFS 基準へ切り替わって以降の実測値として広く使われている値
- *   - 持ち上げる場合の上限も公表されていないので、Apple が配信用マスターに求める
- *     -1 dBTP を超えない範囲に留める（クリップさせない）
- *
- * 曲は 1 曲ずつ測る（Spotify がアルバム再生時に行うアルバム単位の調整はしていない）。
+ * 測るのは再生のときではなく、取り込んだ時点から。ライブラリの曲を裏で 1 曲ずつ測っておき、
+ * 結果は一覧の各曲の「i」にも出す。
  */
 
 export const LoudnessMode = {
   OFF: 'off',
-  SPOTIFY: 'spotify',
-  APPLE: 'apple'
+  SPOTIFY: 'spotify'
 }
 
-/** 押すたびにこの順で巡る */
-const MODE_ORDER = [LoudnessMode.OFF, LoudnessMode.SPOTIFY, LoudnessMode.APPLE]
-
-export const LOUDNESS_PROFILES = {
-  [LoudnessMode.SPOTIFY]: {
-    label: 'Spotify',
-    /** 幅が足りないとき（スマホ）に出す名前 */
-    shortLabel: 'Spotify',
-    /** LUFS */
-    target: -14,
-    /** 持ち上げるときのトゥルーピークの上限（dBTP） */
-    ceiling: { lossy: -1, lossless: 0 }
-  },
-  [LoudnessMode.APPLE]: {
-    label: 'Apple Music',
-    shortLabel: 'Apple',
-    target: -16,
-    ceiling: { lossy: -1, lossless: -1 }
-  }
+export const SPOTIFY_PROFILE = {
+  label: 'Spotify',
+  /** LUFS */
+  target: -14,
+  /** 持ち上げるときのトゥルーピークの上限（dBTP） */
+  ceiling: { lossy: -1, lossless: 0 }
 }
 
 /**
  * 目標に合わせるための増減（dB）。
  * 下げるぶんには制限なし。上げるときだけ、トゥルーピークが上限を越えない所で止める。
  *
- * @param {{integrated: number, truePeak: number}|null} measurement
+ * @param {{integrated: number|null, truePeak: number|null}|null} measurement
  * @param {{target: number, ceiling: {lossy: number, lossless: number}}} profile
  * @param {{lossless?: boolean}} [options]
  */
@@ -66,10 +49,27 @@ export function normalizationGainDb(measurement, profile, { lossless = false } =
   return Math.max(0, Math.min(gain, headroom))
 }
 
+/**
+ * 何曲かをまとめて 1 本とみなした測定値（アルバム単位の補正に使う）。
+ * ラウドネスは各曲のブロックの分布を足し合わせてゲートをかけ直したもの、
+ * トゥルーピークは全曲のうちいちばん高いもの。
+ *
+ * @param {{truePeak: number|null, histogram: import('./loudness-meter.js').Histogram}[]} measurements
+ */
+export function combineMeasurements(measurements) {
+  const integrated = combineLoudness(measurements.map((m) => m.histogram))
+  const peaks = measurements.map((m) => m.truePeak).filter(Number.isFinite)
+  return {
+    integrated: Number.isFinite(integrated) ? round2(integrated) : null,
+    truePeak: peaks.length > 0 ? Math.max(...peaks) : null
+  }
+}
+
 const MODE_KEY = 'hamon.loudness'
-const CACHE_KEY = 'hamon.loudness-cache'
-/** 測り方を変えたら上げる。古い測定値は読まずに測り直す */
-const CACHE_VERSION = 1
+/** 1.4.0 で使っていた localStorage の測定結果。分布を持っていないので捨てて測り直す */
+const LEGACY_CACHE_KEY = 'hamon.loudness-cache'
+/** 測り方や残す中身を変えたら上げる。古い測定値は読まずに測り直す */
+const RECORD_VERSION = 3
 /**
  * これより長い曲は測らない（そのままの音量で鳴らす）。
  * 測るときは曲全体を一度ほどくので、48 kHz ステレオで 20 分 ≒ 460 MB を抱えることになる。
@@ -82,50 +82,66 @@ const CHUNK_SECONDS = 10
 
 /**
  * 曲の測定と、AudioEngine へのゲインの受け渡しを受け持つ。
- * 測った値は端末に残すので、同じ曲は 2 回目から即座に揃う。
  *
- * events: 'change' (status) — モードや測定状況が変わったとき
+ * events:
+ *   'change'   (status) — オン / オフや、鳴っている曲の補正が変わったとき
+ *   'measured' (track|null) — どれかの曲を測り終えたとき（一覧の表示を更新する）
  */
 export class LoudnessNormalizer extends Emitter {
   #engine
   #storage
   #mode
-  /** @type {Record<string, {integrated: number|null, truePeak: number|null}>} */
-  #cache
+  /** IndexedDB に残した測定結果。開き終わるまでは null @type {Awaited<ReturnType<typeof openLoudnessStore>>|null} */
+  #store = null
   /** 測れなかった曲（形式が読めない / 長すぎる）。起動し直すまでは測り直さない */
   #skipped = new Map()
   /** @type {import('./Track.js').Track|null} */
   #track = null
+  /**
+   * アルバム単位で揃える範囲。アルバムを曲順どおりに鳴らしている間だけ入る。
+   * @type {{id: string, name: string, tracks: import('./Track.js').Track[]}|null}
+   */
+  #album = null
   /** @type {import('./Track.js').Track[]} 次に鳴りそうな曲（先に測っておく） */
   #upcoming = []
+  /** @type {import('./Track.js').Track[]} ライブラリの全曲。手が空いたら新しく取り込んだ順に測る */
+  #library = []
   /** いま測っている曲のキー */
   #running = null
 
-  constructor(engine, { storage = globalThis.localStorage } = {}) {
+  constructor(engine, { storage = globalThis.localStorage, openStore = openLoudnessStore } = {}) {
     super()
     this.#engine = engine
     this.#storage = storage
+    // 1.4.0 の Apple Music 準拠は無くしたので、選んでいた人も Spotify 準拠でオンのままにする
     const saved = safeGet(storage, MODE_KEY)
-    this.#mode = MODE_ORDER.includes(saved) ? saved : LoudnessMode.OFF
-    this.#cache = loadCache(storage)
+    this.#mode = saved && saved !== LoudnessMode.OFF ? LoudnessMode.SPOTIFY : LoudnessMode.OFF
+    safeRemove(storage, LEGACY_CACHE_KEY)
+
+    openStore().then((store) => {
+      this.#store = store
+      this.#prune()
+      this.#apply({ smooth: true })
+      this.#emitChange()
+      this.emit('measured', null)
+      this.#schedule()
+    })
   }
 
   get mode() {
     return this.#mode
   }
 
-  /** 次のモードへ切り替える */
-  cycle() {
-    const next = MODE_ORDER[(MODE_ORDER.indexOf(this.#mode) + 1) % MODE_ORDER.length]
-    this.#mode = next
-    safeSet(this.#storage, MODE_KEY, next)
+  /** オン / オフを切り替える */
+  toggle() {
+    this.#mode = this.#mode === LoudnessMode.OFF ? LoudnessMode.SPOTIFY : LoudnessMode.OFF
+    safeSet(this.#storage, MODE_KEY, this.#mode)
     this.#apply({ smooth: true })
-    this.#schedule()
     this.#emitChange()
-    return next
+    return this.#mode
   }
 
-  /** 鳴らす曲が変わったら呼ぶ */
+  /** 鳴らす曲が変わったら呼ぶ（再生が始まる前に） */
   setTrack(track) {
     this.#track = track
     this.#apply({ smooth: false })
@@ -133,39 +149,116 @@ export class LoudnessNormalizer extends Emitter {
     this.#emitChange()
   }
 
-  /** これから鳴りそうな曲を渡しておくと、手が空いているときに測っておく */
+  /**
+   * アルバム単位で揃える範囲を決める。アルバムを曲順どおりに鳴らしているときだけ渡し、
+   * シャッフル / プレイリスト / 寄せ集めのキューでは null（1 曲ずつ揃える）。
+   * @param {{id: string, name: string, tracks: import('./Track.js').Track[]}|null} album
+   */
+  setAlbum(album) {
+    const signature = (value) => (value ? `${value.id}:${value.tracks.map(trackKey).join(',')}` : '')
+    if (signature(album) === signature(this.#album)) return
+    this.#album = album
+    this.#apply({ smooth: true })
+    this.#schedule()
+    this.#emitChange()
+  }
+
+  /** これから鳴りそうな曲を渡しておくと、先に測っておく */
   prefetch(tracks) {
     this.#upcoming = tracks.filter(Boolean)
     this.#schedule()
   }
 
+  /** ライブラリの全曲を渡しておくと、まだ測っていない曲を新しく取り込んだものから測る */
+  setLibrary(tracks) {
+    this.#library = [...tracks].sort((a, b) =>
+      String(b.addedAt ?? '').localeCompare(String(a.addedAt ?? ''))
+    )
+    this.#prune()
+    this.#schedule()
+  }
+
   /**
-   * 画面に出すための現在の状態。
+   * 一覧に出すための、曲ごとの測定状況。
+   * @returns {{state: 'ready', measurement: {integrated: number|null, truePeak: number|null}}
+   *   | {state: 'pending'} | {state: 'skipped', reason: 'too-long'|'unreadable'}}
+   */
+  infoOf(track) {
+    const skipped = this.#skipped.get(trackKey(track))
+    if (skipped) return { state: 'skipped', reason: skipped }
+    const measurement = this.#measurement(track)
+    return measurement ? { state: 'ready', measurement } : { state: 'pending' }
+  }
+
+  /**
+   * ボタンに出すための、鳴っている曲の状態。
    * state: 'off' | 'idle'（曲なし）| 'pending'（測定中）| 'ready' | 'skipped'
+   * basis: 'album'（アルバム全体の値で揃えている）| 'track'
    */
   get status() {
     const mode = this.#mode
-    const profile = LOUDNESS_PROFILES[mode] ?? null
+    const profile = SPOTIFY_PROFILE
     const track = this.#track
-    if (!profile) return { mode, profile, state: 'off' }
+    if (mode === LoudnessMode.OFF) return { mode, profile, state: 'off' }
     if (!track) return { mode, profile, state: 'idle' }
 
-    const key = trackKey(track)
-    const skipped = this.#skipped.get(key)
-    if (skipped) return { mode, profile, state: 'skipped', reason: skipped }
+    const album = this.#albumMeasurement()
+    if (album) {
+      return {
+        mode,
+        profile,
+        state: 'ready',
+        basis: 'album',
+        albumName: this.#album.name,
+        measurement: album.measurement,
+        gainDb: normalizationGainDb(album.measurement, profile, { lossless: album.lossless })
+      }
+    }
 
-    const measurement = this.#cache[key]
-    if (!measurement) return { mode, profile, state: 'pending' }
+    const info = this.infoOf(track)
+    if (info.state !== 'ready') return { mode, profile, ...info }
     return {
       mode,
       profile,
       state: 'ready',
-      measurement,
-      gainDb: normalizationGainDb(measurement, profile, { lossless: isLossless(track) })
+      basis: 'track',
+      measurement: info.measurement,
+      gainDb: normalizationGainDb(info.measurement, profile, { lossless: isLossless(track) })
     }
   }
 
   // ---- 内部 --------------------------------------------------------------
+
+  #measurement(track) {
+    const record = this.#store?.entries.get(trackKey(track))
+    return record?.version === RECORD_VERSION ? record : null
+  }
+
+  /**
+   * アルバム全体の測定値。アルバム単位で揃える場面で、全曲を測り終えているときだけ返す
+   * （途中までの値で揃えると、測り終えた時点で音量がずれるため。それまでは 1 曲ずつ揃える）。
+   * 長すぎる / 読めない曲は数に入れない。
+   */
+  #albumMeasurement() {
+    const album = this.#album
+    const track = this.#track
+    if (!album || !track || !album.tracks.some((t) => t.id === track.id)) return null
+
+    const measured = []
+    for (const albumTrack of album.tracks) {
+      if (this.#skipped.has(trackKey(albumTrack))) continue
+      const measurement = this.#measurement(albumTrack)
+      if (!measurement) return null
+      measured.push({ track: albumTrack, measurement })
+    }
+    if (measured.length === 0) return null
+
+    return {
+      measurement: combineMeasurements(measured.map((m) => m.measurement)),
+      // 1 曲でも非可逆が混ざっていれば、余白は非可逆の側に合わせる
+      lossless: measured.every((m) => isLossless(m.track))
+    }
+  }
 
   #apply({ smooth }) {
     const status = this.status
@@ -188,15 +281,31 @@ export class LoudnessNormalizer extends Emitter {
     }
   }
 
-  /** 測っていない曲を 1 曲ずつ測る。鳴っている曲を最優先にする */
-  async #schedule() {
-    if (this.#running || this.#mode === LoudnessMode.OFF) return
+  /** ライブラリから消えた曲（音源を差し替えた曲の古い音を含む）の測定結果を捨てる */
+  #prune() {
+    if (!this.#store || this.#library.length === 0) return
+    const keys = new Set(this.#library.map(trackKey))
+    for (const key of [...this.#store.entries.keys()]) {
+      if (!keys.has(key)) this.#store.remove(key)
+    }
+  }
 
-    const target = [this.#track, ...this.#upcoming].find((track) => {
-      if (!track?.audioUrl) return false
-      const key = trackKey(track)
-      return !this.#cache[key] && !this.#skipped.has(key)
-    })
+  /**
+   * 測っていない曲を 1 曲ずつ測る。オフの間も測っておく（一覧の「i」に出すため）。
+   * 鳴っている曲 → 鳴らしているアルバムの残り → 次に鳴る曲 → ライブラリ（新しい順）の順に拾う。
+   */
+  async #schedule() {
+    if (this.#running || !this.#store) return
+
+    const candidates = [
+      this.#track,
+      ...(this.#album?.tracks ?? []),
+      ...this.#upcoming,
+      ...this.#library
+    ]
+    const target = candidates.find(
+      (track) => track?.audioUrl && !this.#measurement(track) && !this.#skipped.has(trackKey(track))
+    )
     if (!target) return
 
     const key = trackKey(target)
@@ -206,8 +315,7 @@ export class LoudnessNormalizer extends Emitter {
         this.#skipped.set(key, 'too-long')
       } else {
         const measurement = await analyzeTrack(target)
-        this.#cache[key] = measurement
-        saveCache(this.#storage, this.#cache)
+        this.#store.put(key, { version: RECORD_VERSION, ...measurement })
       }
     } catch (error) {
       console.warn('[loudness] 測定できませんでした:', target.displayTitle, error)
@@ -216,7 +324,12 @@ export class LoudnessNormalizer extends Emitter {
       this.#running = null
     }
 
-    if (this.#track && trackKey(this.#track) === key) {
+    this.emit('measured', target)
+    // 鳴っている曲か、鳴らしているアルバムの曲なら、補正が変わりうる
+    const affectsPlayback =
+      (this.#track && trackKey(this.#track) === key) ||
+      this.#album?.tracks.some((track) => trackKey(track) === key)
+    if (affectsPlayback) {
       this.#apply({ smooth: true })
       this.#emitChange()
     }
@@ -259,7 +372,7 @@ function getWorker() {
 
 /**
  * 音源を読み込んで BS.1770 で測る。
- * @returns {Promise<{integrated: number|null, truePeak: number|null}>}
+ * @returns {Promise<{integrated: number|null, truePeak: number|null, histogram: import('./loudness-meter.js').Histogram}>}
  */
 export async function analyzeTrack(track) {
   const response = await fetch(track.audioUrl)
@@ -281,11 +394,12 @@ export async function analyzeTrack(track) {
     worker = false
     result = await measureInline(buffer)
   }
-  const { integrated, truePeak } = result
-  // JSON に -Infinity は書けないので、測れなかった値は null で持つ
+  const { integrated, truePeak, histogram } = result
+  // 保存先に -Infinity を持ち込まないよう、測れなかった値は null で持つ
   return {
     integrated: Number.isFinite(integrated) ? round2(integrated) : null,
-    truePeak: Number.isFinite(truePeak) ? round2(truePeak) : null
+    truePeak: Number.isFinite(truePeak) ? round2(truePeak) : null,
+    histogram
   }
 }
 
@@ -364,21 +478,7 @@ function round2(value) {
   return Math.round(value * 100) / 100
 }
 
-// ---- 保存 ----------------------------------------------------------------
-
-function loadCache(storage) {
-  try {
-    const parsed = JSON.parse(safeGet(storage, CACHE_KEY) ?? 'null')
-    if (parsed?.version === CACHE_VERSION && parsed.tracks) return parsed.tracks
-  } catch {
-    // 壊れていたら測り直す
-  }
-  return {}
-}
-
-function saveCache(storage, tracks) {
-  safeSet(storage, CACHE_KEY, JSON.stringify({ version: CACHE_VERSION, tracks }))
-}
+// ---- 設定の保存 ----------------------------------------------------------
 
 function safeGet(storage, key) {
   try {
@@ -392,6 +492,14 @@ function safeSet(storage, key, value) {
   try {
     storage?.setItem(key, value)
   } catch {
-    // 容量切れなど。測り直せば済むので黙って諦める
+    // 保存できなくても、起動している間は効いている
+  }
+}
+
+function safeRemove(storage, key) {
+  try {
+    storage?.removeItem(key)
+  } catch {
+    // 消せなくても害はない
   }
 }

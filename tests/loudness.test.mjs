@@ -2,8 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { LoudnessMeter, kWeightingCoefficients } from '../src/renderer/src/core/loudness-meter.js'
 import {
-  LOUDNESS_PROFILES,
-  LoudnessMode,
+  SPOTIFY_PROFILE as spotify,
+  combineMeasurements,
   normalizationGainDb
 } from '../src/renderer/src/core/Loudness.js'
 
@@ -85,12 +85,8 @@ test('トゥルーピークはサンプルの間の山を拾う', () => {
   assert.ok(Math.abs(truePeak) < 0.6, `got ${truePeak}`)
 })
 
-const spotify = LOUDNESS_PROFILES[LoudnessMode.SPOTIFY]
-const apple = LOUDNESS_PROFILES[LoudnessMode.APPLE]
-
 test('目標より大きい曲はそのぶん下げる', () => {
   assert.equal(normalizationGainDb({ integrated: -8, truePeak: 0.5 }, spotify), -6)
-  assert.equal(normalizationGainDb({ integrated: -8, truePeak: 0.5 }, apple), -8)
 })
 
 test('Spotify: 小さい曲はトゥルーピーク -1 dBTP（非可逆）まで持ち上げる', () => {
@@ -104,15 +100,50 @@ test('Spotify: 可逆の音源は 0 dBTP まで持ち上げる', () => {
   assert.equal(normalizationGainDb({ integrated: -20, truePeak: -5 }, spotify, { lossless: true }), 5)
 })
 
-test('Apple Music: 持ち上げは -1 dBTP まで', () => {
-  assert.equal(normalizationGainDb({ integrated: -20, truePeak: -2 }, apple, { lossless: true }), 1)
-})
-
 test('ピークがすでに上限を越えている小さい曲は上げも下げもしない', () => {
   assert.equal(normalizationGainDb({ integrated: -20, truePeak: 0 }, spotify), 0)
 })
 
 test('測れなかった曲はそのまま', () => {
   assert.equal(normalizationGainDb({ integrated: null, truePeak: null }, spotify), 0)
-  assert.equal(normalizationGainDb(null, apple), 0)
+  assert.equal(normalizationGainDb(null, spotify), 0)
+})
+
+function concat(...parts) {
+  const out = new Float32Array(parts.reduce((sum, p) => sum + p.length, 0))
+  let offset = 0
+  for (const part of parts) {
+    out.set(part, offset)
+    offset += part.length
+  }
+  return out
+}
+
+test('アルバム: 1 曲だけなら曲の値と同じ', () => {
+  const tone = sine({ seconds: 10, frequency: 440, dbfs: -12 })
+  const track = measure([tone, tone])
+  const album = combineMeasurements([track])
+  assert.ok(Math.abs(album.integrated - track.integrated) < 0.01, `${album.integrated} vs ${track.integrated}`)
+  assert.equal(album.truePeak, track.truePeak)
+})
+
+test('アルバム: 曲ごとの分布を足すと、つなげて 1 本で測った値と一致する', () => {
+  const loud = sine({ seconds: 30, frequency: 1000, dbfs: -6 })
+  const soft = sine({ seconds: 60, frequency: 300, dbfs: -20 })
+  const quiet = sine({ seconds: 20, frequency: 2000, dbfs: -40 })
+  const tracks = [loud, soft, quiet].map((tone) => measure([tone, tone]))
+  // 曲の境目をまたぐブロックの分だけずれるが、0.1 LU 刻みの分布で十分に近い
+  const whole = measure([concat(loud, soft, quiet), concat(loud, soft, quiet)])
+  const album = combineMeasurements(tracks)
+  assert.ok(Math.abs(album.integrated - whole.integrated) < 0.15, `${album.integrated} vs ${whole.integrated}`)
+  assert.equal(album.truePeak, Math.max(...tracks.map((t) => t.truePeak)))
+})
+
+test('アルバム: 静かな曲も同じ補正になる（アルバムの中で音量差を保つ）', () => {
+  const loud = measure([sine({ seconds: 20, dbfs: -6 })])
+  const soft = measure([sine({ seconds: 20, dbfs: -18 })])
+  const album = combineMeasurements([loud, soft])
+  // 大きい曲に引っ張られ、静かな曲だけの値より大きくなる
+  assert.ok(album.integrated > soft.integrated + 5)
+  assert.ok(normalizationGainDb(album, spotify) < normalizationGainDb(soft, spotify))
 })

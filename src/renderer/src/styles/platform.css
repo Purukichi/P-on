@@ -39,11 +39,9 @@ html[data-platform='mobile'] button { touch-action: manipulation; }
   html[data-platform='mobile'] .topbar { gap: 8px; }
   /* 右にラウドネスの切り替えが並ぶぶん、狭い画面では少し短くする */
   html[data-platform='mobile'] .volume--inline { width: clamp(64px, 21vw, 115px); }
-  /* 上部バーの間が詰まっているぶん寄せなくてよい。幅が足りないので目盛りの絵は外し、名前も短いほうを出す */
+  /* 上部バーの間が詰まっているぶん寄せなくてよい。幅が足りないので目盛りの絵は外して名前だけ出す */
   html[data-platform='mobile'] .loudness { margin-left: 0; padding: 0 6px; }
   html[data-platform='mobile'] .loudness__icon { display: none; }
-  html[data-platform='mobile'] .loudness__label { font-size: 0; }
-  html[data-platform='mobile'] .loudness__label::after { content: attr(data-short); font-size: var(--font-size-xs); }
   html[data-platform='mobile'] .topbar__spacer { min-width: 0; }
   html[data-platform='mobile'] .shelf__toolbar { flex-wrap: wrap; }
   html[data-platform='mobile'] .search { flex: 1 0 100%; max-width: none; }

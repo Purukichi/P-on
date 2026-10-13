@@ -146,6 +146,7 @@ function render() {
   trackCards = buildTrackCards(library)
 
   if (activeCollectionId && !activeCollection()) activeCollectionId = null
+  syncLoudnessAlbum()
 
   paintList()
 
@@ -178,6 +179,8 @@ function setStatus(message, { tone = 'info', duration = 4000 } = {}) {
 
 function playTrack(track, { autoplay = true } = {}) {
   if (!track) return
+  // 鳴り出す前に、アルバム単位で揃えるかを決めておく
+  syncLoudnessAlbum()
   engine.load(track, { autoplay })
   trackList.setActive(track.id)
   render()
@@ -386,22 +389,37 @@ queue.on('change', () => {
 // ---- 配線: ラウドネスノーマライズ -------------------------------------------
 
 nowPlaying.on('loudness', () => {
-  const mode = loudness.cycle()
+  const mode = loudness.toggle()
   setStatus(
     mode === LoudnessMode.SPOTIFY
-      ? '曲ごとの音量を Spotify の基準（−14 LUFS）に揃えます'
-      : mode === LoudnessMode.APPLE
-        ? '曲ごとの音量を Apple Music の基準（−16 LUFS）に揃えます'
-        : '音量の自動調整をやめました'
+      ? '音量を Spotify の基準（−14 LUFS）に揃えます。アルバムを通して聴くときはアルバム単位で揃えます'
+      : '音量の自動調整をやめました'
   )
 })
 
+/**
+ * アルバム単位で揃えるかどうか。
+ * Spotify と同じく、アルバムを曲順どおりに通して聴いているときだけアルバム全体で揃える。
+ * シャッフル中や、プレイリスト / 寄せ集めのキュー / シングルは 1 曲ずつ揃える。
+ */
+function syncLoudnessAlbum() {
+  const current = activeCollection()
+  const inOrder = current?.type === CollectionType.ALBUM && !queueMode && !queue.shuffle
+  loudness.setAlbum(inOrder ? { id: current.id, name: current.name, tracks: current.tracks } : null)
+}
+
 loudness.on('change', (status) => nowPlaying.renderLoudness(status))
+// 測り終えた曲は、一覧の「i」の中身を書き直す
+loudness.on('measured', () => trackList.refreshInfo())
+trackList.setLoudnessInfo((track) => loudness.infoOf(track))
 // 曲が変わったら、鳴り出す前に補正を差し替える（track-change は再生より先に飛ぶ）
 engine.on('track-change', (track) => loudness.setTrack(track))
 // シャッフルやループで次の曲が変わったときも、先に測っておく曲を取り直す
 queue.on('repeat-change', () => loudness.prefetch(queue.upcoming))
-queue.on('shuffle-change', () => loudness.prefetch(queue.upcoming))
+queue.on('shuffle-change', () => {
+  loudness.prefetch(queue.upcoming)
+  syncLoudnessAlbum()
+})
 nowPlaying.renderLoudness(loudness.status)
 
 // ---- 配線: リスト / 棚 ---------------------------------------------------
@@ -1097,6 +1115,8 @@ window.addEventListener('keydown', (event) => {
 library.on('change', () => {
   // キューが持っている Track を新しい実体へ貼り替える（ジャケット差し替えなどを反映するため）
   queue.refresh((id) => library.getTrack(id))
+  // 取り込んだ曲はこの時点で測り始める（再生するまで待たない）
+  loudness.setLibrary(library.tracks)
 
   const playing = engine.track ? library.getTrack(engine.track.id) : null
   if (playing) nowPlaying.renderTrack(playing)
