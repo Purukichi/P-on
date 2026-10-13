@@ -3,33 +3,10 @@
  * 通常（ライト）は :root、ナイトモードは [data-theme='night'] を上書きするだけ。
  * Theme クラスが <html data-theme="..."> を書き換える。
  *
- * 白をベースに黒で組み、色はアクセントの 1 色だけ。
- * アクセントは鳴っている曲のジャケットから拾って ui/accent.js が書き込む。
- * 何も鳴っていないときは下の既定値（モノクロ）のまま。
- *
- * 質感は「すりガラス状のクリア樹脂の筐体」。
- * 半透明の面に、明るい縁と内側の薄い影で厚みを出し、パネルには刻印のような細い方眼を入れる。
+ * 白をベースに、墨と緑の 3 色で組み立てている。
+ * 面は平らに塗り、立体に見せる影や光は付けない。輪郭が要るところは細い線 1 本で引く。
+ * 文字も線も真っ黒・真っ白にはせず、少しやわらげた墨（夜は灰白）にする。
  */
-/*
- * 和文用の書体ファミリー。
- *
- * Windows の游ゴシックは「Yu Gothic Medium」が別ファミリー扱いになっていて、
- * それを指定したまま太字にすると、Medium を機械的に太らせた偽の太字になって字が潰れる。
- * Medium（ふつうの太さ）と Bold（太字）の実体を 1 つのファミリーにまとめ、
- * 太さに応じて本物の書体が選ばれるようにしている。
- * local() には Windows のフルネームと macOS の PostScript 名を並べてある。
- */
-@font-face {
-  font-family: 'P-on Gothic';
-  src: local('Yu Gothic Medium'), local('YuGothic-Medium'), local('游ゴシック Medium');
-  font-weight: 100 550;
-}
-
-@font-face {
-  font-family: 'P-on Gothic';
-  src: local('Yu Gothic Bold'), local('YuGothic-Bold'), local('游ゴシック Bold');
-  font-weight: 551 900;
-}
 
 :root {
   /*
@@ -38,12 +15,8 @@
    */
 
   /*
-   * --- 可変パラメータ ---
-   * Settings クラスが上書きする。設定タブのスライダーはこの 3 つを動かしている。
-   */
-  /*
    * 本体の面の不透明度。低いほどデスクトップが透ける。
-   * ウィンドウの外側のぼかしは OS のアクリルが担当している。
+   * Settings が書き込む。ウィンドウの外側のぼかしは OS のアクリルが担当している。
    */
   --surface-alpha: 0.25;
 
@@ -55,75 +28,62 @@
   --color-bg: rgb(255 255 255 / calc(var(--surface-alpha) * 100%));
   --color-panel: rgb(255 255 255 / calc(var(--surface-alpha) * 52%));
   --color-sunken: rgb(255 255 255 / calc(var(--surface-alpha) * 105%));
-  --color-border: rgb(10 10 12 / 8%);
-  --color-border-strong: rgb(10 10 12 / 20%);
+  --color-border: rgb(43 45 51 / 10%);
+  --color-border-strong: rgb(43 45 51 / 22%);
 
-  /* --- 文字 --- */
-  --color-text: #0a0a0c;
-  --color-text-muted: #4f4f58;
-  --color-text-faint: #83838d;
+  /* --- 文字。真っ黒にはせず、少し青みのある墨 --- */
+  --color-text: #2b2d33;
+  --color-text-muted: #5d6068;
+  --color-text-faint: #8d9098;
 
-  /* --- 黒の面（塗りつぶしボタンなど） --- */
-  --color-ink: #0a0a0c;
-  --color-ink-contrast: #ffffff;
+  /* --- 墨の面（塗りつぶしボタンなど） --- */
+  --color-ink: #2b2d33;
+  --color-ink-contrast: #f7f7f8;
 
   /*
    * --- アクセント ---
-   * 既定はモノクロ（墨）。曲が鳴るとジャケットの色で上書きされる。
-   * hover と淡い面は、どの色になっても追従するよう color-mix で作る。
+   * 落ち着いた深緑。どの画面でもこの 1 色だけを使う。
    */
-  --color-accent: #1c1c21;
-  /* アクセントの上に置く文字色。色を拾ったときは明度から黒 / 白を選んで上書きする */
-  --color-accent-contrast: #ffffff;
-  --color-accent-hover: color-mix(in srgb, var(--color-accent) 84%, white);
+  --color-accent: #3b8c66;
+  --color-accent-hover: #4a9b75;
+  /* アクセントの上に置く文字色。深い緑なので、真っ白ではない白を載せる */
+  --color-accent-contrast: #f7f7f8;
 
-  --color-track: rgb(10 10 12 / 14%);
-  --color-danger: #e5484d;
+  --color-track: rgb(43 45 51 / 14%);
+  --color-danger: #d5615e;
 
   /*
    * --- 重なる面（メニュー・ダイアログ・ドロップ時の覆い・ミニの操作面） ---
-   * 半透明のすりガラスは背景次第で読みづらくなるのでやめ、
-   * メインUIと同じ質感の不透明なパネルを重ねる方式にしている。
+   * 半透明のすりガラスは背景次第で読みづらくなるのでやめ、不透明なパネルを重ねる。
+   * 影は付けず、輪郭の線だけで下の面と分ける。
    */
   --panel-bg: #f6f6f8;
-  --panel-border: rgb(10 10 12 / 12%);
+  --panel-border: rgb(43 45 51 / 14%);
   --panel-shadow: 0 0 0 1px var(--panel-border);
   /* ドロップ時に画面全体へかぶせる面 */
   --color-veil: #f6f6f8;
 
   /*
    * --- メインUIの上に浮くもの（メニュー・吹き出し）の面 ---
-   *
    * アクリル（透過）の窓では backdrop-filter が下の絵をぼかしてくれない。
-   * 透かすと下の文字がそのまま重なって、どちらも読めなくなるので、
-   * ここだけは透けさせず単色で塗る。
-   * 縁と内側の光だけを残して、板が浮いている見え方にしている。
+   * 透かすと下の文字がそのまま重なって読めなくなるので、ここだけは透けさせず単色で塗る。
    */
   --glass-bg: #f6f6f8;
-  --glass-border: rgb(255 255 255 / 70%);
-  /* 縁の内側に置く細い光。厚みに見える */
-  --glass-sheen: inset 0 1px 0 rgb(255 255 255 / 65%);
-
+  --glass-border: rgb(43 45 51 / 14%);
 
   /*
-   * --- 素材: すりガラス状のクリア樹脂 ---
-   * frost      板の面（半透明。下のアクリルが透ける）
-   * frost-hi   押せるもの・浮いているものの面（少し濃い）
-   * edge       上辺の光。板の厚みに見える
-   * hairline   輪郭の細い線
-   * 落ち影は付けない（面と線だけで見せる）
+   * --- 面と線 ---
+   * frost      パネルの面（半透明。下のアクリルが透ける）
+   * frost-hi   押せるもの・選ばれているものの面（少し濃い）
+   * hairline   輪郭の細い線の色
+   * outline    輪郭の線そのもの（box-shadow で 1px 引く。枠線と違って寸法が変わらない）
    */
   --frost: rgb(255 255 255 / 30%);
   --frost-hi: rgb(255 255 255 / 52%);
-  --edge: rgb(255 255 255 / 78%);
-  --hairline: rgb(10 10 12 / 9%);
-  /* 板（パネル）と押せる部品。上辺の光と輪郭の線だけ */
-  --mold-panel: inset 0 1px 0 var(--edge), 0 0 0 1px var(--hairline);
-  --mold-part: inset 0 1px 0 var(--edge), 0 0 0 1px var(--hairline);
-  /* 押し込まれた（彫られた）溝。シークバーの溝や入力欄 */
-  --mold-sunken: inset 0 1px 1px rgb(10 10 12 / 10%), inset 0 0 0 1px var(--hairline);
-  /* 小さな刻印の文字（見出しの添え字など） */
-  --label-tracking: 0.14em;
+  --hairline: rgb(43 45 51 / 12%);
+  --outline: 0 0 0 1px var(--hairline);
+  /* 小さな添え字（曲数など）の字間 */
+  --label-tracking: 0.08em;
 
   /* --- かたち --- */
   --radius-sm: 6px;
@@ -143,17 +103,15 @@
 
   /*
    * --- 書体 ---
-   * 欧文と数字は DIN。DIN 2014 / DIN Next が入っていればそれを、無ければ
-   * Windows に標準で入っている DIN 1451 の書体（Bahnschrift）を使う。
-   * Bahnschrift は和文の字を持たないので、日本語は自動的に後ろの游ゴシックへ回る。
-   * 游ゴシックは上の @font-face で Medium / Bold の実体をまとめた 'P-on Gothic' を使う。
+   * 標準的なゴシック。欧文と数字は Segoe UI、日本語は Yu Gothic UI（どちらも Windows の標準）。
+   * Yu Gothic UI は Semibold / Bold の実体を持つので、太くしても字が潰れない。
+   * macOS / スマホではそれぞれの標準のゴシックに回る。
    */
   --font-sans:
-    'DIN 2014', 'DIN Next', Bahnschrift, 'P-on Gothic', 'Yu Gothic', YuGothic, 'Segoe UI',
-    system-ui, sans-serif;
-  /* 再生時間などの数字用。名前は歴史的経緯で mono のままだが実体は DIN */
-  --font-mono: 'DIN 2014', 'DIN Next', Bahnschrift, 'P-on Gothic', 'Yu Gothic', 'Segoe UI',
+    'Segoe UI', 'Yu Gothic UI', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, system-ui,
     sans-serif;
+  /* 再生時間などの数字用。等幅の数字は font-variant-numeric: tabular-nums で揃える */
+  --font-mono: var(--font-sans);
   /*
    * 字の大きさ。小さすぎると和文が潰れるので、いちばん小さい字でも 11px を下回らない。
    */
@@ -163,10 +121,7 @@
   --font-size-md: 14px;
   --font-size-lg: 16px;
   --font-size-title: 32px;
-  /*
-   * 字の太さ。700 の太字は小さい和文で潰れるので使わない。
-   * 見出しは 600（DIN は SemiBold、和文は Bold の実体）、強調は 500（和文は Medium のまま）
-   */
+  /* 字の太さ。見出しは 600（Semibold）、強調は 500 */
   --weight-medium: 500;
   --weight-strong: 600;
 
@@ -197,41 +152,30 @@
 }
 
 [data-theme='night'] {
-  --color-bg: rgb(12 12 15 / calc(var(--surface-alpha) * 100%));
+  --color-bg: rgb(16 17 20 / calc(var(--surface-alpha) * 100%));
   --color-panel: rgb(255 255 255 / calc(var(--surface-alpha) * 14%));
   --color-sunken: rgb(255 255 255 / calc(var(--surface-alpha) * 32%));
-  --color-border: rgb(255 255 255 / 10%);
-  --color-border-strong: rgb(255 255 255 / 24%);
+  --color-border: rgb(236 237 240 / 10%);
+  --color-border-strong: rgb(236 237 240 / 22%);
 
-  --color-text: #f6f6f8;
-  --color-text-muted: #b0b0ba;
-  --color-text-faint: #74747e;
+  /* 真っ白にはせず、灰白にとどめる */
+  --color-text: #e4e5e9;
+  --color-text-muted: #a9acb4;
+  --color-text-faint: #787b84;
 
-  --color-ink: #f4f4f6;
-  --color-ink-contrast: #0b0b0d;
+  --color-ink: #e4e5e9;
+  --color-ink-contrast: #24262b;
 
-  --color-track: rgb(255 255 255 / 18%);
+  --color-track: rgb(236 237 240 / 16%);
 
-  --color-accent: #ececf0;
-  --color-accent-contrast: #0b0b0d;
-  --color-accent-hover: color-mix(in srgb, var(--color-accent) 84%, black);
-
-  /* 夜は煙った透明樹脂。面は白をごく薄く、縁の光も控えめに */
   --frost: rgb(255 255 255 / 5%);
   --frost-hi: rgb(255 255 255 / 10%);
-  --edge: rgb(255 255 255 / 16%);
-  --hairline: rgb(0 0 0 / 35%);
-  --mold-panel: inset 0 1px 0 var(--edge), 0 0 0 1px var(--hairline);
-  --mold-part: inset 0 1px 0 var(--edge), 0 0 0 1px var(--hairline);
-  --mold-sunken: inset 0 1px 1px rgb(0 0 0 / 35%), inset 0 0 0 1px var(--hairline);
+  --hairline: rgb(236 237 240 / 12%);
 
-  --panel-bg: #17171b;
-  --panel-border: rgb(255 255 255 / 14%);
-  --panel-shadow: 0 0 0 1px var(--panel-border);
-  --color-veil: #17171b;
+  --panel-bg: #1d1e22;
+  --panel-border: rgb(236 237 240 / 14%);
+  --color-veil: #1d1e22;
 
-  --glass-bg: #17171b;
-  --glass-border: rgb(255 255 255 / 16%);
-  --glass-sheen: inset 0 1px 0 rgb(255 255 255 / 10%);
-
+  --glass-bg: #1d1e22;
+  --glass-border: rgb(236 237 240 / 14%);
 }

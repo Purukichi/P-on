@@ -15,7 +15,7 @@
   border: none;
   border-radius: var(--radius-pill);
   background: var(--frost-hi);
-  box-shadow: var(--mold-part);
+  box-shadow: var(--outline);
   color: var(--color-text-muted);
   font: inherit;
   font-size: var(--font-size-xs);
@@ -32,7 +32,7 @@
 }
 
 .loudness:active {
-  box-shadow: var(--mold-sunken);
+  box-shadow: var(--outline);
 }
 
 .loudness:not([data-mode='off']) {

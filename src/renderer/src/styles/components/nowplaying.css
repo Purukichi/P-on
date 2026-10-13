@@ -69,7 +69,7 @@
   padding: 3px var(--space-3);
   border-radius: var(--radius-sm);
   background: var(--frost);
-  box-shadow: var(--mold-sunken);
+  box-shadow: var(--outline);
   font-family: var(--font-mono);
   font-size: var(--font-size-2xs);
   letter-spacing: 0.1em;

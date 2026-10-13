@@ -13,7 +13,7 @@
   border-radius: var(--radius-sm);
   /* メニューと同じ面（theme.css の --glass-bg） */
   background: var(--glass-bg);
-  box-shadow: var(--panel-shadow), var(--glass-sheen);
+  box-shadow: var(--panel-shadow);
   color: var(--color-text);
   font-size: var(--font-size-xs);
   line-height: 1.5;

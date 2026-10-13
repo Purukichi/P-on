@@ -15,7 +15,7 @@
   border: none;
   border-radius: var(--radius-lg);
   background: var(--frost);
-  box-shadow: var(--mold-panel);
+  box-shadow: var(--outline);
   overflow: hidden;
   transition: background var(--transition-theme);
 }
@@ -37,9 +37,7 @@
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-5) var(--space-5) var(--space-4);
-  box-shadow:
-    0 1px 0 var(--hairline),
-    0 2px 0 var(--edge);
+  border-bottom: 1px solid var(--hairline);
   margin-bottom: var(--space-3);
 }
 
@@ -75,7 +73,7 @@
   border: none;
   border-radius: var(--radius-pill);
   background: var(--frost-hi);
-  box-shadow: var(--mold-part);
+  box-shadow: var(--outline);
   color: var(--color-text-muted);
   font: inherit;
   font-size: var(--font-size-xs);
@@ -88,7 +86,7 @@
 }
 
 .tracklist__edit:hover {
-  box-shadow: var(--mold-part), 0 0 0 1px var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
   color: var(--color-text);
 }
 
@@ -100,7 +98,7 @@
 .tracklist__edit--danger:hover {
   background: var(--color-danger);
   box-shadow: 0 0 0 1px var(--color-danger);
-  color: #fff;
+  color: #f7f7f8;
 }
 
 .tracklist__edit[hidden] {
@@ -109,7 +107,7 @@
 
 .tracklist__edit[data-active='true'] {
   background: var(--color-accent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 70%, black);
+  box-shadow: none;
   color: var(--color-accent-contrast);
   font-weight: var(--weight-strong);
 }
@@ -183,13 +181,10 @@
   background: var(--frost-hi);
 }
 
-/*
- * 鳴っている行。面ごとアクセントで塗ると派手な色のジャケットでは騒がしいので、
- * 成形した板を 1 枚載せ、番号の代わりに LED を灯す。
- */
+/* 鳴っている行。少し濃い面を敷き、番号の代わりに緑の点を出す */
 .track[data-active='true'] {
   background: var(--frost-hi);
-  box-shadow: var(--mold-part), inset 3px 0 0 var(--color-accent);
+  box-shadow: var(--outline);
 }
 
 /* 持ち出しのドラッグ（ゴミ箱・棚のカードへ）。掴んでいる間は薄くする */
@@ -217,7 +212,7 @@
 .track[data-settling='true'] {
   border-color: var(--glass-border);
   background: var(--glass-bg);
-  box-shadow: var(--panel-shadow), var(--glass-sheen);
+  box-shadow: var(--panel-shadow);
   /*
    * 落ちた瞬間から濃さは満たしておく（opacity は動かさない）。
    * 薄いところから現れると、置いたはずの短冊が透けて見えてしまう。
@@ -244,7 +239,7 @@
   opacity: 1;
   border-color: var(--glass-border);
   background: var(--glass-bg);
-  box-shadow: var(--panel-shadow), var(--glass-sheen);
+  box-shadow: var(--panel-shadow);
   pointer-events: none;
 }
 
@@ -380,7 +375,7 @@
   border: none;
   border-radius: var(--radius-pill);
   background: var(--frost-hi);
-  box-shadow: var(--mold-part);
+  box-shadow: var(--outline);
   color: inherit;
   font: inherit;
   font-size: var(--font-size-xs);

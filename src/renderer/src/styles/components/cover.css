@@ -36,7 +36,7 @@
   /* 絵を枠いっぱいに出す。縁取りは付けず、輪郭の細い線だけ */
   border-radius: var(--radius-lg);
   background: var(--frost);
-  box-shadow: var(--mold-panel);
+  box-shadow: var(--outline);
   overflow: hidden;
   outline: 2px solid transparent;
   outline-offset: 4px;
@@ -114,7 +114,7 @@
   border: none;
   border-radius: var(--radius-md);
   background: var(--frost-hi);
-  box-shadow: var(--mold-part);
+  box-shadow: var(--outline);
   color: var(--color-text);
   cursor: pointer;
   transition:
@@ -128,7 +128,7 @@
 }
 
 .cover__album:hover {
-  box-shadow: var(--mold-part), 0 0 0 1px var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
 }
 
 .cover__album[data-dropping='true'] {

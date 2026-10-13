@@ -8,47 +8,37 @@
 
 .seekbar__input {
   --fill: 0;
-  --seek-height: 6px;
-  --thumb-size: 16px;
+  --seek-height: 3px;
+  --thumb-size: 9px;
 
-  /* 彫った溝に、鳴った分だけアクセントの色を流し込む */
+  /* 細い線の上を、鳴った分だけアクセントの緑で塗る */
   appearance: none;
   width: 100%;
   height: var(--seek-height);
   margin: 0;
   border-radius: var(--radius-pill);
-  background:
-    linear-gradient(
-      to right,
-      var(--color-accent) calc(var(--fill) * 100%),
-      transparent calc(var(--fill) * 100%)
-    ),
-    var(--frost);
-  box-shadow: var(--mold-sunken);
+  background: linear-gradient(
+    to right,
+    var(--color-accent) calc(var(--fill) * 100%),
+    var(--color-track) calc(var(--fill) * 100%)
+  );
   cursor: pointer;
 }
 
-/* つまみは成形した樹脂の丸い駒。真ん中にアクセントの点を置く */
+/* 再生位置の印は小さな丸ひとつ */
 .seekbar__input::-webkit-slider-thumb {
   appearance: none;
   width: var(--thumb-size);
   height: var(--thumb-size);
   border: none;
   border-radius: 50%;
-  background:
-    radial-gradient(circle, var(--color-accent) 0 3px, transparent 3.5px),
-    var(--panel-bg);
-  box-shadow:
-    inset 0 1px 0 var(--edge),
-    0 0 0 1px var(--hairline);
-  transition:
-    transform var(--transition-fast),
-    box-shadow var(--transition-fast);
+  background: var(--color-accent);
+  transition: transform var(--transition-fast);
 }
 
 .seekbar__input:hover::-webkit-slider-thumb,
 .seekbar__input:active::-webkit-slider-thumb {
-  transform: scale(1.12);
+  transform: scale(1.3);
 }
 
 .seekbar__input:disabled {

@@ -10,8 +10,7 @@
 }
 
 /*
- * 丸いキー。すりガラスの面に、上辺の光と細い縁で厚みを出す。
- * 押している間だけ凹ませる（溝の影に差し替える）。
+ * 丸いキー。平らな面に輪郭の線を 1 本。押している間だけ少し縮める。
  */
 .transport__button {
   --key-size: 42px;
@@ -26,7 +25,7 @@
   border: none;
   border-radius: 50%;
   background: var(--frost-hi);
-  box-shadow: var(--mold-part);
+  box-shadow: var(--outline);
   color: var(--color-text);
   cursor: pointer;
   transition:
@@ -37,12 +36,11 @@
 }
 
 .transport__button:hover:not(:disabled) {
-  box-shadow: var(--mold-part), 0 0 0 1px var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
 }
 
 .transport__button:active:not(:disabled) {
-  box-shadow: var(--mold-sunken);
-  transform: translateY(1px);
+  transform: scale(0.94);
 }
 
 .transport__button:disabled {
@@ -51,28 +49,17 @@
 }
 
 /*
- * 主役の再生ボタン。アクセント色で塗る（光らせない）。
- * 何も鳴らしていないときはアクセントがモノクロなので、墨のキーになる。
+ * 主役の再生ボタン。大きさは他と揃え、アクセントの緑で塗るだけで目立たせる。
  */
 .transport__button--play {
   background: var(--color-accent);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 30%),
-    0 0 0 1px color-mix(in srgb, var(--color-accent) 70%, black);
+  box-shadow: none;
   color: var(--color-accent-contrast);
 }
 
 .transport__button--play:hover:not(:disabled) {
   background: var(--color-accent-hover);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 30%),
-    0 0 0 1px color-mix(in srgb, var(--color-accent) 70%, black);
-}
-
-.transport__button--play:active:not(:disabled) {
-  box-shadow:
-    inset 0 1px 2px rgb(0 0 0 / 25%),
-    0 0 0 1px color-mix(in srgb, var(--color-accent) 70%, black);
+  box-shadow: none;
 }
 
 /*

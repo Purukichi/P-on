@@ -14,7 +14,7 @@
 }
 
 .dialog::backdrop {
-  background: rgb(0 0 0 / 40%);
+  background: rgb(43 45 51 / 40%);
 }
 
 .dialog__form {

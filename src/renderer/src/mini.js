@@ -1,7 +1,6 @@
 import './styles/mini.css'
 import { formatTime } from './utils/time.js'
 import { pick, setMarqueeText } from './ui/dom.js'
-import { applyAccent, pickAccent } from './ui/accent.js'
 
 /**
  * ミニプレイヤー。
@@ -165,15 +164,8 @@ function setFill(element, ratio) {
 
 // ---- ジャケットの主要色で余白を塗る ----------------------------------------
 
-/** ジャケットから主要色を抽出し、余白の背景 (--mini-tint) とアクセント色に反映する */
+/** ジャケットから主要色を抽出し、余白の背景 (--mini-tint) に反映する */
 async function applyTint(coverUrl) {
-  // アクセント色もメインウィンドウと同じ規則でジャケットから拾う（無ければモノクロ）
-  pickAccent(coverUrl ?? '')
-    .catch(() => null)
-    .then((color) => {
-      if (coverUrl === lastCoverUrl) applyAccent(document.documentElement, coverUrl ? color : null)
-    })
-
   if (!coverUrl) {
     root.style.removeProperty('--mini-tint')
     return

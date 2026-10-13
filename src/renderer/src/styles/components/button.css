@@ -1,14 +1,11 @@
 /* 汎用ボタン。再生系のボタンは transport.css を参照。 */
-/*
- * 成形した樹脂の部品。枠線は引かず、縁の光と内側の影で輪郭を出す。
- * 押している間だけ凹む。
- */
+/* 平らな面に、輪郭の線を 1 本だけ引く */
 .button {
   appearance: none;
   border: none;
   border-radius: var(--radius-pill);
   background: var(--frost-hi);
-  box-shadow: var(--mold-part);
+  box-shadow: var(--outline);
   color: var(--color-text);
   font: inherit;
   font-size: var(--font-size-xs);
@@ -23,11 +20,11 @@
 }
 
 .button:hover:not(:disabled) {
-  box-shadow: var(--mold-part), 0 0 0 1px var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
 }
 
 .button:active:not(:disabled) {
-  box-shadow: var(--mold-sunken);
+  box-shadow: var(--outline);
 }
 
 .button:disabled {
@@ -37,18 +34,14 @@
 
 .button--primary {
   background: var(--color-accent);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 30%),
-    0 0 0 1px color-mix(in srgb, var(--color-accent) 70%, black);
+  box-shadow: none;
   color: var(--color-accent-contrast);
   font-weight: var(--weight-strong);
 }
 
 .button--primary:hover:not(:disabled) {
   background: var(--color-accent-hover);
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 30%),
-    0 0 0 1px color-mix(in srgb, var(--color-accent) 70%, black);
+  box-shadow: none;
 }
 
 .button--quiet {
@@ -59,7 +52,7 @@
 
 .button--quiet:hover:not(:disabled) {
   background: var(--frost-hi);
-  box-shadow: var(--mold-part);
+  box-shadow: var(--outline);
   color: var(--color-text);
 }
 
@@ -75,7 +68,7 @@
 .button--danger:hover:not(:disabled) {
   background: var(--color-danger);
   box-shadow: 0 0 0 1px var(--color-danger);
-  color: #fff;
+  color: #f7f7f8;
 }
 
 /* アイコンだけのボタン */
@@ -98,12 +91,12 @@
 
 .iconbutton:hover {
   background: var(--frost-hi);
-  box-shadow: var(--mold-part);
+  box-shadow: var(--outline);
   color: var(--color-text);
 }
 
 .iconbutton:active {
-  box-shadow: var(--mold-sunken);
+  box-shadow: var(--outline);
 }
 
 /* ナイトモードの切り替えに応じて太陽 / 月を出し分ける */

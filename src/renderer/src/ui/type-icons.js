@@ -4,7 +4,7 @@ import { CollectionType } from '../core/Collections.js'
  * 種類（プレイリスト / アルバム / シングル）の印。棚のカードの隅と、棚の絞り込みボタンで使う。
  *
  *   プレイリスト … 3 本の行と、再生の三角
- *   アルバム     … 正方形のジャケットに収まった盤
+ *   アルバム     … ジャケット（スリーブ）から盤がのぞいた形
  *   シングル     … 盤 1 枚
  *
  * 細い線だけで描く。塗りつぶしの印はジャケットの絵と重なると潰れて見分けにくかったため。
@@ -16,9 +16,9 @@ const SHAPES = {
     ['path', { d: 'M15 14.5v6l5-3z', 'stroke-linejoin': 'round' }]
   ],
   [CollectionType.ALBUM]: [
-    ['rect', { x: 3.5, y: 3.5, width: 17, height: 17, rx: 2 }],
-    ['circle', { cx: 12, cy: 12, r: 5 }],
-    ['circle', { cx: 12, cy: 12, r: 1.2 }]
+    ['rect', { x: 3, y: 5, width: 12, height: 14, rx: 1.5 }],
+    ['path', { d: 'M15 6.4a6 6 0 0 1 0 11.2' }],
+    ['path', { d: 'M18.2 8.6a6 6 0 0 1 0 6.8' }]
   ],
   [CollectionType.SINGLE]: [
     ['circle', { cx: 12, cy: 12, r: 8 }],
