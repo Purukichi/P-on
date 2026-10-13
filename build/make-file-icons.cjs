@@ -3,17 +3,18 @@
  *
  *   build/file-icons/<拡張子>.ico   … 例: wav.ico, mp3.ico
  *
- * 白い紙に折り返しの角を付け、下に拡張子（WAV / MP3 …）を緑の帯で載せただけの
- * シンプルな形にしてある。アプリのアイコン（写真入り）をそのまま使うと、
- * 一覧でファイルの種類が見分けにくく、名前の横で絵ばかりが目立つため。
- * 小さいサイズ（32px 未満）では文字が潰れるので、帯だけを残して文字は省く。
+ * 印は「伸びる芽」。左右で大きさの違う 2 枚の葉と、少し曲がった茎で、片方の葉が伸びはじめた芽の形。
+ * アプリアイコンの葉の写真とつながる、ボタニカルな印にしている。
+ * 地や縁取りは付けず、印を拡張子ごとの色で塗るだけにする（種類をひと目で見分けられるように）。
+ *
+ * エクスプローラーの詳細表示は 16px で並ぶので、印は 16 四方の升目で設計し、
+ * ほかのサイズはそれをそのまま拡大して使う。
+ * 48px 以上（中アイコン以上）では、芽の下に拡張子（MP3 / WAV …）を同じ色で添える。
  *
  * 対象の拡張子は src/shared/ipc-channels.js の AUDIO_EXTENSIONS と揃えること。
  * electron-builder.yml の fileAssociations もここで作った .ico を参照している。
  *
- * 実行にはライブラリが要る（普段のビルドには不要なので devDependencies には入れていない）:
- *   npm install --no-save sharp
- *   node build/make-file-icons.cjs
+ * 実行: node build/make-file-icons.cjs（sharp は devDependencies に入っている）
  */
 const { mkdir, writeFile } = require('node:fs/promises')
 const { join } = require('node:path')
@@ -23,44 +24,57 @@ const EXTENSIONS = ['mp3', 'wav', 'flac', 'm4a', 'aac', 'ogg', 'opus', 'webm']
 
 const ICO_SIZES = [16, 24, 32, 48, 64, 128, 256]
 
-/** これより小さいサイズでは拡張子の文字を描かない */
-const MIN_LABEL_SIZE = 32
+/** これ以上のサイズでは、芽の下に拡張子を添える */
+const MIN_LABEL_SIZE = 48
 
-/** テーマの緑。build/icon.svg と同じ */
-const ACCENT = '#72e887'
+/**
+ * 拡張子ごとの色。明るい背景でも暗い背景でも見える中くらいの濃さにそろえ、原色は避けている。
+ * MP3 はアプリのアクセント（src/renderer/src/styles/theme.css の --color-accent）と同じ深緑。
+ */
+const COLORS = {
+  mp3: '#3b8c66',
+  wav: '#3e6fb0',
+  flac: '#7c56ad',
+  m4a: '#b8604a',
+  aac: '#a9742c',
+  ogg: '#2c8593',
+  opus: '#ad4f74',
+  webm: '#5a626e'
+}
 
 const outDir = join(__dirname, 'file-icons')
 
 /**
- * 256 四方の座標で描き、sharp で各サイズへ縮める。
- * 紙は縦長にして、左右に余白を取る（Windows の他のファイルアイコンと並べて浮かないように）。
+ * 伸びる芽（16 四方の座標）。
+ *   茎 … 下から右上へ少し曲がりながら伸びる線
+ *   大きい葉 … 茎の先から右上へ
+ *   小さい葉 … 茎の途中から左へ
  */
+function sprout(color) {
+  return `
+    <path d="M7.5 14 C7.5 11.5 7.9 9.4 9.2 7.8" fill="none" stroke="${color}" stroke-width="1.1" stroke-linecap="round"/>
+    <path d="M9.2 7.8 C9.1 4.7 11.1 2.6 14.2 2.4 C14.3 5.6 12.3 7.7 9.2 7.8 Z" fill="${color}"/>
+    <path d="M7.6 10.6 C5.5 10.7 3.9 9.5 3.4 7.4 C5.6 7.3 7.2 8.5 7.6 10.6 Z" fill="${color}"/>`
+}
+
 function iconSvg(extension, size) {
+  const color = COLORS[extension]
+
+  if (size < MIN_LABEL_SIZE) {
+    return Buffer.from(`
+<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 16 16">${sprout(color)}
+</svg>`)
+  }
+
   const label = extension.toUpperCase()
-  const withLabel = size >= MIN_LABEL_SIZE
   // 4 文字の拡張子（FLAC / OPUS / WEBM）は少し詰める
-  const fontSize = label.length >= 4 ? 50 : 60
+  const fontSize = label.length >= 4 ? 46 : 56
 
   return Buffer.from(`
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 256 256">
-  <!-- 紙 -->
-  <path d="M44 16 H164 L212 64 V232 Q212 240 204 240 H52 Q44 240 44 232 Z"
-        fill="#ffffff" stroke="#c9ced6" stroke-width="6" stroke-linejoin="round"/>
-  <!-- 折り返した角 -->
-  <path d="M164 16 V56 Q164 64 172 64 H212 Z"
-        fill="#e6e9ee" stroke="#c9ced6" stroke-width="6" stroke-linejoin="round"/>
-  <!-- 音符 -->
-  <path d="M112 74 V138 A20 16 0 1 1 100 124 V74 Q100 66 108 66 H146 Q152 66 152 72 V82 Q152 88 146 88 H112 Z"
-        fill="#3a3f47"/>
-  <!-- 拡張子の帯 -->
-  <rect x="28" y="${withLabel ? 160 : 176}" width="200" height="${withLabel ? 64 : 48}" rx="10" fill="${ACCENT}"/>
-  ${
-    withLabel
-      ? `<text x="128" y="192" text-anchor="middle" dominant-baseline="central"
-          font-family="Segoe UI, Arial, sans-serif" font-weight="700" font-size="${fontSize}"
-          fill="#0f2a17">${label}</text>`
-      : ''
-  }
+  <g transform="translate(128 92) scale(9.2) translate(-8.8 -8.2)">${sprout(color)}</g>
+  <text x="128" y="222" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif"
+        font-weight="600" font-size="${fontSize}" fill="${color}">${label}</text>
 </svg>`)
 }
 
