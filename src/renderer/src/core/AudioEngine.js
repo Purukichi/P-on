@@ -19,9 +19,11 @@ const TICK_INTERVAL = 1000 / 24
  * HTMLAudioElement を包んだ再生エンジン。
  *
  * DOM には挿さず `new Audio()` を内部で持つだけにしてあるので、
- * - UI をどう組み替えてもエンジンは影響を受けない
- * - 後で EQ を足したくなったら AudioContext.createMediaElementSource(this.#audio)
- *   でそのまま Web Audio のグラフに繋げられる
+ * UI をどう組み替えてもエンジンは影響を受けない。
+ *
+ * ラウドネスノーマライズを使うときだけ、音を Web Audio の GainNode に通す
+ * （<audio> の volume は 1 より上げられず、小さい曲を持ち上げられないため）。
+ * 利用者の音量は従来どおり volume が持ち、曲ごとの補正は GainNode が持つ。
  *
  * events:
  *   'track-change'  Track|null
@@ -41,11 +43,18 @@ export class AudioEngine extends Emitter {
   #state = 'idle'
   /** 再生中だけ回る、現在位置を配るためのタイマー */
   #tick = null
+  /** ラウドネスノーマライズ用の経路。初めて使うときに組む @type {{context: AudioContext, gain: GainNode}|null} */
+  #graph = null
+  /** いま掛けている補正（dB）。null は補正なし */
+  #normalizationGain = null
 
   constructor({ volume = 0.8 } = {}) {
     super()
     this.#audio = new Audio()
     this.#audio.preload = 'metadata'
+    // Web Audio に通すと、別オリジンの音源は CORS で許可されていないと無音になる。
+    // hamon-media: は Access-Control-Allow-Origin: * を返すので、匿名で取りに行けば通る
+    this.#audio.crossOrigin = 'anonymous'
     this.#audio.volume = clamp01(volume)
     this.#bindAudioEvents()
   }
@@ -87,6 +96,29 @@ export class AudioEngine extends Emitter {
     this.#audio.volume = clamp01(value)
   }
 
+  /** いま掛けている曲ごとの補正（dB）。補正なしなら null */
+  get normalizationGain() {
+    return this.#normalizationGain
+  }
+
+  /**
+   * 曲ごとの音量補正を掛ける。
+   * @param {number|null} db null で補正なし（0 dB と同じ音）
+   * @param {{smooth?: boolean}} [options] 鳴っている途中で変えるときは true（急に変わってプツッと鳴らないように）
+   */
+  setNormalizationGain(db, { smooth = false } = {}) {
+    this.#normalizationGain = Number.isFinite(db) ? db : null
+    // 一度も補正を使っていなければ、経路を組まずに <audio> から直接鳴らしたままにする
+    if (this.#normalizationGain === null && !this.#graph) return
+
+    const { context, gain } = this.#ensureGraph()
+    const linear = 10 ** ((this.#normalizationGain ?? 0) / 20)
+    const now = context.currentTime
+    gain.gain.cancelScheduledValues(now)
+    if (smooth) gain.gain.setTargetAtTime(linear, now, 0.15)
+    else gain.gain.setValueAtTime(linear, now)
+  }
+
   // ---- 操作 --------------------------------------------------------------
 
   /**
@@ -105,6 +137,8 @@ export class AudioEngine extends Emitter {
 
   play() {
     if (!this.#track) return Promise.resolve()
+    // 操作より先に作られた AudioContext は止まった状態で始まることがあるので、鳴らす前に起こす
+    if (this.#graph?.context.state === 'suspended') this.#graph.context.resume().catch(() => {})
     return this.#audio.play().catch((error) => {
       this.emit('error', error)
     })
@@ -158,6 +192,18 @@ export class AudioEngine extends Emitter {
   }
 
   // ---- 内部 --------------------------------------------------------------
+
+  /** <audio> → GainNode → スピーカー の経路を組む。一度繋ぐと外せないので、組むのは 1 回きり */
+  #ensureGraph() {
+    if (this.#graph) return this.#graph
+    const context = new AudioContext()
+    const source = context.createMediaElementSource(this.#audio)
+    const gain = context.createGain()
+    source.connect(gain).connect(context.destination)
+    if (context.state === 'suspended') context.resume().catch(() => {})
+    this.#graph = { context, gain }
+    return this.#graph
+  }
 
   #bindAudioEvents() {
     const audio = this.#audio

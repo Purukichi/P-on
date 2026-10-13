@@ -13,7 +13,7 @@ import { filePathsFrom, isFileDrag, splitByExtension } from './drag.js'
  * 大きい枠は「いま鳴っている曲」のもので、左上の札は「その曲が入っている単位」のもの。
  * アルバムの中に単独配信のジャケットを持つ曲が混ざっていても、両方見えるようにしている。
  *
- * events: 'toggle', 'stop', 'next', 'previous', 'repeat', 'shuffle',
+ * events: 'toggle', 'stop', 'next', 'previous', 'repeat', 'shuffle', 'loudness',
  *         'cover-dropped' ({imagePath}), 'cover-request' (ジャケット未設定の枠がクリックされた),
  *         'album-cover-dropped' ({imagePath}), 'album-cover-request' (札への操作)
  */
@@ -55,7 +55,9 @@ export class NowPlaying extends Emitter {
       'shuffle',
       'volume',
       'volume-value',
-      'volume-entry'
+      'volume-entry',
+      'loudness',
+      'loudness-label'
     ])
 
     this.#bindControls()
@@ -98,6 +100,28 @@ export class NowPlaying extends Emitter {
     this.#el.shuffle.dataset.shuffle = String(Boolean(on))
     this.#el.shuffle.dataset.tip = `${label}（押すと切り替え）`
     this.#el.shuffle.setAttribute('aria-label', label)
+  }
+
+  /**
+   * ラウドネスノーマライズの状態を出す。
+   * @param {ReturnType<import('../core/Loudness.js').LoudnessNormalizer['status']>} status
+   */
+  renderLoudness(status) {
+    const button = this.#el.loudness
+    const { mode, profile, state } = status
+    button.dataset.mode = mode
+    button.dataset.state = state
+    this.#el.loudnessLabel.textContent = profile ? profile.label : 'オフ'
+    this.#el.loudnessLabel.dataset.short = profile ? profile.shortLabel : 'オフ'
+
+    const heading = profile
+      ? `音量の自動調整: ${profile.label} 準拠（${formatDb(profile.target, { digits: 0 })} LUFS）`
+      : '音量の自動調整: オフ'
+    const detail = loudnessDetail(status)
+    const nextLabel =
+      mode === 'off' ? 'Spotify 準拠に' : mode === 'spotify' ? 'Apple Music 準拠に' : 'オフに'
+    button.dataset.tip = [heading, detail, `押すと${nextLabel}切り替え`].filter(Boolean).join('\n')
+    button.setAttribute('aria-label', heading)
   }
 
   /**
@@ -167,6 +191,7 @@ export class NowPlaying extends Emitter {
     this.#listen(next, 'click', () => this.emit('next'))
     this.#listen(repeat, 'click', () => this.emit('repeat'))
     this.#listen(shuffle, 'click', () => this.emit('shuffle'))
+    this.#listen(this.#el.loudness, 'click', () => this.emit('loudness'))
 
     // ドラッグ中は timeupdate でつまみが戻らないようにフラグを立てる
     this.#listen(seek, 'pointerdown', () => {
@@ -351,4 +376,29 @@ export class NowPlaying extends Emitter {
     target.addEventListener(type, handler, options)
     this.#disposers.push(() => target.removeEventListener(type, handler, options))
   }
+}
+
+/** この曲をどれだけ動かしているかの一文 */
+function loudnessDetail({ state, measurement, gainDb, reason }) {
+  switch (state) {
+    case 'pending':
+      return 'この曲の音量を測っています…'
+    case 'skipped':
+      return reason === 'too-long'
+        ? 'この曲は長すぎるため、そのままの音量で鳴らしています'
+        : 'この曲は測れなかったため、そのままの音量で鳴らしています'
+    case 'ready':
+      if (!Number.isFinite(measurement?.integrated)) return 'この曲はほぼ無音のため、そのままの音量です'
+      return `この曲: ${formatDb(measurement.integrated)} LUFS → ${formatDb(gainDb, { sign: true })} dB`
+    default:
+      return ''
+  }
+}
+
+/** 既定は小数 1 桁。負の数はハイフンでなくマイナス記号（−）で出す */
+function formatDb(value, { sign = false, digits = 1 } = {}) {
+  const rounded = Number(value.toFixed(digits))
+  const text = Math.abs(rounded).toFixed(digits)
+  if (rounded < 0) return `−${text}`
+  return sign ? `+${text}` : text
 }

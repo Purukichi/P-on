@@ -3,6 +3,7 @@ import './platform/bootstrap.js'
 import './styles/platform.css'
 import { AudioEngine } from './core/AudioEngine.js'
 import { Library } from './core/Library.js'
+import { LoudnessMode, LoudnessNormalizer } from './core/Loudness.js'
 import { PlayQueue, RepeatMode } from './core/PlayQueue.js'
 import { Theme } from './core/Theme.js'
 import { applyAppearance } from './core/Settings.js'
@@ -30,6 +31,7 @@ applyAppearance()
 const engine = new AudioEngine({ volume: 0.8 })
 const library = new Library()
 const queue = new PlayQueue()
+const loudness = new LoudnessNormalizer(engine)
 
 const nowPlaying = new NowPlaying(root, { engine }).mount()
 const trackList = new TrackList(root).mount()
@@ -378,7 +380,29 @@ engine.on('duration-change', ({ track, duration }) => {
 
 queue.on('change', () => {
   nowPlaying.setNavigation({ hasPrevious: queue.hasPrevious, hasNext: queue.hasNext })
+  loudness.prefetch(queue.upcoming)
 })
+
+// ---- 配線: ラウドネスノーマライズ -------------------------------------------
+
+nowPlaying.on('loudness', () => {
+  const mode = loudness.cycle()
+  setStatus(
+    mode === LoudnessMode.SPOTIFY
+      ? '曲ごとの音量を Spotify の基準（−14 LUFS）に揃えます'
+      : mode === LoudnessMode.APPLE
+        ? '曲ごとの音量を Apple Music の基準（−16 LUFS）に揃えます'
+        : '音量の自動調整をやめました'
+  )
+})
+
+loudness.on('change', (status) => nowPlaying.renderLoudness(status))
+// 曲が変わったら、鳴り出す前に補正を差し替える（track-change は再生より先に飛ぶ）
+engine.on('track-change', (track) => loudness.setTrack(track))
+// シャッフルやループで次の曲が変わったときも、先に測っておく曲を取り直す
+queue.on('repeat-change', () => loudness.prefetch(queue.upcoming))
+queue.on('shuffle-change', () => loudness.prefetch(queue.upcoming))
+nowPlaying.renderLoudness(loudness.status)
 
 // ---- 配線: リスト / 棚 ---------------------------------------------------
 

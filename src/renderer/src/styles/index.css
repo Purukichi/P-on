@@ -15,6 +15,7 @@
 @import './components/seekbar.css';
 @import './components/transport.css';
 @import './components/volume.css';
+@import './components/loudness.css';
 @import './components/tracklist.css';
 @import './components/shelf.css';
 @import './components/compact.css';

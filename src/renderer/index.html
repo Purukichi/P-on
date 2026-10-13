@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: hamon-media:; media-src 'self' hamon-media: blob:; font-src 'self'; connect-src 'self' ws:"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: hamon-media:; media-src 'self' hamon-media: blob:; font-src 'self'; connect-src 'self' ws: hamon-media: blob:"
     />
     <title>P-on</title>
   </head>
@@ -66,6 +66,21 @@
             hidden
           />
         </div>
+
+        <!-- ラウドネスノーマライズ。押すたびに オフ → Spotify → Apple Music と巡る -->
+        <button
+          class="loudness"
+          type="button"
+          data-el="loudness"
+          data-mode="off"
+          data-tip="音量の自動調整: オフ"
+          aria-label="音量の自動調整: オフ"
+        >
+          <svg class="loudness__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+            <path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" />
+          </svg>
+          <span class="loudness__label" data-el="loudness-label" data-short="オフ">オフ</span>
+        </button>
 
         <span class="topbar__spacer"></span>
 

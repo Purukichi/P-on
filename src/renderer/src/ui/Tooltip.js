@@ -22,6 +22,13 @@ export class Tooltip {
   #timer = null
   /** @type {Element|null} いま出している（出そうとしている）相手 */
   #target = null
+  /**
+   * 出している間に相手の data-tip が書き換わったら、文面を差し替える。
+   * （押すと状態が変わるボタンや、測り終わって説明が変わるものが古い文のまま残らないように）
+   */
+  #observer = new MutationObserver(() => {
+    if (this.#target && !this.#el.hidden) this.#show(this.#target)
+  })
 
   constructor(root) {
     this.#root = root
@@ -80,6 +87,8 @@ export class Tooltip {
 
     this.#el.textContent = text
     this.#el.hidden = false
+    this.#observer.disconnect()
+    this.#observer.observe(target, { attributes: true, attributeFilter: ['data-tip'] })
 
     // 相手の真下。はみ出すときは画面に収まる位置へ寄せ、下が狭ければ上に出す
     const anchor = target.getBoundingClientRect()
@@ -98,6 +107,7 @@ export class Tooltip {
   }
 
   #hide() {
+    this.#observer.disconnect()
     clearTimeout(this.#timer)
     this.#timer = null
     this.#target = null

@@ -100,6 +100,19 @@ export class PlayQueue extends Emitter {
     return this.#positionInOrder() > 0
   }
 
+  /**
+   * いまの曲より後に鳴る曲を、鳴る順に並べたもの（シャッフル中は巡り順）。
+   * 全曲ループ中は先頭へ回ったぶんも含める。
+   */
+  get upcoming() {
+    const order = this.#playOrder()
+    const position = order.indexOf(this.#index)
+    if (position < 0) return []
+    const after = order.slice(position + 1)
+    if (this.#repeat === RepeatMode.ALL) after.push(...order.slice(0, position))
+    return after.map((index) => this.#tracks[index])
+  }
+
   /** キューを丸ごと差し替える */
   replace(tracks, startIndex = 0) {
     this.#tracks = [...tracks]
