@@ -113,14 +113,13 @@ export class NowPlaying extends Emitter {
     const on = mode !== 'off'
     button.dataset.mode = mode
     button.dataset.state = state
-    const label = on ? profile.label : 'オフ'
-    this.#el.loudnessLabel.textContent = label
+    this.#el.loudnessLabel.textContent = on ? 'オン' : 'オフ'
 
     const heading = on
-      ? `音量の自動調整: ${profile.label} 準拠（${formatDb(profile.target, { digits: 0 })} LUFS）`
+      ? `音量の自動調整: オン（${formatDb(profile.target, { digits: 0 })} LUFS に揃える）`
       : '音量の自動調整: オフ'
     const detail = loudnessDetail(status)
-    const hint = on ? '押すとオフに切り替え' : '押すと Spotify 準拠に切り替え'
+    const hint = on ? '押すとオフに切り替え' : '押すとオンに切り替え'
     button.dataset.tip = [heading, detail, hint].filter(Boolean).join('\n')
     button.setAttribute('aria-label', heading)
   }

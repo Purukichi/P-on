@@ -1,61 +1,77 @@
 /*
  * ラウドネスノーマライズの切り替え。音量バーのすぐ右に置く。
- * オフのときは控えめにし、効いている間だけアクセント色で示す（ループ / シャッフルと同じ扱い）。
+ * 成形したスイッチに LED を 1 つ埋めた姿で、オンの間だけアクセント色に灯る。
  */
 .loudness {
   appearance: none;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: 7px;
   flex: none;
-  height: 24px;
+  height: 26px;
   /* 上部バーの gap だと音量から離れて見えるので、少し寄せる */
   margin-left: calc(var(--space-2) - var(--space-4));
-  padding: 0 var(--space-2);
-  border: 1px solid var(--color-border-strong);
+  padding: 0 var(--space-3) 0 10px;
+  border: none;
   border-radius: var(--radius-pill);
-  background: transparent;
-  color: var(--color-text-faint);
+  background: var(--frost-hi);
+  box-shadow: var(--mold-part);
+  color: var(--color-text-muted);
   font: inherit;
-  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--label-tracking);
   line-height: 1;
   white-space: nowrap;
   cursor: pointer;
   transition:
-    border-color var(--transition-fast),
-    background var(--transition-fast),
+    box-shadow var(--transition-fast),
     color var(--transition-fast);
 }
 
 .loudness:hover {
-  background: var(--color-sunken);
   color: var(--color-text);
 }
 
+.loudness:active {
+  box-shadow: var(--mold-sunken);
+}
+
 .loudness:not([data-mode='off']) {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  color: var(--color-text);
 }
 
-.loudness__icon {
-  width: 14px;
-  height: 14px;
+/* LED。消えている間も、埋め込まれた点として残す */
+.loudness__led {
+  width: 6px;
+  height: 6px;
   flex: none;
+  border-radius: 50%;
+  background: var(--hairline);
+  box-shadow: inset 0 1px 1px rgb(0 0 0 / 25%);
+  transition:
+    background var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
-/* 測っている間は目盛りを薄く明滅させる */
-.loudness[data-state='pending'] .loudness__icon {
+.loudness:not([data-mode='off']) .loudness__led {
+  background: var(--color-accent);
+  box-shadow: var(--accent-glow);
+}
+
+/* 測っている間は LED を明滅させる */
+.loudness:not([data-mode='off'])[data-state='pending'] .loudness__led {
   animation: loudness-pending 1.2s ease-in-out infinite;
 }
 
 @keyframes loudness-pending {
   50% {
-    opacity: 0.35;
+    opacity: 0.3;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .loudness[data-state='pending'] .loudness__icon {
+  .loudness[data-state='pending'] .loudness__led {
     animation: none;
   }
 }

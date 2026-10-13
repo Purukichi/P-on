@@ -23,6 +23,7 @@ import { TrackEditor } from './ui/TrackEditor.js'
 import { TrackList } from './ui/TrackList.js'
 import { Tooltip } from './ui/Tooltip.js'
 import { pick } from './ui/dom.js'
+import { applyAccent, pickAccent } from './ui/accent.js'
 
 const root = document.querySelector('#app')
 
@@ -386,13 +387,40 @@ queue.on('change', () => {
   loudness.prefetch(queue.upcoming)
 })
 
+// ---- 配線: アクセント色 -----------------------------------------------------
+
+/** いま色を拾っているジャケット。拾い終わる前に曲が変わったら、古い結果は捨てる */
+let accentCoverUrl = null
+
+/**
+ * アクセント色を、鳴っている曲のジャケットから拾い直す。
+ * 何も鳴らしていないとき、ジャケットが無いとき、色味の無い絵のときはモノクロに戻す。
+ */
+function syncAccent() {
+  const track = engine.track ? (library.getTrack(engine.track.id) ?? engine.track) : null
+  const coverUrl = track?.coverUrl ?? null
+  if (coverUrl === accentCoverUrl) return
+  accentCoverUrl = coverUrl
+  if (!coverUrl) {
+    applyAccent(document.documentElement, null)
+    return
+  }
+  pickAccent(coverUrl)
+    .catch(() => null)
+    .then((color) => {
+      if (coverUrl === accentCoverUrl) applyAccent(document.documentElement, color)
+    })
+}
+
+engine.on('track-change', () => syncAccent())
+
 // ---- 配線: ラウドネスノーマライズ -------------------------------------------
 
 nowPlaying.on('loudness', () => {
   const mode = loudness.toggle()
   setStatus(
     mode === LoudnessMode.SPOTIFY
-      ? '音量を Spotify の基準（−14 LUFS）に揃えます。アルバムを通して聴くときはアルバム単位で揃えます'
+      ? '曲ごとの音量を −14 LUFS に揃えます。アルバムを通して聴くときはアルバム単位で揃えます'
       : '音量の自動調整をやめました'
   )
 })
@@ -1120,6 +1148,8 @@ library.on('change', () => {
 
   const playing = engine.track ? library.getTrack(engine.track.id) : null
   if (playing) nowPlaying.renderTrack(playing)
+  // ジャケットを差し替えたときは、色も拾い直す
+  syncAccent()
 
   if (editor.isOpen && editor.trackId) {
     const editing = library.getTrack(editor.trackId)

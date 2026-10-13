@@ -46,15 +46,29 @@
   z-index: 90;
   transform: translateX(-50%);
   margin: 0;
-  padding: var(--space-2) var(--space-5);
+  /* 知らせは筐体に付いた表示窓のように。LED を添え、面は不透明な樹脂で読みやすくする */
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-5) var(--space-2) var(--space-4);
   border-radius: var(--radius-pill);
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
+  background: var(--panel-bg);
+  color: var(--color-text);
   font-size: var(--font-size-sm);
   font-weight: 700;
-  box-shadow: var(--panel-shadow);
+  box-shadow: var(--mold-part), var(--panel-shadow);
   max-width: calc(100vw - 96px);
   text-align: center;
+}
+
+.toast::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: var(--accent-glow);
 }
 
 .toast[hidden] {
@@ -62,6 +76,10 @@
 }
 
 .toast[data-tone='error'] {
+  color: var(--color-danger);
+}
+
+.toast[data-tone='error']::before {
   background: var(--color-danger);
-  color: #fff;
+  box-shadow: 0 0 8px var(--color-danger);
 }

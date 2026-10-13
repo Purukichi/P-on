@@ -3,7 +3,12 @@
  * 通常（ライト）は :root、ナイトモードは [data-theme='night'] を上書きするだけ。
  * Theme クラスが <html data-theme="..."> を書き換える。
  *
- * 白をベースに、黒と緑の 3 色で組み立てている。
+ * 白をベースに黒で組み、色はアクセントの 1 色だけ。
+ * アクセントは鳴っている曲のジャケットから拾って ui/accent.js が書き込む。
+ * 何も鳴っていないときは下の既定値（モノクロ）のまま。
+ *
+ * 質感は「すりガラス状のクリア樹脂の筐体」。
+ * 半透明の面に、明るい縁と内側の薄い影で厚みを出し、パネルには刻印のような細い方眼を入れる。
  */
 :root {
   /*
@@ -41,11 +46,20 @@
   --color-ink: #0a0a0c;
   --color-ink-contrast: #ffffff;
 
-  /* --- アクセント。淡い緑。hover は同じ色相のまま明るくしたもの --- */
-  --color-accent: #72e887;
-  --color-accent-hover: #91eda2;
-  /* アクセントの上に置く文字色。明度から黒 / 白を選んで Settings が上書きする */
-  --color-accent-contrast: #0a0a0c;
+  /*
+   * --- アクセント ---
+   * 既定はモノクロ（墨）。曲が鳴るとジャケットの色で上書きされる。
+   * hover と淡い面は、どの色になっても追従するよう color-mix で作る。
+   */
+  --color-accent: #1c1c21;
+  /* アクセントの上に置く文字色。色を拾ったときは明度から黒 / 白を選んで上書きする */
+  --color-accent-contrast: #ffffff;
+  --color-accent-hover: color-mix(in srgb, var(--color-accent) 84%, white);
+  /* 選択中の行など、アクセントを薄く敷く面 */
+  --color-accent-wash: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  /* 光っている点（LED）のにじみ */
+  --accent-glow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent),
+    0 0 10px color-mix(in srgb, var(--color-accent) 70%, transparent);
 
   --color-track: rgb(10 10 12 / 14%);
   --color-danger: #e5484d;
@@ -76,6 +90,38 @@
 
   --shadow-cover: 0 24px 60px rgb(10 10 12 / 14%);
   --shadow-soft: 0 2px 10px rgb(10 10 12 / 6%);
+
+  /*
+   * --- 素材: すりガラス状のクリア樹脂 ---
+   * frost      板の面（半透明。下のアクリルが透ける）
+   * frost-hi   押せるもの・浮いているものの面（少し濃い）
+   * edge       縁の光。板の厚みに見える
+   * hairline   縁の内側の細い影。光と組み合わせて成形品の角に見せる
+   * engrave    方眼の刻印の線
+   */
+  --frost: rgb(255 255 255 / 30%);
+  --frost-hi: rgb(255 255 255 / 52%);
+  --edge: rgb(255 255 255 / 78%);
+  --hairline: rgb(10 10 12 / 9%);
+  --engrave: rgb(10 10 12 / 4.5%);
+  /* 方眼の一辺 */
+  --grid-size: 24px;
+  /* 板（パネル）。縁の光 + 内側の影 + ごく薄い落ち影 */
+  --mold-panel: inset 0 1px 0 var(--edge), inset 0 0 0 1px rgb(255 255 255 / 30%),
+    0 0 0 1px var(--hairline), 0 18px 40px -24px rgb(10 10 12 / 30%);
+  /* 押せる部品。小さいぶん影も詰める */
+  --mold-part: inset 0 1px 0 var(--edge), inset 0 -1px 0 rgb(10 10 12 / 6%),
+    0 0 0 1px var(--hairline), 0 4px 10px -6px rgb(10 10 12 / 35%);
+  /* 押し込まれた（彫られた）溝。シークバーの溝や入力欄 */
+  --mold-sunken: inset 0 1px 2px rgb(10 10 12 / 14%), inset 0 0 0 1px var(--hairline),
+    0 1px 0 var(--edge);
+  /* 刻印の方眼。パネルの background に重ねる */
+  --texture-grid: linear-gradient(var(--engrave) 1px, transparent 1px) 0 0 / var(--grid-size)
+      var(--grid-size),
+    linear-gradient(90deg, var(--engrave) 1px, transparent 1px) 0 0 / var(--grid-size)
+      var(--grid-size);
+  /* 小さな刻印の文字（見出しの添え字など） */
+  --label-tracking: 0.14em;
 
   /* --- かたち --- */
   --radius-sm: 6px;
@@ -115,9 +161,9 @@
    * ブロックごとに余白がばらつかないよう、外周と内側の間隔をここに集約する。
    */
   /** 画面の外周（上下左右）に取る余白 */
-  --page-gutter: 24px;
+  --page-gutter: 28px;
   /** ブロック同士の間隔 */
-  --block-gap: 24px;
+  --block-gap: 32px;
   /** アイコンボタンなど、小さな正方形の一辺 */
   --control-size: 32px;
   /** 再生中の情報（タイトル・シークバー・音量バー）を揃える幅 */
@@ -151,6 +197,23 @@
   --color-ink-contrast: #0b0b0d;
 
   --color-track: rgb(255 255 255 / 18%);
+
+  --color-accent: #ececf0;
+  --color-accent-contrast: #0b0b0d;
+  --color-accent-hover: color-mix(in srgb, var(--color-accent) 84%, black);
+
+  /* 夜は煙った透明樹脂。面は白をごく薄く、縁の光も控えめに */
+  --frost: rgb(255 255 255 / 5%);
+  --frost-hi: rgb(255 255 255 / 10%);
+  --edge: rgb(255 255 255 / 16%);
+  --hairline: rgb(0 0 0 / 35%);
+  --engrave: rgb(255 255 255 / 4.5%);
+  --mold-panel: inset 0 1px 0 var(--edge), inset 0 0 0 1px rgb(255 255 255 / 5%),
+    0 0 0 1px var(--hairline), 0 22px 44px -24px rgb(0 0 0 / 60%);
+  --mold-part: inset 0 1px 0 var(--edge), inset 0 -1px 0 rgb(0 0 0 / 25%),
+    0 0 0 1px var(--hairline), 0 4px 10px -6px rgb(0 0 0 / 60%);
+  --mold-sunken: inset 0 1px 2px rgb(0 0 0 / 45%), inset 0 0 0 1px var(--hairline),
+    0 1px 0 var(--edge);
 
   --panel-bg: #17171b;
   --panel-border: rgb(255 255 255 / 14%);

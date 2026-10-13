@@ -557,7 +557,8 @@ export class TrackList extends Emitter {
       }
     })
 
-    row.append(create('span', { className: 'track__index', text: `${index + 1}.` }))
+    // 番号は 2 桁にそろえて刻む（01, 02 …）。鳴っている行では CSS が LED に差し替える
+    row.append(create('span', { className: 'track__index', text: String(index + 1).padStart(2, '0') }))
 
     if (this.#editing) {
       row.append(

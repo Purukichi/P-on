@@ -67,7 +67,7 @@
           />
         </div>
 
-        <!-- ラウドネスノーマライズ。押すたびに オフ と Spotify 準拠を切り替える -->
+        <!-- ラウドネスノーマライズ。押すたびにオン / オフを切り替える -->
         <button
           class="loudness"
           type="button"
@@ -76,9 +76,7 @@
           data-tip="音量の自動調整: オフ"
           aria-label="音量の自動調整: オフ"
         >
-          <svg class="loudness__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-            <path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" />
-          </svg>
+          <span class="loudness__led" aria-hidden="true"></span>
           <span class="loudness__label" data-el="loudness-label">オフ</span>
         </button>
 

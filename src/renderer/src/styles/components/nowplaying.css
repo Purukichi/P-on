@@ -62,15 +62,17 @@
 
 /* 再生中の音源のフォーマット（例: FLAC · 44.1 kHz · 16 bit · ステレオ） */
 .nowplaying__format {
-  margin: var(--space-2) 0 var(--space-4);
+  margin: var(--space-3) 0 var(--space-5);
   align-self: flex-start;
   max-width: 100%;
-  padding: 2px var(--space-2);
-  border: 1px solid var(--color-border-strong);
+  /* 筐体に彫った銘板のように、溝の中へ小さく刻む */
+  padding: 3px var(--space-3);
   border-radius: var(--radius-sm);
+  background: var(--frost);
+  box-shadow: var(--mold-sunken);
   font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   color: var(--color-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
