@@ -6,8 +6,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-4) var(--page-gutter) var(--page-gutter);
+  gap: var(--space-5);
+  padding: var(--space-5) var(--page-gutter) var(--page-gutter);
   /* 面は body（アクリル + 半透明）に任せる。上の区切りは刻んだ溝（影の線 + 光の線） */
   background: transparent;
   border-top: 1px solid var(--hairline);
@@ -137,8 +137,7 @@
   background: var(--panel-bg);
   box-shadow:
     inset 0 1px 0 var(--edge),
-    0 0 0 1px var(--hairline),
-    0 1px 3px rgb(0 0 0 / 18%);
+    0 0 0 1px var(--hairline);
   color: var(--color-text);
 }
 
@@ -218,7 +217,7 @@
   grid-template-rows: repeat(var(--shelf-rows, 1), auto);
   grid-auto-columns: 104px;
   align-content: start;
-  gap: var(--space-4);
+  gap: var(--space-5);
   /* 列が増えても縮まないよう、中身の幅どおりに広がってよい */
   width: max-content;
   min-width: 100%;
@@ -279,8 +278,8 @@
   place-items: center;
   width: 100%;
   aspect-ratio: 1;
-  /* ジャケットと同じく、透明なケースに収めた絵。縁は光と影で出す */
-  border-radius: var(--radius-lg);
+  /* 輪郭は線ではなく、上辺の光と細い縁で出す */
+  border-radius: var(--radius-md);
   background: var(--frost);
   overflow: hidden;
   /* 細い線で囲む。offset ぶんは .shelf__list の padding が受け止める */

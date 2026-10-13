@@ -12,8 +12,8 @@
 /* ふつうのノート PC の縦（768〜900 くらい）で、まず余白を削る */
 @media (height < 860px) {
   :root {
-    --page-gutter: 22px;
-    --block-gap: 26px;
+    --page-gutter: 32px;
+    --block-gap: 40px;
   }
 
   .nowplaying__title {
@@ -29,8 +29,8 @@
 /* さらに狭いとき。操作できることは変えず、寸法だけ落とす */
 @media (height < 720px) {
   :root {
-    --page-gutter: 14px;
-    --block-gap: 16px;
+    --page-gutter: 20px;
+    --block-gap: 24px;
   }
 
   .nowplaying {

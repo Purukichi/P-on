@@ -68,7 +68,6 @@
   flex: none;
   border-radius: 50%;
   background: var(--color-accent);
-  box-shadow: var(--accent-glow);
 }
 
 .toast[hidden] {
@@ -81,5 +80,4 @@
 
 .toast[data-tone='error']::before {
   background: var(--color-danger);
-  box-shadow: 0 0 8px var(--color-danger);
 }

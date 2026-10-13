@@ -13,7 +13,7 @@
   margin: var(--page-gutter) var(--page-gutter) var(--page-gutter) 0;
   /* 無地のすりガラスの板。縁は線ではなく光と影で出す */
   border: none;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   background: var(--frost);
   box-shadow: var(--mold-panel);
   overflow: hidden;
@@ -36,11 +36,11 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5) var(--space-3);
+  padding: var(--space-5) var(--space-5) var(--space-4);
   box-shadow:
     0 1px 0 var(--hairline),
     0 2px 0 var(--edge);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
 /*
@@ -118,7 +118,7 @@
   flex: 1;
   min-height: 0;
   margin: 0;
-  padding: 0 var(--space-3) var(--space-4);
+  padding: 0 var(--space-4) var(--space-5);
   list-style: none;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -163,9 +163,9 @@
   grid-template-columns: 2.2em minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--space-3);
-  padding: 10px var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border: 1px solid transparent;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   cursor: pointer;
   /*
    * 戻り（短冊 -> ふだんの行）もここの指定で動く。
@@ -282,7 +282,6 @@
   margin-top: -3.5px;
   border-radius: 50%;
   background: var(--color-accent);
-  box-shadow: var(--accent-glow);
 }
 
 .track[data-active='true'] .track__title {
@@ -348,18 +347,32 @@
 
 /* 操作ボタンはホバー時だけ、再生時間と入れ替わりで出す（行がうるさくならないように） */
 .track__actions {
-  display: none;
+  display: flex;
   gap: var(--space-1);
+  visibility: hidden;
 }
 
 .track:hover .track__actions,
 .track:focus-within .track__actions {
-  display: flex;
+  visibility: visible;
+}
+
+/*
+ * 再生時間と操作ボタンは同じ升に重ね、見せるほうだけを切り替える。
+ * display で出し入れすると、升の幅が「再生時間」と「編集」の幅で入れ替わり、
+ * 左隣の「i」がホバーのたびに横へずれて押しにくくなる。
+ * 重ねておけば升の幅は常に広いほうで決まり、「i」は動かない。
+ */
+.track__duration,
+.track__actions {
+  grid-column: 4;
+  grid-row: 1;
+  justify-self: end;
 }
 
 .track:hover .track__duration,
 .track:focus-within .track__duration {
-  display: none;
+  visibility: hidden;
 }
 
 .track__action {

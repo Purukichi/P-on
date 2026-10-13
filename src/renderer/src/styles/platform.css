@@ -18,6 +18,11 @@ html[data-platform='mobile'] [data-el='open-folder'],
 html[data-platform='mobile'] [data-el='change-library'] { display: none; }
 html[data-platform='mobile'] button { touch-action: manipulation; }
 @media (max-width: 700px) {
+  /* 画面が狭いので、デスクトップ向けに広げた外周の余白はここで詰める */
+  html[data-platform='mobile'] {
+    --page-gutter: 14px;
+    --block-gap: 16px;
+  }
   html[data-platform='mobile'] .stage,
   html[data-platform='mobile'] .app[data-list='visible'] .stage {
     display: flex;

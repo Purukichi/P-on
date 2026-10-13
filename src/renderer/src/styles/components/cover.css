@@ -33,32 +33,10 @@
   aspect-ratio: 1;
   display: grid;
   place-items: center;
-  /*
-   * 透明な樹脂のケースに絵を収めた姿。
-   * 縁（--cover-bezel）は方眼を刻んだすりガラスで、四隅にネジ穴の点を置く。
-   */
-  --cover-bezel: 12px;
-  /*
-   * ネジ穴。角丸に削られないよう、縁の幅より少し内側（角から 8px）に置く。
-   * 16px 四方の中心に描いた点を、四隅に 1 つずつ敷く
-   */
-  --screw: radial-gradient(
-    circle,
-    rgb(0 0 0 / 22%) 0 1.5px,
-    var(--edge) 1.5px 2.4px,
-    var(--hairline) 2.4px 2.9px,
-    transparent 3.2px
-  );
-  padding: var(--cover-bezel);
-  border-radius: var(--radius-xl);
-  background:
-    var(--screw) 0 0 / 16px 16px no-repeat,
-    var(--screw) 100% 0 / 16px 16px no-repeat,
-    var(--screw) 0 100% / 16px 16px no-repeat,
-    var(--screw) 100% 100% / 16px 16px no-repeat,
-    var(--texture-grid),
-    var(--frost);
-  box-shadow: var(--mold-panel), var(--shadow-cover);
+  /* 絵を枠いっぱいに出す。縁取りは付けず、輪郭の細い線だけ */
+  border-radius: var(--radius-lg);
+  background: var(--frost);
+  box-shadow: var(--mold-panel);
   overflow: hidden;
   outline: 2px solid transparent;
   outline-offset: 4px;
@@ -72,9 +50,6 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  border-radius: calc(var(--radius-xl) - var(--cover-bezel));
-  /* 絵の縁にも薄い線を引き、ケースの内側に嵌まって見えるようにする */
-  box-shadow: 0 0 0 1px var(--hairline);
 }
 
 .cover__frame[data-empty='true'] .cover__image {
@@ -98,11 +73,9 @@
 /* 画像をドラッグしてきたときだけヒントを出す */
 .cover__hint {
   position: absolute;
-  inset: auto var(--cover-bezel) var(--cover-bezel);
+  inset: auto 0 0;
   margin: 0;
   padding: var(--space-2);
-  border-radius: 0 0 calc(var(--radius-xl) - var(--cover-bezel))
-    calc(var(--radius-xl) - var(--cover-bezel));
   background: var(--color-accent);
   color: var(--color-accent-contrast);
   font-size: var(--font-size-xs);
@@ -139,7 +112,7 @@
   max-width: 100%;
   padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
   border: none;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background: var(--frost-hi);
   box-shadow: var(--mold-part);
   color: var(--color-text);
@@ -168,7 +141,7 @@
   flex: none;
   width: 32px;
   height: 32px;
-  border-radius: calc(var(--radius-lg) - var(--space-1));
+  border-radius: var(--radius-sm);
   box-shadow: 0 0 0 1px var(--hairline);
   background: var(--color-sunken);
   overflow: hidden;

@@ -55,11 +55,6 @@
   /* アクセントの上に置く文字色。色を拾ったときは明度から黒 / 白を選んで上書きする */
   --color-accent-contrast: #ffffff;
   --color-accent-hover: color-mix(in srgb, var(--color-accent) 84%, white);
-  /* 選択中の行など、アクセントを薄く敷く面 */
-  --color-accent-wash: color-mix(in srgb, var(--color-accent) 16%, transparent);
-  /* 光っている点（LED）のにじみ */
-  --accent-glow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent),
-    0 0 10px color-mix(in srgb, var(--color-accent) 70%, transparent);
 
   --color-track: rgb(10 10 12 / 14%);
   --color-danger: #e5484d;
@@ -71,7 +66,7 @@
    */
   --panel-bg: #f6f6f8;
   --panel-border: rgb(10 10 12 / 12%);
-  --panel-shadow: 0 18px 44px rgb(10 10 12 / 24%);
+  --panel-shadow: 0 2px 8px rgb(10 10 12 / 8%);
   /* ドロップ時に画面全体へかぶせる面 */
   --color-veil: #f6f6f8;
 
@@ -88,38 +83,25 @@
   /* 縁の内側に置く細い光。厚みに見える */
   --glass-sheen: inset 0 1px 0 rgb(255 255 255 / 65%);
 
-  --shadow-cover: 0 24px 60px rgb(10 10 12 / 14%);
-  --shadow-soft: 0 2px 10px rgb(10 10 12 / 6%);
+  --shadow-soft: 0 1px 2px rgb(10 10 12 / 5%);
 
   /*
    * --- 素材: すりガラス状のクリア樹脂 ---
    * frost      板の面（半透明。下のアクリルが透ける）
    * frost-hi   押せるもの・浮いているものの面（少し濃い）
-   * edge       縁の光。板の厚みに見える
-   * hairline   縁の内側の細い影。光と組み合わせて成形品の角に見せる
-   * engrave    方眼の刻印の線
+   * edge       上辺の光。板の厚みに見える
+   * hairline   輪郭の細い線
+   * 落ち影は付けない（面と線だけで見せる）
    */
   --frost: rgb(255 255 255 / 30%);
   --frost-hi: rgb(255 255 255 / 52%);
   --edge: rgb(255 255 255 / 78%);
   --hairline: rgb(10 10 12 / 9%);
-  --engrave: rgb(10 10 12 / 4.5%);
-  /* 方眼の一辺 */
-  --grid-size: 24px;
-  /* 板（パネル）。縁の光 + 内側の影 + ごく薄い落ち影 */
-  --mold-panel: inset 0 1px 0 var(--edge), inset 0 0 0 1px rgb(255 255 255 / 30%),
-    0 0 0 1px var(--hairline), 0 18px 40px -24px rgb(10 10 12 / 30%);
-  /* 押せる部品。小さいぶん影も詰める */
-  --mold-part: inset 0 1px 0 var(--edge), inset 0 -1px 0 rgb(10 10 12 / 6%),
-    0 0 0 1px var(--hairline), 0 4px 10px -6px rgb(10 10 12 / 35%);
+  /* 板（パネル）と押せる部品。上辺の光と輪郭の線だけ */
+  --mold-panel: inset 0 1px 0 var(--edge), 0 0 0 1px var(--hairline);
+  --mold-part: inset 0 1px 0 var(--edge), 0 0 0 1px var(--hairline);
   /* 押し込まれた（彫られた）溝。シークバーの溝や入力欄 */
-  --mold-sunken: inset 0 1px 2px rgb(10 10 12 / 14%), inset 0 0 0 1px var(--hairline),
-    0 1px 0 var(--edge);
-  /* 刻印の方眼。パネルの background に重ねる */
-  --texture-grid: linear-gradient(var(--engrave) 1px, transparent 1px) 0 0 / var(--grid-size)
-      var(--grid-size),
-    linear-gradient(90deg, var(--engrave) 1px, transparent 1px) 0 0 / var(--grid-size)
-      var(--grid-size);
+  --mold-sunken: inset 0 1px 1px rgb(10 10 12 / 10%), inset 0 0 0 1px var(--hairline);
   /* 小さな刻印の文字（見出しの添え字など） */
   --label-tracking: 0.14em;
 
@@ -161,9 +143,9 @@
    * ブロックごとに余白がばらつかないよう、外周と内側の間隔をここに集約する。
    */
   /** 画面の外周（上下左右）に取る余白 */
-  --page-gutter: 28px;
+  --page-gutter: 40px;
   /** ブロック同士の間隔 */
-  --block-gap: 32px;
+  --block-gap: 48px;
   /** アイコンボタンなど、小さな正方形の一辺 */
   --control-size: 32px;
   /** 再生中の情報（タイトル・シークバー・音量バー）を揃える幅 */
@@ -207,23 +189,18 @@
   --frost-hi: rgb(255 255 255 / 10%);
   --edge: rgb(255 255 255 / 16%);
   --hairline: rgb(0 0 0 / 35%);
-  --engrave: rgb(255 255 255 / 4.5%);
-  --mold-panel: inset 0 1px 0 var(--edge), inset 0 0 0 1px rgb(255 255 255 / 5%),
-    0 0 0 1px var(--hairline), 0 22px 44px -24px rgb(0 0 0 / 60%);
-  --mold-part: inset 0 1px 0 var(--edge), inset 0 -1px 0 rgb(0 0 0 / 25%),
-    0 0 0 1px var(--hairline), 0 4px 10px -6px rgb(0 0 0 / 60%);
-  --mold-sunken: inset 0 1px 2px rgb(0 0 0 / 45%), inset 0 0 0 1px var(--hairline),
-    0 1px 0 var(--edge);
+  --mold-panel: inset 0 1px 0 var(--edge), 0 0 0 1px var(--hairline);
+  --mold-part: inset 0 1px 0 var(--edge), 0 0 0 1px var(--hairline);
+  --mold-sunken: inset 0 1px 1px rgb(0 0 0 / 35%), inset 0 0 0 1px var(--hairline);
 
   --panel-bg: #17171b;
   --panel-border: rgb(255 255 255 / 14%);
-  --panel-shadow: 0 18px 44px rgb(0 0 0 / 55%);
+  --panel-shadow: 0 2px 8px rgb(0 0 0 / 30%);
   --color-veil: #17171b;
 
   --glass-bg: #17171b;
   --glass-border: rgb(255 255 255 / 16%);
   --glass-sheen: inset 0 1px 0 rgb(255 255 255 / 10%);
 
-  --shadow-cover: 0 24px 60px rgb(0 0 0 / 55%);
-  --shadow-soft: 0 2px 10px rgb(0 0 0 / 35%);
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 25%);
 }
