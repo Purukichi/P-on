@@ -28,7 +28,7 @@
 .dropveil__title {
   margin: 0;
   font-size: var(--font-size-lg);
-  font-weight: 700;
+  font-weight: var(--weight-strong);
 }
 
 .dropveil__note {
@@ -55,7 +55,7 @@
   background: var(--panel-bg);
   color: var(--color-text);
   font-size: var(--font-size-sm);
-  font-weight: 700;
+  font-weight: var(--weight-medium);
   box-shadow: var(--mold-part), var(--panel-shadow);
   max-width: calc(100vw - 96px);
   text-align: center;

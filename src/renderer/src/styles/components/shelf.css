@@ -133,6 +133,10 @@
   height: 14px;
 }
 
+.viewswitch__button[data-active='false'] {
+  color: var(--color-text-faint);
+}
+
 .viewswitch__button[data-active='true'] {
   background: var(--panel-bg);
   box-shadow:
@@ -331,22 +335,17 @@
   width: 22px;
   height: 22px;
   border-radius: var(--radius-sm);
-  background: var(--panel-bg);
-  box-shadow:
-    inset 0 1px 0 var(--edge),
-    0 0 0 1px var(--hairline);
-  color: var(--color-text);
+  /* どんな絵の上でも見分けられるよう、暗いすりガラスの地に白い細線で描く */
+  background: rgb(10 10 12 / 52%);
+  backdrop-filter: blur(6px);
+  color: #fff;
 }
 
 .card__badge svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
 }
 
-.card[data-type='playlist'] .card__badge {
-  background: var(--color-ink);
-  color: var(--color-ink-contrast);
-}
 
 /* 選択用のチェックボックス */
 .card__check {
@@ -391,7 +390,7 @@
   margin-top: 10px;
   max-width: 100%;
   font-size: var(--font-size-xs);
-  font-weight: 700;
+  font-weight: var(--weight-medium);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -399,7 +398,7 @@
 
 .card__sub {
   max-width: 100%;
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   letter-spacing: 0.04em;
   color: var(--color-text-muted);
   overflow: hidden;

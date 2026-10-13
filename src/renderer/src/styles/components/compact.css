@@ -31,7 +31,6 @@
   width: 56px;
   height: 56px;
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-soft);
 }
 
 .app[data-shelf-expanded='true'] .cover__placeholder svg {

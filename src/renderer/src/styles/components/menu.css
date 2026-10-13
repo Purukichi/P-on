@@ -78,7 +78,7 @@
   background: var(--color-accent);
   color: var(--color-accent-contrast);
   font-size: var(--font-size-xs);
-  font-weight: 700;
+  font-weight: var(--weight-strong);
   /*
    * 字間は最後の 1 字のうしろにも入るので、その分だけ右の詰まりが浅くなる。
    * 詰めすぎると小さな字が団子になるため、控えめにしたうえで右側で相殺する。
@@ -90,7 +90,7 @@
 .menu__name {
   margin-top: var(--space-1);
   font-size: var(--font-size-md);
-  font-weight: 700;
+  font-weight: var(--weight-strong);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

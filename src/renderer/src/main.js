@@ -10,7 +10,6 @@ import { applyAppearance } from './core/Settings.js'
 import {
   CollectionType,
   buildCollections,
-  buildTrackCards,
   findCollection
 } from './core/Collections.js'
 import { AboutPanel } from './ui/AboutPanel.js'
@@ -46,10 +45,6 @@ new Tooltip(root).mount()
 
 /** アルバム / プレイリスト / シングル @type {import('./core/Collections.js').Collection[]} */
 let collections = []
-/** 1 曲ずつのカード（棚を「曲単位」にしたときに並べる） @type {import('./core/Collections.js').Collection[]} */
-let trackCards = []
-/** 棚に並べているもの: 'collections' | 'tracks' */
-let shelfSource = 'collections'
 /** いま再生している単位（アルバム / プレイリスト / シングル） */
 let activeCollectionId = null
 /** 棚から曲を寄せ集めて組んだキューを鳴らしているか（アルバム等を丸ごと鳴らしているときは false） */
@@ -59,13 +54,9 @@ let draggingCollection = false
 
 // ---- 表示 ----------------------------------------------------------------
 
-/**
- * id からカードを引く。
- * 棚に並んでいるものは表示の単位によって変わるので、両方から探す
- * （曲単位で並べている最中でも、アルバムの id を渡されたら解決できるように）。
- */
+/** id からカード（アルバム / プレイリスト / シングル）を引く */
 function lookup(collectionId) {
-  return findCollection(collections, collectionId) ?? findCollection(trackCards, collectionId)
+  return findCollection(collections, collectionId)
 }
 
 function activeCollection() {
@@ -144,14 +135,13 @@ function paintList() {
 
 function render() {
   collections = buildCollections(library)
-  trackCards = buildTrackCards(library)
 
   if (activeCollectionId && !activeCollection()) activeCollectionId = null
   syncLoudnessAlbum()
 
   paintList()
 
-  shelf.render(shelfSource === 'tracks' ? trackCards : collections, { activeCollectionId })
+  shelf.render(collections, { activeCollectionId })
   nowPlaying.renderContext(playingContext())
   nowPlaying.setNavigation({ hasPrevious: queue.hasPrevious, hasNext: queue.hasNext })
   // いまどこに保存しているかは、変更ボタンに触れれば分かるようにしておく
@@ -528,12 +518,6 @@ shelf.on('play-collection', ({ collectionId, trackId }) => playCollection(collec
 shelf.on('queue-collection', (collectionId) => enqueueCollections([collectionId]))
 shelf.on('queue-track', ({ collectionId, trackId }) => enqueueTrack(collectionId, trackId))
 
-// 棚に並べる単位（アルバム / 曲）の切り替え
-shelf.on('source-change', (source) => {
-  shelfSource = source
-  render()
-  setStatus(source === 'tracks' ? '曲単位で並べています' : 'アルバム・プレイリスト単位で並べています')
-})
 
 /*
  * カードを掴んでいる間は、キューが空でも受け皿を開いておく。

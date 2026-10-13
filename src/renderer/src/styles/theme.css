@@ -10,6 +10,27 @@
  * 質感は「すりガラス状のクリア樹脂の筐体」。
  * 半透明の面に、明るい縁と内側の薄い影で厚みを出し、パネルには刻印のような細い方眼を入れる。
  */
+/*
+ * 和文用の書体ファミリー。
+ *
+ * Windows の游ゴシックは「Yu Gothic Medium」が別ファミリー扱いになっていて、
+ * それを指定したまま太字にすると、Medium を機械的に太らせた偽の太字になって字が潰れる。
+ * Medium（ふつうの太さ）と Bold（太字）の実体を 1 つのファミリーにまとめ、
+ * 太さに応じて本物の書体が選ばれるようにしている。
+ * local() には Windows のフルネームと macOS の PostScript 名を並べてある。
+ */
+@font-face {
+  font-family: 'P-on Gothic';
+  src: local('Yu Gothic Medium'), local('YuGothic-Medium'), local('游ゴシック Medium');
+  font-weight: 100 550;
+}
+
+@font-face {
+  font-family: 'P-on Gothic';
+  src: local('Yu Gothic Bold'), local('YuGothic-Bold'), local('游ゴシック Bold');
+  font-weight: 551 900;
+}
+
 :root {
   /*
    * ウィンドウ自体が Windows 11 のアクリル素材（OS 側でデスクトップをぼかす）なので、
@@ -66,7 +87,7 @@
    */
   --panel-bg: #f6f6f8;
   --panel-border: rgb(10 10 12 / 12%);
-  --panel-shadow: 0 2px 8px rgb(10 10 12 / 8%);
+  --panel-shadow: 0 0 0 1px var(--panel-border);
   /* ドロップ時に画面全体へかぶせる面 */
   --color-veil: #f6f6f8;
 
@@ -83,7 +104,6 @@
   /* 縁の内側に置く細い光。厚みに見える */
   --glass-sheen: inset 0 1px 0 rgb(255 255 255 / 65%);
 
-  --shadow-soft: 0 1px 2px rgb(10 10 12 / 5%);
 
   /*
    * --- 素材: すりガラス状のクリア樹脂 ---
@@ -123,20 +143,32 @@
 
   /*
    * --- 書体 ---
-   * Bahnschrift は Windows 標準の DIN 1451 系書体。
-   * 欧文と数字は Bahnschrift が受け持ち、和文グリフは持っていないので
-   * 日本語は自動的に後ろの游ゴシックへフォールバックする。
+   * 欧文と数字は DIN。DIN 2014 / DIN Next が入っていればそれを、無ければ
+   * Windows に標準で入っている DIN 1451 の書体（Bahnschrift）を使う。
+   * Bahnschrift は和文の字を持たないので、日本語は自動的に後ろの游ゴシックへ回る。
+   * 游ゴシックは上の @font-face で Medium / Bold の実体をまとめた 'P-on Gothic' を使う。
    */
   --font-sans:
-    Bahnschrift, '游ゴシック体', YuGothic, '游ゴシック Medium', 'Yu Gothic Medium', '游ゴシック',
-    'Yu Gothic', 'Segoe UI', system-ui, sans-serif;
+    'DIN 2014', 'DIN Next', Bahnschrift, 'P-on Gothic', 'Yu Gothic', YuGothic, 'Segoe UI',
+    system-ui, sans-serif;
   /* 再生時間などの数字用。名前は歴史的経緯で mono のままだが実体は DIN */
-  --font-mono: Bahnschrift, 'Yu Gothic', 'Segoe UI', sans-serif;
-  --font-size-xs: 11px;
-  --font-size-sm: 12px;
-  --font-size-md: 13px;
-  --font-size-lg: 15px;
+  --font-mono: 'DIN 2014', 'DIN Next', Bahnschrift, 'P-on Gothic', 'Yu Gothic', 'Segoe UI',
+    sans-serif;
+  /*
+   * 字の大きさ。小さすぎると和文が潰れるので、いちばん小さい字でも 11px を下回らない。
+   */
+  --font-size-2xs: 11px;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
   --font-size-title: 32px;
+  /*
+   * 字の太さ。700 の太字は小さい和文で潰れるので使わない。
+   * 見出しは 600（DIN は SemiBold、和文は Bold の実体）、強調は 500（和文は Medium のまま）
+   */
+  --weight-medium: 500;
+  --weight-strong: 600;
 
   /*
    * --- 寸法の基準 ---
@@ -195,12 +227,11 @@
 
   --panel-bg: #17171b;
   --panel-border: rgb(255 255 255 / 14%);
-  --panel-shadow: 0 2px 8px rgb(0 0 0 / 30%);
+  --panel-shadow: 0 0 0 1px var(--panel-border);
   --color-veil: #17171b;
 
   --glass-bg: #17171b;
   --glass-border: rgb(255 255 255 / 16%);
   --glass-sheen: inset 0 1px 0 rgb(255 255 255 / 10%);
 
-  --shadow-soft: 0 1px 2px rgb(0 0 0 / 25%);
 }

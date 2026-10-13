@@ -44,7 +44,7 @@
 .nowplaying__title {
   margin: 0;
   font-size: var(--font-size-title);
-  font-weight: 700;
+  font-weight: var(--weight-strong);
   line-height: 1.2;
   letter-spacing: -0.01em;
   overflow: hidden;
@@ -71,7 +71,7 @@
   background: var(--frost);
   box-shadow: var(--mold-sunken);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   letter-spacing: 0.1em;
   color: var(--color-text-muted);
   overflow: hidden;

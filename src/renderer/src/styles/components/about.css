@@ -70,7 +70,7 @@
 .about__name {
   margin: 0;
   font-size: var(--font-size-lg);
-  font-weight: 700;
+  font-weight: var(--weight-strong);
   letter-spacing: 0.06em;
 }
 
@@ -93,7 +93,7 @@
 /* 更新が見つかったときだけ目立たせる */
 .about__status[data-tone='ready'] {
   color: var(--color-accent);
-  font-weight: 700;
+  font-weight: var(--weight-strong);
 }
 
 .about__status[data-tone='error'] {

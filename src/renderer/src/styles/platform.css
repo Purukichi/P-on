@@ -46,6 +46,8 @@ html[data-platform='mobile'] button { touch-action: manipulation; }
   html[data-platform='mobile'] .volume--inline { width: clamp(64px, 21vw, 115px); }
   /* 上部バーの間が詰まっているぶん寄せなくてよい */
   html[data-platform='mobile'] .loudness { margin-left: 0; padding: 0 8px; }
+  /* 字を大きくしたぶん上部バーが窮屈なので、ボタンの左右の余白だけ詰める */
+  html[data-platform='mobile'] .topbar .button { padding-inline: 10px; }
   html[data-platform='mobile'] .topbar__spacer { min-width: 0; }
   html[data-platform='mobile'] .shelf__toolbar { flex-wrap: wrap; }
   html[data-platform='mobile'] .search { flex: 1 0 100%; max-width: none; }

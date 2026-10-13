@@ -52,7 +52,7 @@
 .tracklist__title {
   margin: 0;
   font-size: var(--font-size-md);
-  font-weight: 700;
+  font-weight: var(--weight-medium);
   line-height: 1.6;
   letter-spacing: 0.02em;
   overflow: hidden;
@@ -62,7 +62,7 @@
 
 .tracklist__count {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   letter-spacing: var(--label-tracking);
   color: var(--color-text-muted);
   flex: none;
@@ -111,7 +111,7 @@
   background: var(--color-accent);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 70%, black);
   color: var(--color-accent-contrast);
-  font-weight: 700;
+  font-weight: var(--weight-strong);
 }
 
 .tracklist__items {
@@ -285,7 +285,7 @@
 }
 
 .track[data-active='true'] .track__title {
-  font-weight: 700;
+  font-weight: var(--weight-medium);
 }
 
 .track__main {
@@ -451,7 +451,7 @@
 /* 1 行目（タイトル）だけ少し強調しておく */
 .track__field[data-field='title'] {
   font-size: var(--font-size-md);
-  font-weight: 700;
+  font-weight: var(--weight-strong);
 }
 
 .track__field::placeholder {

@@ -79,7 +79,7 @@
   background: var(--color-accent);
   color: var(--color-accent-contrast);
   font-size: var(--font-size-xs);
-  font-weight: 700;
+  font-weight: var(--weight-strong);
   text-align: center;
   opacity: 0;
   transform: translateY(100%);
@@ -167,14 +167,14 @@
 
 .cover__album-name {
   font-size: var(--font-size-sm);
-  font-weight: 700;
+  font-weight: var(--weight-medium);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .cover__album-sub {
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   letter-spacing: 0.04em;
   color: var(--color-text-muted);
   overflow: hidden;

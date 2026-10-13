@@ -363,7 +363,7 @@
         </aside>
       </main>
 
-      <footer class="shelf" data-view="grid" data-source="collections" data-expanded="false">
+      <footer class="shelf" data-view="grid" data-expanded="false">
         <div class="shelf__toolbar">
           <label class="search">
             <svg class="search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -392,36 +392,14 @@
             </button>
           </label>
 
-          <!-- 棚に並べるものの単位。曲単位にすると 1 曲ずつキューへ運べる -->
-          <div class="viewswitch" role="group" aria-label="並べる単位の切り替え">
-            <button
-              class="viewswitch__button"
-              type="button"
-              data-el="shelf-src-collections"
-              data-active="true"
-              data-tip="アルバム・プレイリスト単位で並べる"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <circle cx="15.5" cy="12" r="6" opacity=".5" />
-                <circle cx="9" cy="12" r="6.5" />
-                <circle cx="9" cy="12" r="1.8" fill="currentColor" stroke="none" />
-              </svg>
-            </button>
-            <button
-              class="viewswitch__button"
-              type="button"
-              data-el="shelf-src-tracks"
-              data-active="false"
-              data-tip="曲単位で並べる"
-            >
-              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M10 5.5 20 3.6v2.5L10 8z" />
-                <rect x="9" y="5.5" width="1.7" height="11.5" rx=".85" />
-                <rect x="18.3" y="3.6" width="1.7" height="10.5" rx=".85" />
-                <ellipse cx="7.5" cy="17.4" rx="3" ry="2.4" transform="rotate(-18 7.5 17.4)" />
-                <ellipse cx="16.8" cy="14.5" rx="3" ry="2.4" transform="rotate(-18 16.8 14.5)" />
-              </svg>
-            </button>
+          <!--
+            棚に並べる種類。それぞれ独立に入り切りでき、入っている種類だけが並ぶ。
+            印（SVG）は CollectionShelf が ui/type-icons.js から差し込む（カードの隅の印と同じ形）
+          -->
+          <div class="viewswitch" role="group" aria-label="並べる種類">
+            <button class="viewswitch__button" type="button" data-el="shelf-type-playlist" data-type="playlist" aria-pressed="true"></button>
+            <button class="viewswitch__button" type="button" data-el="shelf-type-album" data-type="album" aria-pressed="true"></button>
+            <button class="viewswitch__button" type="button" data-el="shelf-type-single" data-type="single" aria-pressed="true"></button>
           </div>
 
           <div class="viewswitch" role="group" aria-label="表示の切り替え">

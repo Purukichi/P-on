@@ -55,8 +55,6 @@
  * 何も鳴らしていないときはアクセントがモノクロなので、墨のキーになる。
  */
 .transport__button--play {
-  --key-size: 52px;
-
   background: var(--color-accent);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 30%),

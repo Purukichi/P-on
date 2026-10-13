@@ -27,7 +27,7 @@
 .dialog__heading {
   margin: 0;
   font-size: var(--font-size-xs);
-  font-weight: 700;
+  font-weight: var(--weight-strong);
   letter-spacing: 0.18em;
   color: var(--color-text-muted);
 }

@@ -2,6 +2,7 @@ import { Emitter } from '../core/Emitter.js'
 import { CollectionType, filterCollections } from '../core/Collections.js'
 import { formatTime } from '../utils/time.js'
 import { closestFrom, collect, create } from './dom.js'
+import { typeIcon } from './type-icons.js'
 import {
   attachDragThumbnail,
   getCollectionDragData,
@@ -54,7 +55,7 @@ const WHEEL_LINE_HEIGHT = 40
  *         'delete-selection' (collectionIds),
  *         'drag-start', 'drag-end' (カードを掴んでいる間だけ受け皿を開くために使う),
  *         'queue-collection' (collectionId), 'queue-track' ({collectionId, trackId}),
- *         'source-change' ('collections'|'tracks')
+ *         'types-change' (string[]) 並べる種類（プレイリスト / アルバム / シングル）が変わったとき
  */
 export class CollectionShelf extends Emitter {
   #root
@@ -71,6 +72,8 @@ export class CollectionShelf extends Emitter {
    * その場合は、棚を畳んだ時点で検索も解除する（元の眺めに戻す）。
    */
   #artistQuery = false
+  /** 棚に並べる種類（プレイリスト / アルバム / シングル）。前回の選び方を覚えておく */
+  #types = loadTypes()
   /** @type {Set<string>} */
   #selected = new Set()
   #marquee = null
@@ -105,8 +108,9 @@ export class CollectionShelf extends Emitter {
       'shelf-menu',
       'shelf-search',
       'shelf-search-clear',
-      'shelf-src-collections',
-      'shelf-src-tracks',
+      'shelf-type-playlist',
+      'shelf-type-album',
+      'shelf-type-single',
       'shelf-view-grid',
       'shelf-view-list',
       'shelf-expand',
@@ -285,8 +289,11 @@ export class CollectionShelf extends Emitter {
       this.#el.shelfSearch.focus()
     })
 
-    this.#el.shelfSrcCollections.addEventListener('click', () => this.#setSource('collections'))
-    this.#el.shelfSrcTracks.addEventListener('click', () => this.#setSource('tracks'))
+    for (const [type, button] of this.#typeButtons()) {
+      button.append(typeIcon(type))
+      button.addEventListener('click', () => this.#toggleType(type))
+    }
+    this.#syncTypeButtons()
 
     this.#el.shelfViewGrid.addEventListener('click', () => this.#setView('grid'))
     this.#el.shelfViewList.addEventListener('click', () => this.#setView('list'))
@@ -311,13 +318,35 @@ export class CollectionShelf extends Emitter {
     if (!expanded && this.#artistQuery) this.clearSearch()
   }
 
-  #setSource(source) {
-    if (this.#shelf.dataset.source === source) return
-    this.#shelf.dataset.source = source
-    this.#el.shelfSrcCollections.dataset.active = String(source === 'collections')
-    this.#el.shelfSrcTracks.dataset.active = String(source === 'tracks')
+  /** 種類ごとの絞り込みボタン */
+  #typeButtons() {
+    return [
+      [CollectionType.PLAYLIST, this.#el.shelfTypePlaylist],
+      [CollectionType.ALBUM, this.#el.shelfTypeAlbum],
+      [CollectionType.SINGLE, this.#el.shelfTypeSingle]
+    ]
+  }
+
+  /** その種類を並べる / 並べないを切り替える。全部を外すこともできる（棚は空の案内になる） */
+  #toggleType(type) {
+    if (this.#types.has(type)) this.#types.delete(type)
+    else this.#types.add(type)
+    saveTypes(this.#types)
+    this.#syncTypeButtons()
     this.#closeMenu()
-    this.emit('source-change', source)
+    this.#renderList()
+    this.emit('types-change', [...this.#types])
+  }
+
+  #syncTypeButtons() {
+    for (const [type, button] of this.#typeButtons()) {
+      const on = this.#types.has(type)
+      const label = TYPE_LABELS[type]
+      button.dataset.active = String(on)
+      button.setAttribute('aria-pressed', String(on))
+      button.setAttribute('aria-label', `${label}を表示`)
+      button.dataset.tip = on ? `${label}を表示中（押すと隠す）` : `${label}を隠しています（押すと表示）`
+    }
   }
 
   #setView(view) {
@@ -335,7 +364,8 @@ export class CollectionShelf extends Emitter {
   // ---- 一覧の描画 ----------------------------------------------------------
 
   #renderList() {
-    this.#visible = filterCollections(this.#all, this.#query)
+    const shown = this.#all.filter((collection) => this.#types.has(collection.type))
+    this.#visible = filterCollections(shown, this.#query)
 
     this.#el.shelfList.replaceChildren(
       ...this.#visible.map((collection) => this.#renderCard(collection))
@@ -350,7 +380,11 @@ export class CollectionShelf extends Emitter {
     this.#el.shelfEmpty.textContent =
       this.#all.length === 0
         ? '音源ファイルをウィンドウにドラッグすると取り込めます'
-        : '見つかりませんでした'
+        : this.#types.size === 0
+          ? '並べる種類が選ばれていません（検索欄の右のボタンで、プレイリスト / アルバム / シングルを選べます）'
+          : shown.length === 0
+            ? '選んでいる種類のものはまだありません'
+            : '見つかりませんでした'
 
     // 消えたカードの選択は落とす
     for (const id of [...this.#selected]) {
@@ -383,7 +417,7 @@ export class CollectionShelf extends Emitter {
     if (collection.coverUrl) {
       art.append(create('img', { className: 'card__image', attrs: { src: collection.coverUrl, alt: '' } }))
     }
-    art.append(create('span', { className: 'card__badge', children: [badgeIcon(collection.type)] }))
+    art.append(create('span', { className: 'card__badge', children: [typeIcon(collection.type)] }))
 
     // 選択用のチェックボックス。押し間違えたときはもう一度押せば外れる
     const check = create('span', {
@@ -887,56 +921,36 @@ function checkIcon() {
   return svg
 }
 
-/**
- * 種類ごとの印。ひと目で見分けられるよう形を変えてある。
- *   アルバム   … 盤が 2 枚重なった形
- *   シングル   … 一枚の盤
- *   プレイリスト … リストと再生記号
- *
- * 線は 12〜14px まで縮めて描かれる。viewBox は 24 なので、
- * ここでの太さは実寸では半分ほどになる。1px を割ると線がかすれて潰れるため、
- * 見た目の細さより「縮めても残ること」を優先して太めに取っている。
- */
-function badgeIcon(type) {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-  svg.setAttribute('viewBox', '0 0 24 24')
-  svg.setAttribute('aria-hidden', 'true')
-
-  if (type === CollectionType.PLAYLIST) {
-    svg.append(
-      pathEl('M3 6h12v2.2H3zM3 10.9h12v2.2H3zM3 15.8h7.5V18H3z'),
-      pathEl('M17.4 10v6.1a2.3 2.3 0 1 1-1.7-2.2V8.2l5.3-1.2v5.9a2.3 2.3 0 1 1-1.7-2.2V9z')
-    )
-  } else if (type === CollectionType.ALBUM) {
-    svg.append(
-      circle(15.6, 12, 6.4, { stroke: 'currentColor', width: 2.4, opacity: 0.55 }),
-      circle(9.2, 12, 6.8, { stroke: 'currentColor', width: 2.6 }),
-      circle(9.2, 12, 2.1, { fill: 'currentColor' })
-    )
-  } else {
-    svg.append(
-      circle(12, 12, 8, { stroke: 'currentColor', width: 2.6 }),
-      circle(12, 12, 2.4, { fill: 'currentColor' })
-    )
-  }
-  return svg
-}
-
-function circle(cx, cy, r, { fill = 'none', stroke, width, opacity } = {}) {
-  const element = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
-  element.setAttribute('cx', String(cx))
-  element.setAttribute('cy', String(cy))
-  element.setAttribute('r', String(r))
-  element.setAttribute('fill', fill)
-  if (stroke) element.setAttribute('stroke', stroke)
-  if (width) element.setAttribute('stroke-width', String(width))
-  if (opacity != null) element.setAttribute('opacity', String(opacity))
-  return element
-}
-
 function pathEl(d) {
   const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
   path.setAttribute('d', d)
   path.setAttribute('fill', 'currentColor')
   return path
+}
+
+const TYPE_KEY = 'hamon.shelf-types'
+const TYPE_LABELS = {
+  [CollectionType.PLAYLIST]: 'プレイリスト',
+  [CollectionType.ALBUM]: 'アルバム',
+  [CollectionType.SINGLE]: 'シングル'
+}
+
+/** 前回選んでいた種類。初めて開いたとき（記録が無いとき）は全部を並べる */
+function loadTypes() {
+  const all = Object.keys(TYPE_LABELS)
+  try {
+    const saved = JSON.parse(localStorage.getItem(TYPE_KEY) ?? 'null')
+    if (Array.isArray(saved)) return new Set(saved.filter((type) => all.includes(type)))
+  } catch {
+    // 壊れていたら全部を並べる
+  }
+  return new Set(all)
+}
+
+function saveTypes(types) {
+  try {
+    localStorage.setItem(TYPE_KEY, JSON.stringify([...types]))
+  } catch {
+    // 保存できなくても、開いている間は効いている
+  }
 }

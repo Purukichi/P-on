@@ -41,7 +41,7 @@
     inset 0 1px 0 rgb(255 255 255 / 30%),
     0 0 0 1px color-mix(in srgb, var(--color-accent) 70%, black);
   color: var(--color-accent-contrast);
-  font-weight: 700;
+  font-weight: var(--weight-strong);
 }
 
 .button--primary:hover:not(:disabled) {
