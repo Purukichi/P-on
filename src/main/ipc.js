@@ -7,7 +7,8 @@ import {
   getMainWindow,
   getMiniWindow,
   openMiniPlayer,
-  setMiniAlwaysOnTop
+  setMiniAlwaysOnTop,
+  TITLEBAR_HEIGHT
 } from './windows.js'
 import { appInfo, checkForUpdatesManually } from './updater.js'
 import { takeOpenedFiles } from './opened-files.js'
@@ -267,7 +268,7 @@ function registerPlayerRelay() {
     const main = getMainWindow()
     if (!main || !color || !symbolColor) return
     try {
-      main.setTitleBarOverlay({ color, symbolColor, height: 48 })
+      main.setTitleBarOverlay({ color, symbolColor, height: TITLEBAR_HEIGHT })
     } catch (error) {
       // titleBarOverlay に対応していないプラットフォームでは何もしない
       console.warn('[window] タイトルバーの色を変更できませんでした:', error.message)

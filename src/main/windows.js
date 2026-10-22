@@ -61,6 +61,13 @@ let mainWindow = null
 /** @type {BrowserWindow|null} */
 let miniWindow = null
 
+/**
+ * OS が描く最小化 / 最大化 / 閉じるボタンの高さ。
+ * 上部バー（theme.css の --titlebar-height）と同じにしないと、
+ * ボタンにホバーしたときの面がバーの下の罫線からはみ出す。
+ */
+export const TITLEBAR_HEIGHT = 40
+
 export function getMainWindow() {
   return mainWindow && !mainWindow.isDestroyed() ? mainWindow : null
 }
@@ -82,11 +89,11 @@ export function createMainWindow() {
     backgroundColor: '#00000000',
     // タイトルバーは自前の面に溶け込ませる（操作ボタンだけ OS が上に描く）
     titleBarStyle: 'hidden',
-    trafficLightPosition: process.platform === 'darwin' ? { x: 16, y: 17 } : undefined,
+    trafficLightPosition: process.platform === 'darwin' ? { x: 16, y: 13 } : undefined,
     titleBarOverlay: process.platform === 'darwin' ? false : {
       color: '#00000000',
       symbolColor: '#0a0a0a',
-      height: 48
+      height: TITLEBAR_HEIGHT
     },
     autoHideMenuBar: true,
     webPreferences: SHARED_WEB_PREFERENCES()
