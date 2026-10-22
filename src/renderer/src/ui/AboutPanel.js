@@ -64,7 +64,7 @@ export class AboutPanel {
     aboutVersion.textContent = info.version
 
     if (info.supported) {
-      this.#setStatus('更新の有無を確認できます。')
+      this.#setStatus('Check whether a new version is available.')
       aboutCheck.disabled = false
     } else {
       this.#setStatus(info.reason)
@@ -81,7 +81,7 @@ export class AboutPanel {
     if (this.#checking) return
     this.#checking = true
     this.#el.aboutCheck.disabled = true
-    this.#setStatus('確認しています…')
+    this.#setStatus('Checking…')
 
     try {
       const result = await this.api.app.checkUpdate()
@@ -95,20 +95,20 @@ export class AboutPanel {
   #renderResult({ status, version, message }) {
     switch (status) {
       case 'latest':
-        this.#setStatus('お使いのバージョンが最新です。')
+        this.#setStatus('You’re up to date.')
         break
       case 'available':
         // 見つかった時点で裏のダウンロードが始まっている
-        this.#setStatus(`バージョン ${version} があります。ダウンロードしています…`, 'ready')
+        this.#setStatus(`Version ${version} is available. Downloading…`, 'ready')
         break
       case 'downloaded':
-        this.#setStatus(`バージョン ${version} の準備ができています。再起動すると適用されます。`, 'ready')
+        this.#setStatus(`Version ${version} is ready. Restart to apply it.`, 'ready')
         break
       case 'unsupported':
-        this.#setStatus(message ?? 'この環境では更新を確認できません。')
+        this.#setStatus(message ?? 'Updates can’t be checked here.')
         break
       default:
-        this.#setStatus(message ?? '更新を確認できませんでした。', 'error')
+        this.#setStatus(message ?? 'Couldn’t check for updates.', 'error')
     }
   }
 

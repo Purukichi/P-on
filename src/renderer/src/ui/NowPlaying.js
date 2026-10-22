@@ -88,17 +88,17 @@ export class NowPlaying extends Emitter {
   /** ループの状態を出す。見た目の出し分けは data-repeat を見て CSS が行う */
   renderRepeat(mode) {
     const label =
-      mode === 'one' ? '1曲だけループ' : mode === 'all' ? 'キュー全体をループ' : 'ループしない'
+      mode === 'one' ? 'Repeat one' : mode === 'all' ? 'Repeat all' : 'Repeat off'
     this.#el.repeat.dataset.repeat = mode
-    this.#el.repeat.dataset.tip = `${label}（押すと切り替え）`
+    this.#el.repeat.dataset.tip = `${label} (click to change)`
     this.#el.repeat.setAttribute('aria-label', label)
   }
 
   /** シャッフルの状態を出す。見た目の出し分けは data-shuffle を見て CSS が行う */
   renderShuffle(on) {
-    const label = on ? 'シャッフル再生' : '順番どおりに再生'
+    const label = on ? 'Shuffle on' : 'Shuffle off'
     this.#el.shuffle.dataset.shuffle = String(Boolean(on))
-    this.#el.shuffle.dataset.tip = `${label}（押すと切り替え）`
+    this.#el.shuffle.dataset.tip = `${label} (click to change)`
     this.#el.shuffle.setAttribute('aria-label', label)
   }
 
@@ -115,10 +115,10 @@ export class NowPlaying extends Emitter {
     // 文字は「Normalize」のまま。オン / オフは左の四角（オンでオレンジ）で示す
 
     const heading = on
-      ? `音量の自動調整: オン（${formatDb(profile.target, { digits: 0 })} LUFS に揃える）`
-      : '音量の自動調整: オフ'
+      ? `Loudness normalization: on (to ${formatDb(profile.target, { digits: 0 })} LUFS)`
+      : 'Loudness normalization: off'
     const detail = loudnessDetail(status)
-    const hint = on ? '押すとオフに切り替え' : '押すとオンに切り替え'
+    const hint = on ? 'Click to turn off' : 'Click to turn on'
     button.dataset.tip = [heading, detail, hint].filter(Boolean).join('\n')
     button.setAttribute('aria-label', heading)
   }
@@ -146,7 +146,7 @@ export class NowPlaying extends Emitter {
       this.#el.coverAlbumArt.dataset.empty = 'true'
     }
 
-    chip.dataset.tip = `${context.name}\nクリックまたは画像をドロップでジャケットを設定`
+    chip.dataset.tip = `${context.name}\nClick or drop an image to set the artwork`
   }
 
   /** ライブラリ更新でジャケットや曲名が変わったときに外から呼ぶ */
@@ -154,7 +154,7 @@ export class NowPlaying extends Emitter {
     const hasTrack = Boolean(track)
 
     // 長いタイトルは「…」ではなく自動スクロールで全体を見せる
-    setMarqueeText(this.#el.npTitle, hasTrack ? track.displayTitle : '曲を選んでください')
+    setMarqueeText(this.#el.npTitle, hasTrack ? track.displayTitle : 'Choose a track')
     // 名前は押せる形にしておく（ArtistPopover がその人の曲を一覧にする）
     this.#el.npArtist.replaceChildren(
       ...artistLinks(hasTrack ? track.artist : null, { fallback: hasTrack ? track.displayArtist : '—' })
@@ -166,7 +166,7 @@ export class NowPlaying extends Emitter {
 
     if (hasTrack && track.hasCover) {
       this.#el.coverImage.src = track.coverUrl
-      this.#el.coverImage.alt = `${track.displayTitle} のジャケット`
+      this.#el.coverImage.alt = `Artwork of ${track.displayTitle}`
       this.#el.coverFrame.dataset.empty = 'false'
     } else {
       this.#el.coverImage.removeAttribute('src')
@@ -349,8 +349,8 @@ export class NowPlaying extends Emitter {
     this.#root.dataset.state = state
     const isPlaying = state === 'playing'
     this.#el.playToggle.dataset.playing = String(isPlaying)
-    this.#el.playToggle.setAttribute('aria-label', isPlaying ? '一時停止' : '再生')
-    this.#el.playToggle.dataset.tip = isPlaying ? '一時停止 (Space)' : '再生 (Space)'
+    this.#el.playToggle.setAttribute('aria-label', isPlaying ? 'Pause' : 'Play')
+    this.#el.playToggle.dataset.tip = isPlaying ? 'Pause (Space)' : 'Play (Space)'
   }
 
   #renderTime({ currentTime, duration, progress }) {
@@ -381,17 +381,17 @@ export class NowPlaying extends Emitter {
 function loudnessDetail({ state, basis, albumName, measurement, gainDb, reason }) {
   switch (state) {
     case 'pending':
-      return 'この曲の音量を測っています…'
+      return 'Measuring this track’s loudness…'
     case 'skipped':
       return reason === 'too-long'
-        ? 'この曲は長すぎるため、そのままの音量で鳴らしています'
-        : 'この曲は測れなかったため、そのままの音量で鳴らしています'
+        ? 'This track is too long to measure, so it plays at its own level'
+        : 'This track couldn’t be measured, so it plays at its own level'
     case 'ready': {
-      if (!Number.isFinite(measurement?.integrated)) return 'この曲はほぼ無音のため、そのままの音量です'
+      if (!Number.isFinite(measurement?.integrated)) return 'This track is almost silent, so it plays at its own level'
       const change = `${formatDb(measurement.integrated)} LUFS → ${formatDb(gainDb, { sign: true })} dB`
       return basis === 'album'
-        ? `アルバム単位（${albumName}）: ${change}`
-        : `曲単位: ${change}`
+        ? `Album (${albumName}): ${change}`
+        : `Track: ${change}`
     }
     default:
       return ''

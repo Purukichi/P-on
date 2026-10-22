@@ -96,7 +96,7 @@ export class TrackEditor extends Emitter {
     const usingAlbumCover = !track?.hasOwnCover && Boolean(track?.albumCoverUrl)
     this.#el.editorClearCover.disabled = !track?.hasOwnCover
     this.#el.editorCoverNote.textContent = usingAlbumCover
-      ? 'いまはアルバム共通のジャケットを表示中。ここで設定するとこの曲だけ差し替わります。'
+      ? 'Showing the album artwork. Setting one here changes it for this track only.'
       : ''
   }
 

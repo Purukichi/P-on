@@ -22,6 +22,7 @@ import { TrackEditor } from './ui/TrackEditor.js'
 import { TrackList } from './ui/TrackList.js'
 import { Tooltip } from './ui/Tooltip.js'
 import { pick } from './ui/dom.js'
+import { count } from './utils/plural.js'
 
 const root = document.querySelector('#app')
 
@@ -84,8 +85,8 @@ function listPresentation() {
     }
   }
   // 棚から寄せ集めたキュー。行から「外す」で 1 曲ずつ抜ける
-  if (queueMode) return { title: '再生キュー', mode: 'queue' }
-  return { title: '再生キュー', mode: 'library' }
+  if (queueMode) return { title: 'Queue', mode: 'queue' }
+  return { title: 'Queue', mode: 'library' }
 }
 
 /**
@@ -127,7 +128,7 @@ function paintList() {
     title,
     mode,
     tracks: queue.tracks,
-    emptyMessage: '棚のカードをここにドロップすると、再生キューに追加できます'
+    emptyMessage: 'Drop cards from the library here to add them to the queue'
   })
   trackList.setActive(queue.current?.id ?? null)
 }
@@ -144,7 +145,7 @@ function render() {
   nowPlaying.renderContext(playingContext())
   nowPlaying.setNavigation({ hasPrevious: queue.hasPrevious, hasNext: queue.hasNext })
   // いまどこに保存しているかは、変更ボタンに触れれば分かるようにしておく
-  changeLibraryButton.dataset.tip = `ライブラリの保存先を変更\n現在: ${library.libraryPath}`
+  changeLibraryButton.dataset.tip = `Change library location\nCurrent: ${library.libraryPath}`
   publishPlayerState()
 }
 
@@ -215,7 +216,7 @@ function enqueueTracks(tracks) {
   }
 
   if (added.length === 0) {
-    setStatus('すべてキューに入っています')
+    setStatus('Everything is already in the queue')
     return
   }
 
@@ -226,7 +227,7 @@ function enqueueTracks(tracks) {
   if (started) playTrack(started)
   else render()
 
-  setStatus(`再生キューに${added.length}曲を追加しました`)
+  setStatus(`Added ${count(added.length, 'track')} to the queue`)
 }
 
 /** キューを空にして、曲を選んでいない状態に戻す */
@@ -236,7 +237,7 @@ function clearQueue() {
   activeCollectionId = null
   queueMode = false
   render()
-  setStatus('再生キューを空にしました')
+  setStatus('Queue cleared')
 }
 
 // ---- ミニプレイヤーとの同期 ------------------------------------------------
@@ -307,10 +308,10 @@ nowPlaying.on('repeat', () => {
   localStorage.setItem(REPEAT_KEY, mode)
   setStatus(
     mode === RepeatMode.ONE
-      ? 'この曲だけを繰り返します'
+      ? 'Repeating this track'
       : mode === RepeatMode.ALL
-        ? 'キューの最後まで来たら先頭に戻ります'
-        : 'ループを解除しました'
+        ? 'Repeating the queue'
+        : 'Repeat off'
   )
 })
 
@@ -331,7 +332,7 @@ const SHUFFLE_KEY = 'hamon.shuffle'
 nowPlaying.on('shuffle', () => {
   const on = queue.toggleShuffle()
   localStorage.setItem(SHUFFLE_KEY, String(on))
-  setStatus(on ? 'キューの中からランダムに再生します' : '並んでいる順に再生します')
+  setStatus(on ? 'Shuffle on' : 'Shuffle off')
 })
 
 queue.on('shuffle-change', (on) => {
@@ -356,7 +357,7 @@ engine.on('ended', () => {
 
   const next = queue.next()
   if (next) playTrack(next)
-  else setStatus('キューの最後まで再生しました')
+  else setStatus('Reached the end of the queue')
 })
 
 engine.on('error', (error) => setStatus(error.message, { tone: 'error' }))
@@ -382,8 +383,8 @@ nowPlaying.on('loudness', () => {
   const mode = loudness.toggle()
   setStatus(
     mode === LoudnessMode.SPOTIFY
-      ? '曲ごとの音量を −14 LUFS に揃えます。アルバムを通して聴くときはアルバム単位で揃えます'
-      : '音量の自動調整をやめました'
+      ? 'Normalizing each track to −14 LUFS (whole albums are normalized as a unit)'
+      : 'Loudness normalization off'
   )
 })
 
@@ -470,18 +471,18 @@ trackList.on('reorder', async ({ trackIds }) => {
 
   if (collection?.type === CollectionType.PLAYLIST) {
     await library.reorderPlaylist(collection.sourceId, trackIds)
-    setStatus(`「${collection.name}」の曲順を変更しました`)
+    setStatus(`Reordered “${collection.name}”`)
     return
   }
 
   if (collection?.type === CollectionType.ALBUM) {
     await library.reorderTracks(trackIds)
-    setStatus(`「${collection.name}」の曲順を変更しました`)
+    setStatus(`Reordered “${collection.name}”`)
     return
   }
 
   render()
-  setStatus('再生キューの順番を変更しました')
+  setStatus('Reordered the queue')
 })
 
 shelf.on('play-collection', ({ collectionId, trackId }) => playCollection(collectionId, trackId))
@@ -524,13 +525,13 @@ bindArtistLinks(root, (artist) => {
   // fromArtist を立てておくと、棚を畳んだ時点で検索も解除される
   const hits = shelf.search(artist, { fromArtist: true })
   setStatus(
-    hits > 0 ? `「${artist}」で検索しました（${hits}件）` : `「${artist}」は見つかりませんでした`,
+    hits > 0 ? `Searched for “${artist}” (${count(hits, 'result')})` : `No results for “${artist}”`,
     { tone: hits > 0 ? 'info' : 'error' }
   )
 })
 
 shelf.on('create-playlist', async () => {
-  const name = await nameDialog.ask({ heading: '新しいプレイリスト', confirmLabel: '作成' })
+  const name = await nameDialog.ask({ heading: 'New playlist', confirmLabel: 'Create' })
   if (!name) return
   await library.createPlaylist(name)
 })
@@ -539,9 +540,9 @@ shelf.on('rename-playlist', async (playlistId) => {
   const playlist = library.getPlaylist(playlistId)
   if (!playlist) return
   const name = await nameDialog.ask({
-    heading: 'プレイリスト名を変更',
+    heading: 'Rename playlist',
     value: playlist.name,
-    confirmLabel: '変更'
+    confirmLabel: 'Rename'
   })
   if (name) await library.renamePlaylist(playlistId, name)
 })
@@ -550,9 +551,9 @@ shelf.on('delete-playlist', async (playlistId) => {
   const playlist = library.getPlaylist(playlistId)
   if (!playlist) return
   const ok = await window.hamon.confirm({
-    message: `プレイリスト「${playlist.name}」を削除しますか？`,
-    detail: '曲そのものはライブラリに残ります。',
-    confirmLabel: '削除'
+    message: `Delete the playlist “${playlist.name}”?`,
+    detail: 'The tracks stay in your library.',
+    confirmLabel: 'Delete'
   })
   if (ok) await library.deletePlaylist(playlistId)
 })
@@ -571,22 +572,22 @@ shelf.on('playlist-cover', async (playlistId) => {
 
 shelf.on('playlist-cover-clear', async (playlistId) => {
   await library.clearPlaylistCover(playlistId)
-  setStatus('ジャケットを外しました。収録曲のものが使われます')
+  setStatus('Artwork removed. The tracks’ own artwork will be used')
 })
 
 shelf.on('rename-album', async (albumName) => {
   const collection = findCollection(collections, `album:${albumName}`)
   if (!collection) return
   const name = await nameDialog.ask({
-    heading: 'アルバム名を変更',
+    heading: 'Rename album',
     value: albumName,
-    confirmLabel: '変更'
+    confirmLabel: 'Rename'
   })
   if (!name || name === albumName) return
   // ジャケットとアルバムのアーティストも一緒に付け替わる
   await library.renameAlbum(albumName, name)
   activeCollectionId = `album:${name}`
-  setStatus(`「${name}」に変更しました`)
+  setStatus(`Renamed to “${name}”`)
 })
 
 /*
@@ -599,18 +600,18 @@ shelf.on('album-artist', async (collectionId) => {
   if (!collection) return
 
   const artist = await nameDialog.ask({
-    heading: `「${collection.name}」のアルバムアーティスト`,
+    heading: `Album artist of “${collection.name}”`,
     value: collection.ownArtist ?? '',
-    confirmLabel: '設定',
-    note: '空にすると収録曲のアーティストから表示します。複数いる場合は「A, B, C」のようにカンマで区切る'
+    confirmLabel: 'Set',
+    note: 'Leave empty to use the tracks’ artists. Separate several artists with commas, like “A, B, C”'
   })
   if (artist === null) return
 
   await library.setAlbumArtist(collection.name, artist)
   setStatus(
     artist
-      ? `「${collection.name}」のアルバムアーティストを設定しました`
-      : `「${collection.name}」のアルバムアーティストを解除しました`
+      ? `Set the album artist of “${collection.name}”`
+      : `Cleared the album artist of “${collection.name}”`
   )
 })
 
@@ -620,10 +621,10 @@ shelf.on('track-artists', async (collectionId) => {
   if (!collection) return
 
   const artist = await nameDialog.ask({
-    heading: `「${collection.name}」の収録曲のアーティスト`,
+    heading: `Track artists of “${collection.name}”`,
     value: collection.trackArtists.join(', '),
-    confirmLabel: '設定',
-    note: `${collection.size}曲すべてのアーティストを書き換えます`
+    confirmLabel: 'Set',
+    note: `Changes the artist of all ${count(collection.size, 'track')}`
   })
   if (artist === null) return
 
@@ -631,7 +632,7 @@ shelf.on('track-artists', async (collectionId) => {
     collection.tracks.map((track) => track.id),
     artist
   )
-  setStatus(`「${collection.name}」の収録曲のアーティストを更新しました`)
+  setStatus(`Updated the track artists of “${collection.name}”`)
 })
 
 // 右クリックメニューの「編集」
@@ -655,7 +656,7 @@ shelf.on('group-selection', async ({ collectionIds, as }) => {
   const trackIds = [...new Set(chosen.flatMap((c) => c.tracks.map((track) => track.id)))]
 
   if (trackIds.length === 0) {
-    setStatus('まとめられる曲がありません', { tone: 'error' })
+    setStatus('No tracks to group', { tone: 'error' })
     return
   }
 
@@ -663,22 +664,22 @@ shelf.on('group-selection', async ({ collectionIds, as }) => {
 
   if (as === 'album') {
     const name = await nameDialog.ask({
-      heading: 'アルバムにまとめる',
+      heading: 'Make album',
       value: suggestion,
-      confirmLabel: 'まとめる'
+      confirmLabel: 'Make album'
     })
     if (!name) return
     await library.setAlbumForTracks(trackIds, name)
     shelf.clearSelection()
     activeCollectionId = `album:${name}`
-    setStatus(`「${name}」にまとめました（${trackIds.length}曲）`)
+    setStatus(`Grouped into “${name}” (${count(trackIds.length, 'track')})`)
     return
   }
 
   const name = await nameDialog.ask({
-    heading: 'プレイリストにする',
+    heading: 'Make playlist',
     value: suggestion,
-    confirmLabel: '作成'
+    confirmLabel: 'Create'
   })
   if (!name) return
   const playlistId = await library.createPlaylist(name)
@@ -686,17 +687,17 @@ shelf.on('group-selection', async ({ collectionIds, as }) => {
   await library.addToPlaylist(playlistId, trackIds)
   shelf.clearSelection()
   activeCollectionId = `playlist:${playlistId}`
-  setStatus(`「${name}」を作成しました（${trackIds.length}曲）`)
+  setStatus(`Created “${name}” (${count(trackIds.length, 'track')})`)
 })
 
 shelf.on('add-track', async ({ playlistId, trackId }) => {
   const playlist = library.getPlaylist(playlistId)
   if (playlist?.includes(trackId)) {
-    setStatus('その曲はすでに追加されています')
+    setStatus('That track is already in the playlist')
     return
   }
   await library.addToPlaylist(playlistId, [trackId])
-  setStatus(`「${playlist?.name ?? 'プレイリスト'}」に追加しました`)
+  setStatus(`Added to “${playlist?.name ?? 'playlist'}”`)
 })
 
 // アルバム / シングルを別のアルバム / シングルに重ねる -> まとめてプレイリストを作る
@@ -706,9 +707,9 @@ shelf.on('merge-collections', async ({ sourceIds, targetId }) => {
   if (!target || sources.length === 0) return
 
   const name = await nameDialog.ask({
-    heading: 'まとめてプレイリストを作る',
+    heading: 'Make a playlist from these',
     value: sources.length === 1 ? `${target.name} + ${sources[0].name}` : target.name,
-    confirmLabel: '作成'
+    confirmLabel: 'Create'
   })
   if (!name) return
 
@@ -722,7 +723,7 @@ shelf.on('merge-collections', async ({ sourceIds, targetId }) => {
   shelf.clearSelection()
   activeCollectionId = `playlist:${playlistId}`
   render()
-  setStatus(`「${name}」を作成しました（${trackIds.length}曲）`)
+  setStatus(`Created “${name}” (${count(trackIds.length, 'track')})`)
 })
 
 // コレクションをプレイリストに重ねる -> 束ごと追加
@@ -734,12 +735,12 @@ shelf.on('add-collection', async ({ playlistId, collectionId }) => {
   const trackIds = source.tracks.map((track) => track.id)
   const added = trackIds.filter((id) => !playlist.includes(id))
   if (added.length === 0) {
-    setStatus('すべて追加済みです')
+    setStatus('Everything is already in the playlist')
     return
   }
 
   await library.addToPlaylist(playlistId, trackIds)
-  setStatus(`「${playlist.name}」に${added.length}曲を追加しました`)
+  setStatus(`Added ${count(added.length, 'track')} to “${playlist.name}”`)
 })
 
 // ---- 配線: 取り込み / 削除 ------------------------------------------------
@@ -771,18 +772,18 @@ changeLibraryButton.addEventListener('click', async () => {
   queueMode = false
   render()
 
-  setStatus('ライブラリを移しています…', { duration: 600000 })
+  setStatus('Moving the library…', { duration: 600000 })
   const { ok, warning } = await library.changeLocation(choice.path, choice.mode)
   if (!ok) return
 
-  setStatus(warning ?? `保存先を ${choice.path} に変更しました`, {
+  setStatus(warning ?? `Library location changed to ${choice.path}`, {
     tone: warning ? 'error' : 'info',
     duration: warning ? 12000 : 4000
   })
 })
 
 dropZones.on('files-dropped', async (filePaths) => {
-  setStatus(`${filePaths.length}件を取り込んでいます…`, { duration: 60000 })
+  setStatus(`Importing ${count(filePaths.length, 'file')}…`, { duration: 60000 })
   handleImported(await library.importFiles(filePaths))
 })
 
@@ -790,7 +791,7 @@ dropZones.on('files-dropped', async (filePaths) => {
 function handleImported({ added, skipped }) {
   if (added.length === 0) {
     setStatus(
-      skipped.length > 0 ? '取り込めるファイルがありませんでした' : '取り込みをキャンセルしました',
+      skipped.length > 0 ? 'No files could be imported' : 'Import canceled',
       { tone: skipped.length > 0 ? 'error' : 'info' }
     )
     return
@@ -806,8 +807,8 @@ function handleImported({ added, skipped }) {
     render()
   }
 
-  const skippedNote = skipped.length > 0 ? `（${skipped.length}件はスキップ）` : ''
-  setStatus(`${added.length}曲をキューに追加しました${skippedNote}`)
+  const skippedNote = skipped.length > 0 ? ` (${count(skipped.length, 'file')} skipped)` : ''
+  setStatus(`Added ${count(added.length, 'track')} to the queue${skippedNote}`)
 }
 
 /**
@@ -818,7 +819,7 @@ function handleImported({ added, skipped }) {
 async function openPendingFiles() {
   const { added, skipped } = await library.openPendingFiles()
   if (added.length === 0) {
-    if (skipped.length > 0) setStatus('開いたファイルを読み込めませんでした', { tone: 'error' })
+    if (skipped.length > 0) setStatus('Couldn’t read the opened file', { tone: 'error' })
     return
   }
 
@@ -826,9 +827,9 @@ async function openPendingFiles() {
   queueMode = false
   playTrack(queue.replace(added, 0))
 
-  const skippedNote = skipped.length > 0 ? `（${skipped.length}件はスキップ）` : ''
+  const skippedNote = skipped.length > 0 ? ` (${count(skipped.length, 'file')} skipped)` : ''
   setStatus(
-    added.length === 1 ? `「${added[0].title}」を再生します${skippedNote}` : `${added.length}曲を再生します${skippedNote}`
+    added.length === 1 ? `Playing “${added[0].title}”${skippedNote}` : `Playing ${count(added.length, 'track')}${skippedNote}`
   )
 }
 
@@ -853,24 +854,24 @@ async function deleteCollections(collectionIds) {
   const trackIds = [...new Set(others.flatMap((c) => c.tracks.map((t) => t.id)))]
 
   const detail = [
-    trackIds.length > 0 ? `${trackIds.length}曲の音源ファイルとジャケット画像を完全に削除します。` : '',
-    playlists.length > 0 ? `プレイリスト${playlists.length}件を削除します（曲は残ります）。` : ''
+    trackIds.length > 0 ? `The audio files and artwork of ${count(trackIds.length, 'track')} will be permanently deleted.` : '',
+    playlists.length > 0 ? `${count(playlists.length, 'playlist')} will be deleted (the tracks stay).` : ''
   ]
     .filter(Boolean)
     .join('\n')
 
   const ok = await window.hamon.confirm({
-    message: `選択した${targets.length}件を削除しますか？`,
-    detail: `${detail}\n元に戻せません。`,
-    confirmLabel: '削除'
+    message: `Delete ${count(targets.length, 'selected item')}?`,
+    detail: `${detail}\nThis can’t be undone.`,
+    confirmLabel: 'Delete'
   })
   if (!ok) return
 
   for (const playlist of playlists) await library.deletePlaylist(playlist.sourceId)
   if (trackIds.length > 0) {
-    await deleteTracks(trackIds, { confirm: false, label: `${targets.length}件` })
+    await deleteTracks(trackIds, { confirm: false, label: count(targets.length, 'item') })
   } else {
-    setStatus(`${targets.length}件を削除しました`)
+    setStatus(`Deleted ${count(targets.length, 'item')}`)
   }
   shelf.clearSelection()
 }
@@ -886,19 +887,19 @@ async function deleteCollection(collectionId) {
 
   if (collection.type === CollectionType.PLAYLIST) {
     const ok = await window.hamon.confirm({
-      message: `プレイリスト「${collection.name}」を削除しますか？`,
-      detail: '曲そのものはライブラリに残ります。',
-      confirmLabel: '削除'
+      message: `Delete the playlist “${collection.name}”?`,
+      detail: 'The tracks stay in your library.',
+      confirmLabel: 'Delete'
     })
     if (ok) await library.deletePlaylist(collection.sourceId)
     return
   }
 
-  const label = collection.type === CollectionType.ALBUM ? 'アルバム' : '曲'
+  const label = collection.type === CollectionType.ALBUM ? 'album' : 'track'
   const ok = await window.hamon.confirm({
-    message: `${label}「${collection.name}」を削除しますか？`,
-    detail: `${collection.size}曲の音源ファイルとジャケット画像がライブラリから完全に削除されます。元に戻せません。`,
-    confirmLabel: '削除'
+    message: `Delete the ${label} “${collection.name}”?`,
+    detail: `The audio files and artwork of ${count(collection.size, 'track')} will be permanently deleted from your library. This can’t be undone.`,
+    confirmLabel: 'Delete'
   })
   if (!ok) return
 
@@ -920,9 +921,9 @@ async function deleteTracks(trackIds, { confirm = true, label = null } = {}) {
 
   if (confirm) {
     const ok = await window.hamon.confirm({
-      message: `「${tracks[0].displayTitle}」を削除しますか？`,
-      detail: '音源ファイルとジャケット画像がライブラリから完全に削除されます。元に戻せません。',
-      confirmLabel: '削除'
+      message: `Delete “${tracks[0].displayTitle}”?`,
+      detail: 'The audio file and artwork will be permanently deleted from your library. This can’t be undone.',
+      confirmLabel: 'Delete'
     })
     if (!ok) return
   }
@@ -949,7 +950,7 @@ async function deleteTracks(trackIds, { confirm = true, label = null } = {}) {
     }
   }
 
-  setStatus(`「${label ?? tracks[0].displayTitle}」を削除しました`)
+  setStatus(`Deleted “${label ?? tracks[0].displayTitle}”`)
 }
 
 // ---- 配線: 楽曲情報の編集 -------------------------------------------------
@@ -987,7 +988,7 @@ editor.on('replace-audio', async (trackId) => {
   editor.renderAudio(track)
 
   if (engine.track?.id === trackId) playTrack(track, { autoplay: engine.state === 'playing' })
-  setStatus(`「${track.displayTitle}」の音源を差し替えました`)
+  setStatus(`Replaced the audio of “${track.displayTitle}”`)
 })
 
 nowPlaying.on('cover-dropped', async ({ imagePath }) => {
@@ -998,7 +999,7 @@ nowPlaying.on('cover-dropped', async ({ imagePath }) => {
 nowPlaying.on('cover-request', async () => {
   const trackId = engine.track?.id
   if (!trackId) {
-    setStatus('先に曲を選んでください', { tone: 'error' })
+    setStatus('Choose a track first', { tone: 'error' })
     return
   }
   await library.pickCover(trackId)
@@ -1018,11 +1019,11 @@ dropZones.on('images-dropped', async (imagePaths) => {
 async function setCoverOfCurrentTrack(imagePath) {
   const trackId = engine.track?.id
   if (!trackId) {
-    setStatus('先に曲を再生してから、ジャケットをドロップしてください', { tone: 'error' })
+    setStatus('Play a track first, then drop the artwork', { tone: 'error' })
     return
   }
   await library.setCoverFromPath(trackId, imagePath)
-  setStatus(`「${engine.track.displayTitle}」のジャケットを設定しました`)
+  setStatus(`Set the artwork of “${engine.track.displayTitle}”`)
 }
 
 // ---- 配線: アルバム / プレイリストの札 -------------------------------------
@@ -1038,7 +1039,7 @@ nowPlaying.on('album-cover-dropped', async ({ imagePath }) => {
   } else {
     return
   }
-  setStatus(`「${current.name}」のジャケットを設定しました`)
+  setStatus(`Set the artwork of “${current.name}”`)
 })
 
 nowPlaying.on('album-cover-request', async () => {
@@ -1054,7 +1055,7 @@ nowPlaying.on('album-cover-request', async () => {
 const themeButton = pick(root, 'theme-toggle')
 function renderTheme() {
   themeButton.setAttribute('aria-pressed', String(theme.isNight))
-  themeButton.dataset.tip = theme.isNight ? 'ライトモードに戻す' : 'ナイトモードにする'
+  themeButton.dataset.tip = theme.isNight ? 'Switch to light mode' : 'Switch to night mode'
 
   // ボタン領域は透明にしてアクリルを透かし、記号の色だけ本文に合わせる
   const styles = getComputedStyle(document.documentElement)
@@ -1126,7 +1127,7 @@ openPendingFiles()
 
 // フォーマット表示を後から足したので、既存のライブラリにも埋めて回る（データは消さない）
 library.backfillFormats().then((filled) => {
-  if (filled > 0) setStatus(`${filled}曲のフォーマット情報を読み込みました`)
+  if (filled > 0) setStatus(`Read format info for ${count(filled, 'track')}`)
 })
 
 // dev 時だけコンソールからいじれるようにしておく (本番ビルドでは除去される)

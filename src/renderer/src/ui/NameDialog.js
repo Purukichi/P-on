@@ -40,7 +40,7 @@ export class NameDialog {
    * @param {{heading: string, value?: string, confirmLabel?: string, note?: string}} options
    * @returns {Promise<string|null>} キャンセルなら null。空文字は「未設定にする」の意味で返る
    */
-  ask({ heading, value = '', confirmLabel = '決定', note = '' }) {
+  ask({ heading, value = '', confirmLabel = 'OK', note = '' }) {
     this.#el.nameHeading.textContent = heading
     this.#el.nameInput.value = value
     this.#el.nameNote.textContent = note

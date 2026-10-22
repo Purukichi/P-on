@@ -10,6 +10,8 @@
  * 表示の分類を変えたくなったらこのファイルを直せば済む。
  */
 
+import { count } from '../utils/plural.js'
+
 export const CollectionType = {
   PLAYLIST: 'playlist',
   ALBUM: 'album',
@@ -92,7 +94,7 @@ function playlistsOf(library) {
         id: `playlist:${playlist.id}`,
         sourceId: playlist.id,
         name: playlist.name,
-        subtitle: `${playlist.trackIds.length}曲`,
+        subtitle: count(playlist.trackIds.length, 'track'),
         tracks: library.tracksOfPlaylist(playlist.id),
         ownCoverUrl: playlist.coverUrl
       })
@@ -118,7 +120,7 @@ function albumsOf(library) {
      */
     const ownArtist = library.albumArtist(album)
     const artists = [...new Set(tracks.flatMap((track) => track.artists))]
-    const fallback = artists.length === 0 ? 'アーティスト未設定' : artists.join(', ')
+    const fallback = artists.length === 0 ? 'Unknown artist' : artists.join(', ')
 
     return new Collection({
       type: CollectionType.ALBUM,

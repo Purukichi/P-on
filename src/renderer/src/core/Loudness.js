@@ -376,7 +376,7 @@ function getWorker() {
  */
 export async function analyzeTrack(track) {
   const response = await fetch(track.audioUrl)
-  if (!response.ok) throw new Error(`読み込めませんでした (${response.status})`)
+  if (!response.ok) throw new Error(`Couldn’t load (${response.status})`)
   const encoded = await response.arrayBuffer()
 
   // decodeAudioData は文脈のサンプルレートへ変換してからほどいてくれる

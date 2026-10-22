@@ -52,7 +52,7 @@ export async function checkForUpdatesManually() {
   try {
     const result = await autoUpdater.checkForUpdates()
     const latest = result?.updateInfo?.version ?? null
-    if (!latest) return { status: 'error', message: '更新情報を取得できませんでした' }
+    if (!latest) return { status: 'error', message: 'Couldn’t get update info' }
     if (latest === app.getVersion()) return { status: 'latest', version: latest }
     return { status: 'available', version: latest }
   } catch (error) {
@@ -67,12 +67,12 @@ export async function checkForUpdatesManually() {
 function readableError(error) {
   const text = String(error?.message ?? error)
   if (text.includes('404')) {
-    return '配信元が見つかりませんでした。リリースが未公開か、リポジトリが非公開の可能性があります。'
+    return 'Couldn’t find the update source. The release may not be published yet.'
   }
   if (/ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNREFUSED|net::/i.test(text)) {
-    return 'ネットワークに接続できませんでした。'
+    return 'Couldn’t connect to the network.'
   }
-  return '更新を確認できませんでした。'
+  return 'Couldn’t check for updates.'
 }
 
 export function initUpdater() {
@@ -82,13 +82,13 @@ export function initUpdater() {
    * - ポータブル版は自分自身を書き換えられない（PORTABLE_EXECUTABLE_DIR で見分ける）
    */
   if (!app.isPackaged) {
-    support = { supported: false, reason: '開発中のため、更新の確認は行いません。' }
+    support = { supported: false, reason: 'Updates aren’t checked in development builds.' }
     return
   }
   if (process.env.PORTABLE_EXECUTABLE_DIR) {
     support = {
       supported: false,
-      reason: 'ポータブル版は自動更新に対応していません。新しい版は手動で入れ替えてください。'
+      reason: 'The portable version doesn’t update automatically. Please replace it with the new version manually.'
     }
     return
   }
@@ -113,10 +113,10 @@ export function initUpdater() {
 
     const { response } = await dialog.showMessageBox(visibleWindow(), {
       type: 'info',
-      message: `新しいバージョン ${info.version} を用意しました`,
+      message: `PMP1 ${info.version} is ready`,
       detail:
-        '再起動すると更新が適用されます。音源を含む更新では、新しい楽曲もライブラリに追加されます。\n「あとで」を選んだ場合は、次にアプリを終了したときに自動で適用されます。',
-      buttons: ['いま再起動して更新', 'あとで'],
+        'Restart to apply the update. Updates that include music also add the new tracks to your library.\nIf you choose Later, it’s applied automatically the next time you quit.',
+      buttons: ['Restart and update', 'Later'],
       defaultId: 0,
       cancelId: 1
     })

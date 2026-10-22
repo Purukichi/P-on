@@ -37,19 +37,19 @@ export function createMobileApi({ store = createMobileStore(), picker = pickFile
   const resolveFile = (file) => typeof file === 'string' ? droppedFiles.get(file) : file
   const track = (state, id) => {
     const value = state.tracks.find((item) => item.id === id)
-    if (!value) throw new Error('トラックが見つかりません')
+    if (!value) throw new Error('Track not found')
     return value
   }
   const playlist = (state, id) => {
     const value = state.playlists.find((item) => item.id === id)
-    if (!value) throw new Error('プレイリストが見つかりません')
+    if (!value) throw new Error('Playlist not found')
     return value
   }
   async function snapshot() {
     await ready
     const state = await store.read()
     return {
-      libraryPath: 'アプリ内ライブラリ',
+      libraryPath: 'In-app library',
       contentError,
       tracks: state.tracks.map(({ audio, cover, ...item }) => ({
         ...item, audioFile: audio.name, audioUrl: mediaUrl(audio),
@@ -70,7 +70,7 @@ export function createMobileApi({ store = createMobileStore(), picker = pickFile
   function image(file) {
     if (!file) return null
     file = resolveFile(file)
-    if (!file || !IMAGE_EXTENSIONS.includes(fileExtension(file))) throw new Error('対応していない画像形式です')
+    if (!file || !IMAGE_EXTENSIONS.includes(fileExtension(file))) throw new Error('Unsupported image format')
     return { key: key(), name: file.name, blob: file }
   }
   async function importFiles(files) {
@@ -98,7 +98,7 @@ export function createMobileApi({ store = createMobileStore(), picker = pickFile
   async function replaceAudio(id, file) {
     file = resolveFile(file)
     if (!file) return { snapshot: await snapshot(), replaced: false }
-    if (!AUDIO_EXTENSIONS.includes(fileExtension(file))) throw new Error('対応していない音声形式です')
+    if (!AUDIO_EXTENSIONS.includes(fileExtension(file))) throw new Error('Unsupported audio format')
     const { format } = await metadata(file)
     await store.update((state) => Object.assign(track(state, id), {
       audio: { key: key(), name: file.name, blob: file }, duration: format.duration ?? null, format
@@ -155,15 +155,15 @@ export function createMobileApi({ store = createMobileStore(), picker = pickFile
       }),
       backfillFormats: async () => ({ snapshot: await snapshot(), filled: 0 }),
       openFolder: async () => {}, chooseLocation: async () => null,
-      applyLocation: async () => { throw new Error('モバイルではアプリ内に保存します') }
+      applyLocation: async () => { throw new Error('On mobile, the library is stored inside the app') }
     },
     playlists: {
       create: async (name) => {
         const playlistId = key()
-        await store.update((state) => state.playlists.push({ id: playlistId, name: trim(name) || '新しいプレイリスト', trackIds: [], createdAt: new Date().toISOString() }))
+        await store.update((state) => state.playlists.push({ id: playlistId, name: trim(name) || 'New playlist', trackIds: [], createdAt: new Date().toISOString() }))
         return { snapshot: await snapshot(), playlistId }
       },
-      rename: (id, name) => mutate((state) => { playlist(state, id).name = trim(name) || '新しいプレイリスト' }),
+      rename: (id, name) => mutate((state) => { playlist(state, id).name = trim(name) || 'New playlist' }),
       remove: (id) => mutate((state) => { state.playlists = state.playlists.filter((item) => item.id !== id) }),
       addTracks: (id, ids) => mutate((state) => {
         const target = playlist(state, id)
@@ -184,8 +184,8 @@ export function createMobileApi({ store = createMobileStore(), picker = pickFile
     },
     confirm: async ({ message, detail }) => window.confirm([message, detail].filter(Boolean).join('\n\n')),
     app: {
-      info: async () => ({ version: DISPLAY_VERSION, supported: false, reason: 'アプリの更新は配布元から行ってください。' }),
-      checkUpdate: async () => ({ status: 'unsupported', message: 'アプリの更新は配布元から行ってください。' })
+      info: async () => ({ version: DISPLAY_VERSION, supported: false, reason: 'Please update the app from where you got it.' }),
+      checkUpdate: async () => ({ status: 'unsupported', message: 'Please update the app from where you got it.' })
     },
     player: { publishState: noop, onState: subscribe, sendCommand: noop, onCommand: subscribe, requestState: noop, onStateRequested: subscribe },
     windows: { openMini: noop, closeMini: noop, quit: noop, setMiniAlwaysOnTop: noop, onMiniHover: subscribe, setTitleBar: noop },

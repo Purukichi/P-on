@@ -241,7 +241,7 @@ export class AudioEngine extends Emitter {
       if (!audio.currentSrc) return // unload() 時の空 src は無視
       const code = audio.error?.code
       this.#setState('idle')
-      this.emit('error', new Error(`再生できませんでした (code: ${code ?? 'unknown'})`))
+      this.emit('error', new Error(`Couldn’t play this track (code: ${code ?? 'unknown'})`))
     })
   }
 

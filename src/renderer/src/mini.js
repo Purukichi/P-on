@@ -52,7 +52,7 @@ const ON_TOP_KEY = 'hamon.mini.onTop'
 function applyAlwaysOnTop(onTop) {
   el.pin.dataset.active = String(onTop)
   el.pin.setAttribute('aria-pressed', String(onTop))
-  el.pin.title = onTop ? '常に手前に表示（解除する）' : '常に手前に表示する'
+  el.pin.title = onTop ? 'Always on top (click to turn off)' : 'Always on top'
   localStorage.setItem(ON_TOP_KEY, onTop ? 'on' : 'off')
   window.hamon.windows.setMiniAlwaysOnTop(onTop)
 }
@@ -117,13 +117,13 @@ function render(state) {
   root.dataset.playing = String(Boolean(state?.isPlaying))
 
   // 高頻度の time-update でマーキーを作り直さないよう、タイトルが変わったときだけ
-  const title = hasTrack ? state.title : '曲が選ばれていません'
+  const title = hasTrack ? state.title : 'No track selected'
   if (title !== lastTitle) {
     lastTitle = title
     setMarqueeText(el.title, title)
   }
   el.artist.textContent = hasTrack ? state.artist : '—'
-  el.toggle.setAttribute('aria-label', state?.isPlaying ? '一時停止' : '再生')
+  el.toggle.setAttribute('aria-label', state?.isPlaying ? 'Pause' : 'Play')
 
   if (state?.coverUrl) {
     el.art.src = state.coverUrl

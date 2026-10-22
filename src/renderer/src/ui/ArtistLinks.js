@@ -12,7 +12,7 @@ import { closestFrom, create } from './dom.js'
  * @param {{fallback?: string}} options
  * @returns {Node[]}
  */
-export function artistLinks(artist, { fallback = 'アーティスト未設定' } = {}) {
+export function artistLinks(artist, { fallback = 'Unknown artist' } = {}) {
   const names = splitArtists(artist)
   if (names.length === 0) return [document.createTextNode(fallback)]
 
@@ -26,7 +26,7 @@ export function artistLinks(artist, { fallback = 'アーティスト未設定' }
         attrs: {
           type: 'button',
           'data-artist': name,
-          'data-tip': `「${name}」の曲を棚で探す`
+          'data-tip': `Find “${name}” in the library`
         }
       })
     )

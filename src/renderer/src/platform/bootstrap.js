@@ -38,5 +38,5 @@ if (__P_ON_MOBILE__) {
     if (event.target.closest('[data-el="shelf-list"], .tracklist, [data-el="trash"]')) event.preventDefault()
   })
 }
-if (!window.hamon) throw new Error('アプリの初期化に失敗しました。再起動してください。')
+if (!window.hamon) throw new Error('PMP1 failed to start. Please restart the app.')
 document.documentElement.dataset.platform = window.hamon.platform ?? 'desktop'

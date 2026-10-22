@@ -51,17 +51,17 @@ export class Track {
     if (f.bitsPerSample) parts.push(`${f.bitsPerSample} bit`)
     else if (f.bitrate) parts.push(`${Math.round(f.bitrate / 1000)} kbps`)
     if (f.channels) parts.push(channelLabel(f.channels))
-    if (f.lossless === true) parts.push('ロスレス')
+    if (f.lossless === true) parts.push('Lossless')
 
     return parts.join(' · ')
   }
 
   get displayTitle() {
-    return this.title || '無題のトラック'
+    return this.title || 'Untitled track'
   }
 
   get displayArtist() {
-    return this.artist || 'アーティスト未設定'
+    return this.artist || 'Unknown artist'
   }
 
   /**
@@ -127,7 +127,7 @@ function round(value) {
 }
 
 function channelLabel(channels) {
-  if (channels === 1) return 'モノラル'
-  if (channels === 2) return 'ステレオ'
+  if (channels === 1) return 'Mono'
+  if (channels === 2) return 'Stereo'
   return `${channels}ch`
 }

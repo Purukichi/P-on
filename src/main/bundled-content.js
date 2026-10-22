@@ -12,7 +12,7 @@ let pending = Promise.resolve()
 async function copyVerified(source, relative, expectedHash, root) {
   const hash = createHash('sha256')
   for await (const chunk of createReadStream(source)) hash.update(chunk)
-  if (hash.digest('hex') !== expectedHash) throw new Error('同梱音源の検証に失敗しました')
+  if (hash.digest('hex') !== expectedHash) throw new Error('Bundled music failed verification')
   const target = join(root, relative), temporary = `${target}.${randomUUID()}.tmp`
   try { await copyFile(source, temporary); await rename(temporary, target) }
   finally { await unlink(temporary).catch((error) => { if (error.code !== 'ENOENT') throw error }) }
@@ -37,7 +37,7 @@ export function ensureBundledContent() {
       tracks.push({ id: contentTrackId(item.id), title: item.title, artist: item.artist ?? 'Purukichi', album: item.album ?? null,
         duration: item.duration ?? null, audioFile, coverFile, format: null, addedAt: new Date().toISOString() })
     }
-    if (libraryRoot() !== root) throw new Error('ライブラリ保存先が変更されました。もう一度開いてください')
+    if (libraryRoot() !== root) throw new Error('The library location changed. Please open it again')
     if (tracks.length) await update((state) => mergeContent(state, tracks))
     completed.add(root)
   })

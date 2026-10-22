@@ -29,12 +29,12 @@ export function registerIpcHandlers() {
 
   handle(IPC.LIBRARY_PICK_FILES, async (event) => {
     const { canceled, filePaths } = await dialog.showOpenDialog(windowOf(event), {
-      title: '音源を取り込む',
-      buttonLabel: '取り込む',
+      title: 'Import music',
+      buttonLabel: 'Import',
       properties: ['openFile', 'multiSelections'],
       filters: [
-        { name: '音声ファイル', extensions: AUDIO_EXTENSIONS },
-        { name: 'すべてのファイル', extensions: ['*'] }
+        { name: 'Audio', extensions: AUDIO_EXTENSIONS },
+        { name: 'All files', extensions: ['*'] }
       ]
     })
     if (canceled) return { snapshot: await library.snapshot(), added: [], skipped: [] }
@@ -50,7 +50,7 @@ export function registerIpcHandlers() {
   )
 
   handle(IPC.LIBRARY_PICK_COVER, async (event, trackId) => {
-    const imagePath = await askForImage(event, 'この曲のジャケット画像を選択')
+    const imagePath = await askForImage(event, 'Choose artwork for this track')
     if (!imagePath) return library.snapshot()
     return library.setCover(trackId, imagePath)
   })
@@ -80,7 +80,7 @@ export function registerIpcHandlers() {
   )
 
   handle(IPC.LIBRARY_PICK_ALBUM_COVER, async (event, albumName) => {
-    const imagePath = await askForImage(event, `「${albumName}」のジャケット画像を選択`)
+    const imagePath = await askForImage(event, `Choose artwork for “${albumName}”`)
     if (!imagePath) return library.snapshot()
     return library.setAlbumCover(albumName, imagePath)
   })
@@ -88,9 +88,9 @@ export function registerIpcHandlers() {
   async function askForImage(event, title) {
     const { canceled, filePaths } = await dialog.showOpenDialog(windowOf(event), {
       title,
-      buttonLabel: '設定',
+      buttonLabel: 'Set',
       properties: ['openFile'],
-      filters: [{ name: '画像ファイル', extensions: IMAGE_EXTENSIONS }]
+      filters: [{ name: 'Images', extensions: IMAGE_EXTENSIONS }]
     })
     return canceled ? null : filePaths[0]
   }
@@ -102,12 +102,12 @@ export function registerIpcHandlers() {
 
   handle(IPC.LIBRARY_PICK_AUDIO, async (event, trackId) => {
     const { canceled, filePaths } = await dialog.showOpenDialog(windowOf(event), {
-      title: '差し替える音源を選択',
-      buttonLabel: '差し替える',
+      title: 'Choose replacement audio',
+      buttonLabel: 'Replace',
       properties: ['openFile'],
       filters: [
-        { name: '音声ファイル', extensions: AUDIO_EXTENSIONS },
-        { name: 'すべてのファイル', extensions: ['*'] }
+        { name: 'Audio', extensions: AUDIO_EXTENSIONS },
+        { name: 'All files', extensions: ['*'] }
       ]
     })
     if (canceled) return { snapshot: await library.snapshot(), replaced: false }
@@ -134,8 +134,8 @@ export function registerIpcHandlers() {
     const currentRoot = library.libraryLocation()
 
     const { canceled, filePaths } = await dialog.showOpenDialog(parent, {
-      title: 'ライブラリの保存先を選ぶ',
-      buttonLabel: 'ここにする',
+      title: 'Choose library location',
+      buttonLabel: 'Use this folder',
       defaultPath: currentRoot,
       properties: ['openDirectory', 'createDirectory']
     })
@@ -158,9 +158,9 @@ export function registerIpcHandlers() {
     if (check.hasLibrary) {
       const { response } = await dialog.showMessageBox(parent, {
         type: 'question',
-        message: '選んだフォルダには、すでに PMP1 のライブラリがあります',
-        detail: `${target}\n\nこちらに切り替えますか？\nいまのライブラリのデータは、元の場所にそのまま残ります。`,
-        buttons: ['このライブラリを使う', 'キャンセル'],
+        message: 'This folder already contains a PMP1 library',
+        detail: `${target}\n\nSwitch to this library?\nYour current library stays where it is.`,
+        buttons: ['Use this library', 'Cancel'],
         defaultId: 0,
         cancelId: 1
       })
@@ -169,13 +169,13 @@ export function registerIpcHandlers() {
 
     const { response } = await dialog.showMessageBox(parent, {
       type: 'question',
-      message: 'いまのデータをどうしますか？',
-      detail: `移動元: ${currentRoot}\n移動先: ${target}\n\n「移動」と「コピー」はどちらも先に写しきってから切り替えるので、途中で失敗しても元のデータは残ります。`,
+      message: 'What should happen to your current library?',
+      detail: `From: ${currentRoot}\nTo: ${target}\n\nMove and Copy both finish copying before switching, so your data is safe even if something fails.`,
       buttons: [
-        '移動する（元のフォルダからは削除）',
-        'コピーする（元も残す）',
-        '移さない（保存先だけ変更）',
-        'キャンセル'
+        'Move (delete from the old folder)',
+        'Copy (keep the old folder)',
+        'Don’t move (only change the location)',
+        'Cancel'
       ],
       defaultId: 0,
       cancelId: 3
@@ -207,7 +207,7 @@ export function registerIpcHandlers() {
   )
 
   handle(IPC.PLAYLIST_PICK_COVER, async (event, id, name) => {
-    const imagePath = await askForImage(event, `「${name}」のジャケット画像を選択`)
+    const imagePath = await askForImage(event, `Choose artwork for “${name}”`)
     if (!imagePath) return library.snapshot()
     return library.setPlaylistCover(id, imagePath)
   })
@@ -223,10 +223,10 @@ export function registerIpcHandlers() {
   handle(IPC.CONFIRM, async (event, { message, detail, confirmLabel = 'OK' } = {}) => {
     const { response } = await dialog.showMessageBox(windowOf(event), {
       type: 'warning',
-      buttons: [confirmLabel, 'キャンセル'],
+      buttons: [confirmLabel, 'Cancel'],
       defaultId: 1,
       cancelId: 1,
-      message: message ?? '実行しますか？',
+      message: message ?? 'Continue?',
       detail
     })
     return response === 0

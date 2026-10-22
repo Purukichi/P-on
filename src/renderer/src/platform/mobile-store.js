@@ -7,7 +7,7 @@ export function createMobileStore(name = 'p-on-mobile-v2') {
     request.onupgradeneeded = () => request.result.createObjectStore('library')
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error)
-    request.onblocked = () => reject(new Error('別の画面を閉じてから、もう一度起動してください'))
+    request.onblocked = () => reject(new Error('Close other windows of the app and start it again'))
   })
   let pending = Promise.resolve()
   async function read() {
@@ -24,7 +24,7 @@ export function createMobileStore(name = 'p-on-mobile-v2') {
       const tx = db.transaction('library', 'readwrite')
       tx.objectStore('library').put(state, 'state')
       tx.oncomplete = resolve
-      tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('保存できませんでした'))
+      tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('Couldn’t save'))
     })
   }
   return {

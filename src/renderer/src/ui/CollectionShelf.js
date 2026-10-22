@@ -3,6 +3,7 @@ import { CollectionType, filterCollections } from '../core/Collections.js'
 import { formatTime } from '../utils/time.js'
 import { closestFrom, collect, create } from './dom.js'
 import { typeIcon } from './type-icons.js'
+import { count } from '../utils/plural.js'
 import {
   attachDragThumbnail,
   getCollectionDragData,
@@ -307,7 +308,7 @@ export class CollectionShelf extends Emitter {
     this.#shelf.dataset.expanded = String(expanded)
     // 展開中はメインUIをコンパクトな 1 行に切り替える（CSS 側が拾う）
     this.#root.dataset.shelfExpanded = String(expanded)
-    this.#el.shelfExpandLabel.textContent = expanded ? '折りたたむ' : 'もっと見る'
+    this.#el.shelfExpandLabel.textContent = expanded ? 'Show less' : 'Show more'
     this.#closeMenu()
 
     /*
@@ -344,8 +345,8 @@ export class CollectionShelf extends Emitter {
       const label = TYPE_LABELS[type]
       button.dataset.active = String(on)
       button.setAttribute('aria-pressed', String(on))
-      button.setAttribute('aria-label', `${label}を表示`)
-      button.dataset.tip = on ? `${label}を表示中（押すと隠す）` : `${label}を隠しています（押すと表示）`
+      button.setAttribute('aria-label', `Show ${label}`)
+      button.dataset.tip = on ? `Showing ${label} (click to hide)` : `Hiding ${label} (click to show)`
     }
   }
 
@@ -379,12 +380,12 @@ export class CollectionShelf extends Emitter {
     this.#el.shelfEmpty.hidden = !nothing
     this.#el.shelfEmpty.textContent =
       this.#all.length === 0
-        ? '音源ファイルをウィンドウにドラッグすると取り込めます'
+        ? 'Drag audio files into the window to import them'
         : this.#types.size === 0
-          ? '並べる種類が選ばれていません（検索欄の右のボタンで、プレイリスト / アルバム / シングルを選べます）'
+          ? 'No types selected (use the buttons next to the search box to show playlists, albums or singles)'
           : shown.length === 0
-            ? '選んでいる種類のものはまだありません'
-            : '見つかりませんでした'
+            ? 'Nothing of the selected types yet'
+            : 'No results'
 
     // 消えたカードの選択は落とす
     for (const id of [...this.#selected]) {
@@ -438,7 +439,7 @@ export class CollectionShelf extends Emitter {
       card.append(
         create('span', {
           className: 'card__meta',
-          text: `${typeLabel(collection.type)} · ${collection.size}曲`
+          text: `${typeLabel(collection.type)} · ${count(collection.size, 'track')}`
         })
       )
     }
@@ -592,7 +593,7 @@ export class CollectionShelf extends Emitter {
       setCollectionDragData(event, ids)
       attachDragThumbnail(event, {
         coverUrl: collection.coverUrl,
-        label: ids.length > 1 ? `${ids.length}件` : collection.name
+        label: ids.length > 1 ? count(ids.length, 'item') : collection.name
       })
       for (const id of ids) {
         this.#cardOf(id)?.setAttribute('data-dragging', 'true')
@@ -797,16 +798,16 @@ export class CollectionShelf extends Emitter {
           create('span', { className: 'menu__sub', text: collection.subtitle })
         ]
       }),
-      item('play', '先頭から再生'),
+      item('play', 'Play from the start'),
       // 棚から右のリストへドラッグするのと同じこと。メニューからでも足せるようにしておく
-      item('queue', '再生キューに追加')
+      item('queue', 'Add to queue')
     ]
 
     if (collection.type === CollectionType.PLAYLIST) {
-      parts.push(item('playlist-cover', 'プレイリストのジャケットを変更'))
+      parts.push(item('playlist-cover', 'Change playlist artwork'))
       // 自前のジャケットを持っているときだけ「外す」を出す（収録曲のものに戻る）
-      if (collection.ownCoverUrl) parts.push(item('playlist-cover-clear', 'ジャケットを外す'))
-      parts.push(item('rename-playlist', '名前を変更'), item('delete', 'プレイリストを削除', 'danger'))
+      if (collection.ownCoverUrl) parts.push(item('playlist-cover-clear', 'Remove artwork'))
+      parts.push(item('rename-playlist', 'Rename'), item('delete', 'Delete playlist', 'danger'))
     } else if (collection.type === CollectionType.ALBUM) {
       /*
        * アーティストは 2 段構え。
@@ -814,14 +815,14 @@ export class CollectionShelf extends Emitter {
        * 下は収録曲そのものの書き換えなので、まとめて直したいときだけ使う。
        */
       parts.push(
-        item('album-cover', 'アルバムのジャケットを変更'),
-        item('rename-album', 'アルバム名を変更'),
-        item('album-artist', 'アルバムのアーティストを変更'),
-        item('track-artists', '収録曲のアーティストをまとめて変更'),
-        item('delete', 'アルバムごと削除', 'danger')
+        item('album-cover', 'Change album artwork'),
+        item('rename-album', 'Rename album'),
+        item('album-artist', 'Change album artist'),
+        item('track-artists', 'Change all track artists'),
+        item('delete', 'Delete album', 'danger')
       )
     } else {
-      parts.push(item('edit', '楽曲情報を編集'), item('delete', 'この曲を削除', 'danger'))
+      parts.push(item('edit', 'Edit track info'), item('delete', 'Delete track', 'danger'))
     }
 
     // 収録曲。1 曲だけのシングルでは省く
@@ -847,7 +848,7 @@ export class CollectionShelf extends Emitter {
                 attrs: {
                   type: 'button',
                   'data-menu-action': 'queue-track',
-                  'data-tip': 'この曲を再生キューに追加'
+                  'data-tip': 'Add this track to the queue'
                 }
               })
             ]
@@ -896,7 +897,7 @@ export class CollectionShelf extends Emitter {
       card.querySelector('.card__check')?.setAttribute('aria-checked', String(on))
     }
     this.#el.shelfSelection.hidden = this.#selected.size === 0
-    this.#el.shelfSelectionCount.textContent = `${this.#selected.size}件を選択中`
+    this.#el.shelfSelectionCount.textContent = `${this.#selected.size} selected`
     this.#el.shelfMakeAlbum.disabled = this.#selected.size === 0
     this.#el.shelfMakePlaylist.disabled = this.#selected.size === 0
     this.#el.shelfDeleteSelection.disabled = this.#selected.size === 0
@@ -930,9 +931,9 @@ function pathEl(d) {
 
 const TYPE_KEY = 'hamon.shelf-types'
 const TYPE_LABELS = {
-  [CollectionType.PLAYLIST]: 'プレイリスト',
-  [CollectionType.ALBUM]: 'アルバム',
-  [CollectionType.SINGLE]: 'シングル'
+  [CollectionType.PLAYLIST]: 'Playlist',
+  [CollectionType.ALBUM]: 'Album',
+  [CollectionType.SINGLE]: 'Single'
 }
 
 /** 前回選んでいた種類。初めて開いたとき（記録が無いとき）は全部を並べる */

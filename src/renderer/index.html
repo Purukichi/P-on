@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja" data-theme="light">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -25,8 +25,8 @@
           class="brandmark"
           type="button"
           data-el="about-open"
-          data-tip="バージョン情報"
-          aria-label="PMP1 のバージョン情報"
+          data-tip="About"
+          aria-label="About PMP1"
           aria-expanded="false"
         >
           <svg class="brandmark__icon" viewBox="0 0 59.25 14.25" aria-hidden="true">
@@ -45,14 +45,14 @@
             <path d="M4 9.5h3.5L12 5.5v13L7.5 14.5H4z" />
             <path d="M15.5 9a4 4 0 0 1 0 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
           </svg>
-          <input class="volume__input" type="range" data-el="volume" min="0" max="1" step="0.01" value="0.8" aria-label="音量" />
+          <input class="volume__input" type="range" data-el="volume" min="0" max="1" step="0.01" value="0.8" aria-label="Volume" />
           <!-- 数字はダブルクリック（またはフォーカスして Enter）で直接入力に変わる -->
           <span
             class="volume__value"
             data-el="volume-value"
             role="button"
             tabindex="0"
-            data-tip="ダブルクリックで数値を入力"
+            data-tip="Double-click to type a value"
             >80</span
           >
           <input
@@ -60,7 +60,7 @@
             type="text"
             inputmode="numeric"
             data-el="volume-entry"
-            aria-label="音量（0〜100）"
+            aria-label="Volume (0–100)"
             hidden
           />
         </div>
@@ -71,8 +71,8 @@
           type="button"
           data-el="loudness"
           data-mode="off"
-          data-tip="音量の自動調整: オフ"
-          aria-label="音量の自動調整: オフ"
+          data-tip="Loudness normalization: off"
+          aria-label="Loudness normalization: off"
         >
 <span class="loudness__box" aria-hidden="true"></span>
           <span class="loudness__label">Normalize</span>
@@ -81,14 +81,14 @@
         <span class="topbar__spacer"></span>
 
         <div class="topbar__actions">
-          <button class="button" type="button" data-el="add-tracks">音源を追加</button>
+          <button class="button" type="button" data-el="add-tracks">Add music</button>
 
           <button
             class="iconbutton"
             type="button"
             data-el="open-mini"
-            data-tip="ミニプレイヤーに切り替え"
-            aria-label="ミニプレイヤーに切り替え"
+            data-tip="Switch to mini player"
+            aria-label="Switch to mini player"
           >
             <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1m1 2v10h14V7z" />
@@ -100,8 +100,8 @@
             class="iconbutton"
             type="button"
             data-el="open-folder"
-            data-tip="保存フォルダを開く"
-            aria-label="保存フォルダを開く"
+            data-tip="Open library folder"
+            aria-label="Open library folder"
           >
             <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4l2 2h9A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z" />
@@ -112,8 +112,8 @@
             class="iconbutton"
             type="button"
             data-el="change-library"
-            data-tip="ライブラリの保存先を変更"
-            aria-label="ライブラリの保存先を変更"
+            data-tip="Change library location"
+            aria-label="Change library location"
           >
             <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4l2 2h9A1.5 1.5 0 0 1 21 8.5V11h-2V9h-8.8l-2-2H5v10h6v2H4.5A1.5 1.5 0 0 1 3 17.5z" />
@@ -125,8 +125,8 @@
             class="iconbutton"
             type="button"
             data-el="theme-toggle"
-            data-tip="ナイトモード切替"
-            aria-label="ナイトモード切替"
+            data-tip="Toggle night mode"
+            aria-label="Toggle night mode"
             aria-pressed="false"
           >
             <svg class="icon icon--moon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -142,8 +142,8 @@
             type="button"
             data-el="trash"
             data-dropping="false"
-            data-tip="曲をここにドラッグすると音源とジャケットを削除します"
-            aria-label="ゴミ箱"
+            data-tip="Drag tracks here to delete their audio and artwork"
+            aria-label="Trash"
           >
             <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M9 3h6l1 2h4v2H4V5h4zM6 8h12l-1 12.2A2 2 0 0 1 15 22H9a2 2 0 0 1-2-1.8zm3.5 2.5v9h1.5v-9zm3.5 0v9h1.5v-9z" />
@@ -153,8 +153,6 @@
       </header>
 
       <main class="stage">
-        <p class="section-label stage__label">Now playing</p>
-
         <section class="cover">
           <!--
             いま鳴らしている単位（アルバム / プレイリスト）の札。
@@ -189,14 +187,14 @@
                 <ellipse cx="16.6" cy="14.6" rx="3.2" ry="2.5" transform="rotate(-18 16.6 14.6)" />
               </svg>
             </div>
-            <p class="cover__hint">クリックまたは画像をドロップで、この曲のジャケットを設定</p>
+            <p class="cover__hint">Click or drop an image to set this track’s artwork</p>
           </div>
         </section>
 
         <section class="nowplaying">
           <!-- 棚を展開したときは、この塊がそのまま 1 行に畳まれる -->
           <div class="nowplaying__meta">
-            <h2 class="nowplaying__title" data-el="np-title">曲を選んでください</h2>
+            <h2 class="nowplaying__title" data-el="np-title">Choose a track</h2>
             <p class="nowplaying__artist" data-el="np-artist">—</p>
             <p class="nowplaying__format" data-el="np-format" hidden></p>
           </div>
@@ -210,7 +208,7 @@
               max="1"
               step="0.0001"
               value="0"
-              aria-label="再生位置"
+              aria-label="Position"
               disabled
             />
             <div class="seekbar__times">
@@ -220,7 +218,7 @@
           </div>
 
           <div class="transport">
-            <button class="transport__button" type="button" data-el="prev" data-tip="前の曲" aria-label="前の曲" disabled>
+            <button class="transport__button" type="button" data-el="prev" data-tip="Previous" aria-label="Previous" disabled>
               <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M7 6h2v12H7zm11 0v12l-8-6z" />
               </svg>
@@ -231,7 +229,7 @@
               type="button"
               data-el="play-toggle"
               data-playing="false"
-              aria-label="再生"
+              aria-label="Play"
               disabled
             >
               <svg class="icon icon--play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -242,13 +240,13 @@
               </svg>
             </button>
 
-            <button class="transport__button" type="button" data-el="stop" data-tip="停止" aria-label="停止" disabled>
+            <button class="transport__button" type="button" data-el="stop" data-tip="Stop" aria-label="Stop" disabled>
               <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <rect x="7" y="7" width="10" height="10" rx="1.5" />
               </svg>
             </button>
 
-            <button class="transport__button" type="button" data-el="next" data-tip="次の曲" aria-label="次の曲" disabled>
+            <button class="transport__button" type="button" data-el="next" data-tip="Next" aria-label="Next" disabled>
               <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M15 6h2v12h-2zM6 6l8 6-8 6z" />
               </svg>
@@ -263,8 +261,8 @@
               type="button"
               data-el="repeat"
               data-repeat="off"
-              data-tip="ループしない"
-              aria-label="ループしない"
+              data-tip="Repeat off"
+              aria-label="Repeat off"
             >
               <svg
                 class="icon icon--repeat"
@@ -305,8 +303,8 @@
               type="button"
               data-el="shuffle"
               data-shuffle="false"
-              data-tip="順番どおりに再生"
-              aria-label="順番どおりに再生"
+              data-tip="Shuffle off"
+              aria-label="Shuffle off"
             >
               <svg
                 class="icon"
@@ -334,26 +332,26 @@
         -->
         <aside class="tracklist" data-el="list-panel" data-dropping="false">
           <header class="tracklist__head">
-            <h3 class="tracklist__title" data-el="list-title">リスト</h3>
-            <span class="tracklist__count" data-el="list-count">0曲</span>
+            <h3 class="tracklist__title" data-el="list-title">List</h3>
+            <span class="tracklist__count" data-el="list-count">0 tracks</span>
             <!-- 再生キューを鳴らしているときだけ出る -->
             <button
               class="tracklist__edit tracklist__edit--danger"
               type="button"
               data-el="list-clear"
-              data-tip="再生キューを空にする"
+              data-tip="Clear the queue"
               hidden
             >
-              空にする
+              Clear
             </button>
             <button
               class="tracklist__edit"
               type="button"
               data-el="list-edit"
               data-active="false"
-              data-tip="タイトル・アーティスト・アルバムを直接編集する"
+              data-tip="Edit titles, artists and albums in place"
             >
-              編集
+              Edit
             </button>
           </header>
           <ol class="tracklist__items" data-el="list"></ol>
@@ -363,8 +361,6 @@
 
       <footer class="shelf" data-view="grid" data-expanded="false">
         <div class="shelf__toolbar">
-          <span class="section-label">Library</span>
-
           <label class="search">
             <svg class="search__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <circle cx="10.5" cy="10.5" r="6.5" />
@@ -374,16 +370,16 @@
               class="search__input"
               type="search"
               data-el="shelf-search"
-              placeholder="アルバム・曲名・アーティストで検索"
-              aria-label="検索"
+              placeholder="Search albums, tracks, artists"
+              aria-label="Search"
             />
             <!-- 入力があるときだけ出る。押すと検索を解除する -->
             <button
               class="search__clear"
               type="button"
               data-el="shelf-search-clear"
-              data-tip="検索をクリア"
-              aria-label="検索をクリア"
+              data-tip="Clear search"
+              aria-label="Clear search"
               hidden
             >
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -396,14 +392,14 @@
             棚に並べる種類。それぞれ独立に入り切りでき、入っている種類だけが並ぶ。
             印（SVG）は CollectionShelf が ui/type-icons.js から差し込む（カードの隅の印と同じ形）
           -->
-          <div class="viewswitch" role="group" aria-label="並べる種類">
+          <div class="viewswitch" role="group" aria-label="Types to show">
             <button class="viewswitch__button" type="button" data-el="shelf-type-playlist" data-type="playlist" aria-pressed="true"></button>
             <button class="viewswitch__button" type="button" data-el="shelf-type-album" data-type="album" aria-pressed="true"></button>
             <button class="viewswitch__button" type="button" data-el="shelf-type-single" data-type="single" aria-pressed="true"></button>
           </div>
 
-          <div class="viewswitch" role="group" aria-label="表示の切り替え">
-            <button class="viewswitch__button" type="button" data-el="shelf-view-grid" data-active="true" data-tip="グリッド表示">
+          <div class="viewswitch" role="group" aria-label="View">
+            <button class="viewswitch__button" type="button" data-el="shelf-view-grid" data-active="true" data-tip="Grid view">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />
                 <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" />
@@ -411,7 +407,7 @@
                 <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" />
               </svg>
             </button>
-            <button class="viewswitch__button" type="button" data-el="shelf-view-list" data-active="false" data-tip="リスト表示">
+            <button class="viewswitch__button" type="button" data-el="shelf-view-list" data-active="false" data-tip="List view">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <rect x="3" y="4" width="4" height="4" rx="1" />
                 <rect x="9" y="5" width="12" height="2" rx="1" />
@@ -424,26 +420,26 @@
           </div>
 
           <button class="button button--small" type="button" data-el="shelf-expand">
-            <span data-el="shelf-expand-label">もっと見る</span>
+            <span data-el="shelf-expand-label">Show more</span>
           </button>
 
-          <button class="button button--small" type="button" data-el="shelf-add">＋ プレイリスト</button>
+          <button class="button button--small" type="button" data-el="shelf-add">+ Playlist</button>
         </div>
 
         <!-- 選択中だけ出る -->
         <div class="selectionbar" data-el="shelf-selection" hidden>
-          <span class="selectionbar__count" data-el="shelf-selection-count">0件を選択中</span>
+          <span class="selectionbar__count" data-el="shelf-selection-count">0 selected</span>
           <button class="button button--small" type="button" data-el="shelf-make-album">
-            アルバムにまとめる
+            Make album
           </button>
           <button class="button button--small" type="button" data-el="shelf-make-playlist">
-            プレイリストにする
+            Make playlist
           </button>
           <button class="button button--small button--danger" type="button" data-el="shelf-delete-selection">
-            削除
+            Delete
           </button>
           <button class="button button--small button--quiet" type="button" data-el="shelf-clear-selection">
-            選択を解除
+            Clear selection
           </button>
         </div>
 
@@ -451,14 +447,14 @@
         <div class="shelf__body" data-el="shelf-body">
           <div class="shelf__list" data-el="shelf-list"></div>
           <p class="shelf__empty" data-el="shelf-empty">
-            音源ファイルをウィンドウにドラッグすると取り込めます
+            Drag audio files into the window to import them
           </p>
           <div class="marquee-select" data-el="shelf-marquee" hidden></div>
         </div>
       </footer>
 
       <!-- ブランドマークを押すと出る。バージョンと更新の確認だけ -->
-      <div class="about" data-el="about" role="dialog" aria-label="バージョン情報" hidden>
+      <div class="about" data-el="about" role="dialog" aria-label="About" hidden>
         <div class="about__head">
 <svg class="about__mark" viewBox="0 0 59.25 14.25" aria-hidden="true">
             <path class="logo__off" d="M9.5625 0.5625h1.125v1.125h-1.125zM12.5625 0.5625h1.125v1.125h-1.125zM18.5625 0.5625h1.125v1.125h-1.125zM21.5625 0.5625h1.125v1.125h-1.125zM24.5625 0.5625h1.125v1.125h-1.125zM30.5625 0.5625h1.125v1.125h-1.125zM42.5625 0.5625h1.125v1.125h-1.125zM45.5625 0.5625h1.125v1.125h-1.125zM48.5625 0.5625h1.125v1.125h-1.125zM54.5625 0.5625h1.125v1.125h-1.125zM57.5625 0.5625h1.125v1.125h-1.125zM3.5625 3.5625h1.125v1.125h-1.125zM6.5625 3.5625h1.125v1.125h-1.125zM12.5625 3.5625h1.125v1.125h-1.125zM21.5625 3.5625h1.125v1.125h-1.125zM30.5625 3.5625h1.125v1.125h-1.125zM36.5625 3.5625h1.125v1.125h-1.125zM39.5625 3.5625h1.125v1.125h-1.125zM45.5625 3.5625h1.125v1.125h-1.125zM54.5625 3.5625h1.125v1.125h-1.125zM57.5625 3.5625h1.125v1.125h-1.125zM9.5625 6.5625h1.125v1.125h-1.125zM12.5625 6.5625h1.125v1.125h-1.125zM18.5625 6.5625h1.125v1.125h-1.125zM24.5625 6.5625h1.125v1.125h-1.125zM30.5625 6.5625h1.125v1.125h-1.125zM42.5625 6.5625h1.125v1.125h-1.125zM45.5625 6.5625h1.125v1.125h-1.125zM48.5625 6.5625h1.125v1.125h-1.125zM54.5625 6.5625h1.125v1.125h-1.125zM57.5625 6.5625h1.125v1.125h-1.125zM3.5625 9.5625h1.125v1.125h-1.125zM6.5625 9.5625h1.125v1.125h-1.125zM9.5625 9.5625h1.125v1.125h-1.125zM12.5625 9.5625h1.125v1.125h-1.125zM18.5625 9.5625h1.125v1.125h-1.125zM21.5625 9.5625h1.125v1.125h-1.125zM24.5625 9.5625h1.125v1.125h-1.125zM30.5625 9.5625h1.125v1.125h-1.125zM36.5625 9.5625h1.125v1.125h-1.125zM39.5625 9.5625h1.125v1.125h-1.125zM42.5625 9.5625h1.125v1.125h-1.125zM45.5625 9.5625h1.125v1.125h-1.125zM48.5625 9.5625h1.125v1.125h-1.125zM54.5625 9.5625h1.125v1.125h-1.125zM57.5625 9.5625h1.125v1.125h-1.125zM3.5625 12.5625h1.125v1.125h-1.125zM6.5625 12.5625h1.125v1.125h-1.125zM9.5625 12.5625h1.125v1.125h-1.125zM12.5625 12.5625h1.125v1.125h-1.125zM18.5625 12.5625h1.125v1.125h-1.125zM21.5625 12.5625h1.125v1.125h-1.125zM24.5625 12.5625h1.125v1.125h-1.125zM30.5625 12.5625h1.125v1.125h-1.125zM36.5625 12.5625h1.125v1.125h-1.125zM39.5625 12.5625h1.125v1.125h-1.125zM42.5625 12.5625h1.125v1.125h-1.125zM45.5625 12.5625h1.125v1.125h-1.125zM57.5625 12.5625h1.125v1.125h-1.125z" />
@@ -467,14 +463,14 @@
           </svg>
           <div>
             <p class="about__name">PMP1</p>
-            <p class="about__version">バージョン <span data-el="about-version">—</span></p>
+            <p class="about__version">Version <span data-el="about-version">—</span></p>
           </div>
         </div>
 
         <p class="about__status" data-el="about-status" data-tone="info"></p>
 
         <div class="about__actions">
-          <button class="button button--small" type="button" data-el="about-check">更新を確認</button>
+          <button class="button button--small" type="button" data-el="about-check">Check for updates</button>
         </div>
       </div>
 
@@ -483,8 +479,8 @@
 
       <div class="dropveil" data-el="dropveil" hidden>
         <div class="dropveil__inner">
-          <p class="dropveil__title">ドロップして取り込む</p>
-          <p class="dropveil__note">mp3 / wav / flac などをライブラリに保存して再生キューに追加します</p>
+          <p class="dropveil__title">Drop to import</p>
+          <p class="dropveil__note">MP3, WAV, FLAC and more are saved to your library and added to the queue</p>
         </div>
       </div>
 
@@ -493,48 +489,48 @@
       <!-- 楽曲情報の編集 -->
       <dialog class="dialog" data-el="editor">
         <form class="dialog__form" data-el="editor-form">
-          <h3 class="dialog__heading">楽曲情報</h3>
+          <h3 class="dialog__heading">Track info</h3>
 
           <div class="dialog__body">
             <div class="editor__cover">
               <div class="editor__thumb" data-el="editor-thumb" data-empty="true" data-dropping="false">
                 <img class="editor__thumb-image" data-el="editor-thumb-image" alt="" />
-                <span class="editor__thumb-hint">画像をドロップ</span>
+                <span class="editor__thumb-hint">Drop an image</span>
               </div>
               <button class="button button--small" type="button" data-el="editor-pick-cover">
-                この曲のジャケット
+                Track artwork
               </button>
               <button class="button button--small button--quiet" type="button" data-el="editor-clear-cover">
-                外す
+                Remove
               </button>
               <p class="editor__note" data-el="editor-cover-note"></p>
             </div>
 
             <div class="editor__fields">
               <label class="field">
-                <span class="field__label">タイトル</span>
+                <span class="field__label">Title</span>
                 <input class="field__input" type="text" data-el="editor-title" required />
               </label>
               <label class="field">
-                <span class="field__label">アーティスト</span>
-                <input class="field__input" type="text" data-el="editor-artist" placeholder="未設定" />
+                <span class="field__label">Artist</span>
+                <input class="field__input" type="text" data-el="editor-artist" placeholder="Not set" />
               </label>
               <label class="field">
-                <span class="field__label">アルバム</span>
+                <span class="field__label">Album</span>
                 <input
                   class="field__input"
                   type="text"
                   data-el="editor-album"
-                  placeholder="未設定のときはシングルとして扱われます"
+                  placeholder="Leave empty to treat it as a single"
                 />
               </label>
 
               <div class="field">
-                <span class="field__label">音源ファイル</span>
+                <span class="field__label">Audio file</span>
                 <div class="editor__audio">
                   <span class="editor__audio-name" data-el="editor-audio-name"></span>
                   <button class="button button--small" type="button" data-el="editor-replace-audio">
-                    差し替え
+                    Replace
                   </button>
                 </div>
                 <p class="field__note" data-el="editor-audio-note"></p>
@@ -543,8 +539,8 @@
           </div>
 
           <footer class="dialog__actions">
-            <button class="button button--quiet" type="button" data-el="editor-cancel">キャンセル</button>
-            <button class="button button--primary" type="submit">保存</button>
+            <button class="button button--quiet" type="button" data-el="editor-cancel">Cancel</button>
+            <button class="button button--primary" type="submit">Save</button>
           </footer>
         </form>
       </dialog>
@@ -552,15 +548,15 @@
       <!-- プレイリスト名の入力 -->
       <dialog class="dialog dialog--compact" data-el="name-dialog">
         <form class="dialog__form" data-el="name-form">
-          <h3 class="dialog__heading" data-el="name-heading">プレイリスト名</h3>
+          <h3 class="dialog__heading" data-el="name-heading">Playlist name</h3>
           <label class="field">
-            <span class="field__label">名前</span>
+            <span class="field__label">Name</span>
             <input class="field__input" type="text" data-el="name-input" />
             <span class="field__note" data-el="name-note"></span>
           </label>
           <footer class="dialog__actions">
-            <button class="button button--quiet" type="button" data-el="name-cancel">キャンセル</button>
-            <button class="button button--primary" type="submit" data-el="name-submit">決定</button>
+            <button class="button button--quiet" type="button" data-el="name-cancel">Cancel</button>
+            <button class="button button--primary" type="submit" data-el="name-submit">OK</button>
           </footer>
         </form>
       </dialog>

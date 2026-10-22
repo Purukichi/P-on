@@ -35,7 +35,7 @@ export async function snapshot() {
   try { await ensureBundledContent() }
   catch (error) {
     console.error('[content] 同梱音源を追加できませんでした:', error)
-    contentError = '同梱音源を追加できませんでした。空き容量を確認し、アプリを再起動してください。'
+    contentError = 'Couldn’t add the bundled music. Check your free disk space and restart the app.'
   }
   const data = await load()
   const albumCovers = Object.fromEntries(
@@ -95,7 +95,7 @@ export function inspectLocation(target) {
   const hasLibrary = existsSync(join(target, 'library.json'))
 
   if (isSamePath(current, target)) {
-    return { ok: false, reason: 'いまと同じ場所です', hasLibrary }
+    return { ok: false, reason: 'That’s the current location', hasLibrary }
   }
   /*
    * 入れ子だと、移動元のフォルダを消すときに移動先ごと巻き添えにしたり、
@@ -104,7 +104,7 @@ export function inspectLocation(target) {
   if (isInside(target, current) || isInside(current, target)) {
     return {
       ok: false,
-      reason: 'いまの保存先と入れ子になっているフォルダは選べません',
+      reason: 'You can’t choose a folder inside or around the current location',
       hasLibrary
     }
   }
@@ -136,7 +136,7 @@ export async function changeLibraryLocation(nextRoot, mode) {
 
   if (mode !== 'none') {
     if (check.hasLibrary) {
-      throw new Error('選んだフォルダにはすでに PMP1 のライブラリがあります')
+      throw new Error('This folder already contains a PMP1 library')
     }
     await copyLibraryContents(current, nextRoot)
   }
@@ -185,7 +185,7 @@ async function removeLibraryContents(root) {
   }
 
   if (leftovers.length === 0) return null
-  return `移動は済みましたが、元のフォルダの ${leftovers.join(' / ')} を削除できませんでした（${root}）`
+  return `Moved, but couldn’t delete ${leftovers.join(' / ')} from the old folder (${root})`
 }
 
 function normalizePath(value) {
@@ -383,7 +383,7 @@ export async function backfillFormats() {
 export async function updateTrack(trackId, patch) {
   await update((data) => {
     const track = data.tracks.find((t) => t.id === trackId)
-    if (!track) throw new Error('トラックが見つかりません')
+    if (!track) throw new Error('Track not found')
 
     if ('title' in patch) track.title = normalize(patch.title) ?? track.title
     if ('artist' in patch) track.artist = normalize(patch.artist)
@@ -399,14 +399,14 @@ export async function setCover(trackId, imagePath) {
 
   const data = await load()
   const track = data.tracks.find((t) => t.id === trackId)
-  if (!track) throw new Error('トラックが見つかりません')
+  if (!track) throw new Error('Track not found')
 
   let nextCoverFile = null
 
   if (imagePath) {
     const extension = extname(imagePath).toLowerCase()
     if (!isSupportedImageExtension(extension)) {
-      throw new Error('対応していない画像形式です (jpg / png / webp / gif / bmp)')
+      throw new Error('Unsupported image format (jpg / png / webp / gif / bmp)')
     }
     const base = sanitize(basename(track.audioFile, extname(track.audioFile)))
     const coverName = await uniqueName(coverDir(), base, extension)
@@ -441,11 +441,11 @@ export async function replaceAudio(trackId, filePath) {
 
   const data = await load()
   const track = data.tracks.find((t) => t.id === trackId)
-  if (!track) throw new Error('トラックが見つかりません')
+  if (!track) throw new Error('Track not found')
 
   const extension = extname(filePath).toLowerCase()
   if (!AUDIO_EXTENSIONS.includes(extension.slice(1))) {
-    throw new Error(`対応していない音声形式です (${AUDIO_EXTENSIONS.join(' / ')})`)
+    throw new Error(`Unsupported audio format (${AUDIO_EXTENSIONS.join(' / ')})`)
   }
 
   const audioName = await uniqueName(
@@ -559,7 +559,7 @@ export async function reorderTracks(orderedTrackIds) {
 export async function setAlbumArtist(albumName, artist) {
   const data = await load()
   if (!data.tracks.some((track) => track.album === albumName)) {
-    throw new Error('アルバムが見つかりません')
+    throw new Error('Album not found')
   }
 
   const value = normalize(artist)
@@ -580,7 +580,7 @@ export async function setAlbumArtist(albumName, artist) {
  */
 export async function renameAlbum(oldName, newName) {
   const album = normalize(newName)
-  if (!album) throw new Error('アルバム名を入力してください')
+  if (!album) throw new Error('Enter an album name')
 
   await update((data) => {
     for (const track of data.tracks) {
@@ -615,7 +615,7 @@ export async function setAlbumCover(albumName, imagePath) {
 
   const data = await load()
   if (!data.tracks.some((track) => track.album === albumName)) {
-    throw new Error('アルバムが見つかりません')
+    throw new Error('Album not found')
   }
 
   let nextCoverFile = null
@@ -623,7 +623,7 @@ export async function setAlbumCover(albumName, imagePath) {
   if (imagePath) {
     const extension = extname(imagePath).toLowerCase()
     if (!isSupportedImageExtension(extension)) {
-      throw new Error('対応していない画像形式です (jpg / png / webp / gif / bmp)')
+      throw new Error('Unsupported image format (jpg / png / webp / gif / bmp)')
     }
     const coverName = await uniqueName(coverDir(), `album - ${sanitize(albumName)}`, extension)
     await copyFile(imagePath, join(coverDir(), coverName))
@@ -679,7 +679,7 @@ export async function deleteTrack(trackId) {
 export async function createPlaylist(name) {
   const playlist = {
     id: randomUUID(),
-    name: normalize(name) ?? '新しいプレイリスト',
+    name: normalize(name) ?? 'New playlist',
     trackIds: [],
     createdAt: new Date().toISOString()
   }
@@ -706,14 +706,14 @@ export async function setPlaylistCover(playlistId, imagePath) {
 
   const data = await load()
   const playlist = data.playlists.find((p) => p.id === playlistId)
-  if (!playlist) throw new Error('プレイリストが見つかりません')
+  if (!playlist) throw new Error('Playlist not found')
 
   let nextCoverFile = null
 
   if (imagePath) {
     const extension = extname(imagePath).toLowerCase()
     if (!isSupportedImageExtension(extension)) {
-      throw new Error('対応していない画像形式です (jpg / png / webp / gif / bmp)')
+      throw new Error('Unsupported image format (jpg / png / webp / gif / bmp)')
     }
     const coverName = await uniqueName(coverDir(), `playlist - ${sanitize(playlist.name)}`, extension)
     await copyFile(imagePath, join(coverDir(), coverName))
@@ -747,7 +747,7 @@ export async function deletePlaylist(playlistId) {
 export async function addToPlaylist(playlistId, trackIds) {
   await update((data) => {
     const playlist = data.playlists.find((p) => p.id === playlistId)
-    if (!playlist) throw new Error('プレイリストが見つかりません')
+    if (!playlist) throw new Error('Playlist not found')
     for (const trackId of trackIds) {
       const exists = data.tracks.some((t) => t.id === trackId)
       if (exists && !playlist.trackIds.includes(trackId)) playlist.trackIds.push(trackId)
@@ -766,7 +766,7 @@ export async function addToPlaylist(playlistId, trackIds) {
 export async function reorderPlaylist(playlistId, orderedTrackIds) {
   await update((data) => {
     const playlist = data.playlists.find((p) => p.id === playlistId)
-    if (!playlist) throw new Error('プレイリストが見つかりません')
+    if (!playlist) throw new Error('Playlist not found')
 
     const known = new Set(playlist.trackIds)
     const next = orderedTrackIds.filter((id) => known.has(id))

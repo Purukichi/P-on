@@ -3,6 +3,7 @@ import { formatDb } from '../utils/decibel.js'
 import { formatTime } from '../utils/time.js'
 import { artistLinks } from './ArtistLinks.js'
 import { collect, create } from './dom.js'
+import { count } from '../utils/plural.js'
 import {
   attachDragThumbnail,
   hideNativeDragImage,
@@ -460,7 +461,7 @@ export class TrackList extends Emitter {
     this.#mode = mode
 
     this.#el.listTitle.textContent = title
-    this.#el.listCount.textContent = `${tracks.length}曲`
+    this.#el.listCount.textContent = count(tracks.length, 'track')
     // 空にできるのは自分で組んだキューだけ。アルバムやプレイリストの中身は消さない
     this.#el.listClear.hidden = mode !== 'queue' || tracks.length === 0
     this.#el.listEmpty.textContent = emptyMessage
@@ -499,24 +500,24 @@ export class TrackList extends Emitter {
 
   /** 「i」に出す説明。ファイル形式 / ラウドネス（積分値）/ トゥルーピーク */
   #describe(track) {
-    const format = track.formatSummary || fileExtension(track.audioFile) || '不明'
-    const lines = [`ファイル形式: ${format}`]
+    const format = track.formatSummary || fileExtension(track.audioFile) || 'Unknown'
+    const lines = [`Format: ${format}`]
     const info = this.#loudnessInfo?.(track) ?? { state: 'pending' }
 
     if (info.state === 'ready') {
       const { integrated, truePeak } = info.measurement
       lines.push(
-        `ラウドネス (INT): ${Number.isFinite(integrated) ? `${formatDb(integrated)} LUFS` : '測れる音がありません'}`,
+        `Loudness (INT): ${Number.isFinite(integrated) ? `${formatDb(integrated)} LUFS` : 'nothing to measure'}`,
         `True Peak: ${Number.isFinite(truePeak) ? `${formatDb(truePeak, { sign: true })} dBTP` : '—'}`
       )
     } else if (info.state === 'skipped') {
       lines.push(
         info.reason === 'too-long'
-          ? 'ラウドネス: 20 分を超える曲は測っていません'
-          : 'ラウドネス: この音源は読み込めませんでした'
+          ? 'Loudness: tracks over 20 minutes aren’t measured'
+          : 'Loudness: couldn’t read this audio'
       )
     } else {
-      lines.push('ラウドネス: 測定中…')
+      lines.push('Loudness: measuring…')
     }
     return lines.join('\n')
   }
@@ -533,7 +534,7 @@ export class TrackList extends Emitter {
     this.#editing = editing
     this.#root.dataset.listEdit = String(editing)
     this.#el.listEdit.dataset.active = String(editing)
-    this.#el.listEdit.textContent = editing ? '完了' : '編集'
+    this.#el.listEdit.textContent = editing ? 'Done' : 'Edit'
     // 編集中に届いていた更新もここで一緒に反映される
     this.#paint()
   }
@@ -566,14 +567,14 @@ export class TrackList extends Emitter {
         create('span', {
           className: 'track__grip',
           text: '⠿',
-          attrs: { draggable: 'true', 'data-tip': 'ドラッグして曲順を変更', 'aria-hidden': 'true' }
+          attrs: { draggable: 'true', 'data-tip': 'Drag to reorder', 'aria-hidden': 'true' }
         }),
         create('span', {
           className: 'track__fields',
           children: [
-            this.#field('title', track.title || track.baseFileName, track.baseFileName, 'タイトル'),
-            this.#field('artist', track.artist ?? '', '', 'アーティスト'),
-            this.#field('album', track.album ?? '', '', 'アルバム（空ならシングル）')
+            this.#field('title', track.title || track.baseFileName, track.baseFileName, 'Title'),
+            this.#field('artist', track.artist ?? '', '', 'Artist'),
+            this.#field('album', track.album ?? '', '', 'Album (empty for a single)')
           ]
         })
       )
@@ -598,7 +599,7 @@ export class TrackList extends Emitter {
           type: 'button',
           'data-action': 'info',
           'data-tip': this.#describe(track),
-          'aria-label': '音源の情報'
+          'aria-label': 'Audio info'
         },
         children: [infoIcon()]
       }),
@@ -612,19 +613,19 @@ export class TrackList extends Emitter {
     actions.append(
       create('button', {
         className: 'track__action',
-        text: '編集',
-        attrs: { type: 'button', 'data-action': 'edit', 'data-tip': '楽曲情報を編集' }
+        text: 'Edit',
+        attrs: { type: 'button', 'data-action': 'edit', 'data-tip': 'Edit track info' }
       })
     )
     if (this.#mode === 'playlist' || this.#mode === 'queue') {
       actions.append(
         create('button', {
           className: 'track__action',
-          text: '外す',
+          text: 'Remove',
           attrs: {
             type: 'button',
             'data-action': 'detach',
-            'data-tip': this.#mode === 'queue' ? '再生キューから外す' : 'このプレイリストから外す'
+            'data-tip': this.#mode === 'queue' ? 'Remove from the queue' : 'Remove from this playlist'
           }
         })
       )
