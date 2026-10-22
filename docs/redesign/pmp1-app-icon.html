@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PMP1 App Icon</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo+Mono:wght@300;400&family=Noto+Sans+JP&display=swap">
+<style>
+  /* PMP1 のアプリアイコン案。どれも PMP1 のロゴと同じドットの字形（4 × 5、M だけ 5 列）を使う */
+  :root { --page: #d3d4cf; --ink: #111210; --ink2: #575854; --ink3: #8f908b; --rule: #c3c4bf; --cell: #e8e9e5; --plot: #f4f4f1; --accent: #ff4d0f;
+          --mono: "Chivo Mono", ui-monospace, monospace; --sans: "Noto Sans JP", "Yu Gothic UI", sans-serif; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 14px/1.7 var(--sans); padding: 28px 16px 64px; }
+  .wrap { max-width: 1200px; margin: 0 auto; display: grid; gap: 24px; }
+  .eyebrow { font: 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink2); }
+  h1 { font: 400 26px var(--mono); margin: 4px 0; }
+  .lede { margin: 0; color: var(--ink2); max-width: 75ch; }
+  .opt { background: var(--cell); border: 1px solid var(--rule); display: grid; grid-template-columns: 300px 1fr; }
+  .opt > div { padding: 20px; }
+  .opt h2 { font: 400 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; margin: 0 0 8px; display: flex; gap: 10px; }
+  .opt h2 i { font-style: normal; color: var(--ink3); }
+  .opt p { margin: 0; font-size: 13px; color: var(--ink2); }
+  .big { display: grid; place-items: center; border-right: 1px solid var(--rule); background: var(--plot); }
+  .row { display: flex; gap: 0; border-top: 1px solid var(--rule); }
+  .row:first-of-type { border-top: 0; }
+  .bg { flex: 1; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px 22px; padding: 16px 20px; min-width: 0; }
+  .bg.light { background: #f3f3f3; }
+  .bg.dark { background: #202020; }
+  .bg.wall { background: radial-gradient(60% 80% at 20% 30%, #3a4f86, transparent 60%), radial-gradient(50% 70% at 80% 70%, #7a3f6a, transparent 60%), #12162a; }
+  .sz { display: grid; justify-items: center; gap: 4px; font: 10px var(--mono); color: var(--ink3); }
+  .bg.dark .sz, .bg.wall .sz { color: #8f908b; }
+  .taskbar { display: flex; gap: 6px; align-items: center; padding: 6px 10px; background: rgb(32 32 32 / 85%); border-radius: 6px; }
+  .taskbar span { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 4px; }
+  .taskbar span.on { background: rgb(255 255 255 / 8%); }
+  .taskbar img, .taskbar svg { display: block; }
+  .rec { background: var(--plot); border: 1px solid var(--rule); padding: 18px 20px; }
+  .rec h2 { font: 400 12px var(--mono); letter-spacing: .14em; text-transform: uppercase; margin: 0 0 8px; }
+  @media (max-width: 760px) { .opt { grid-template-columns: 1fr; } .big { border-right: 0; border-bottom: 1px solid var(--rule); padding: 24px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">PMP1 · App icon · 2.0.1</div>
+    <h1>PMP1 App Icon</h1>
+    <p class="lede">今のアイコン（現行）と、ブラッシュアップ案 4 つです。どれも 16 升の升目で設計し、16 px では 1 ドット = 1 ピクセルでぼやけないようにしています。左が 256 px、右が実際のサイズ（明るい背景・暗い背景・壁紙の上）と、タスクバーに並べたときの見え方です。</p>
+  </header>
+  <div id="opts" class="wrap" style="gap:16px"></div>
+  <div class="rec">
+    <h2>おすすめ</h2>
+    <p>B · Ink tile です。墨の地に明るいドットなので、タスクバー（暗い）でもエクスプローラー（明るい）でも輪郭がはっきりし、オレンジの「1」がいちばん映えます。小さいサイズでは「P1」だけに切り替えるので、16 px でも字が潰れません。</p>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const G = {
+    P: ["###.", "#..#", "###.", "#...", "#..."],
+    M: ["#...#", "##.##", "#.#.#", "#...#", "#...#"],
+    "1": [".#..", "##..", ".#..", ".#..", "###."],
+  };
+  const orange = g => g.map(r => r.replace(/#/g, "o"));
+  const join = (...gs) => gs[0].map((_, y) => gs.map(g => g[y]).join("."));
+  const pad = (rows, w) => rows.map(r => r.padEnd(w, "."));
+
+  const STACK = [...join(G.P, G.M), "..........", ...pad(join(G.P, orange(G["1"])), 10)];   // 10 × 11
+  const P1 = join(G.P, orange(G["1"]));                                                     // 9 × 5
+  const PMP1 = join(G.P, G.M, G.P, orange(G["1"]));                                          // 19 × 5
+
+  /*
+   * size: 出来上がりの px。tile: 地の色など。dots: 置くドットの配列。
+   * 升目は 16 升。dots は左上 (ox, oy) に置き、ドットは升の dot 割の大きさ。
+   */
+  function icon(size, o) {
+    const u = size / 16;
+    const pick = typeof o.dots === "function" ? o.dots(size) : o.dots;
+    const { rows, ox, oy } = pick;
+    let r = "";
+    if (o.tile) {
+      const inset = o.tileInset ?? 0.5;
+      const rx = size >= 32 ? u * (o.radius ?? 2) : (o.radius ? u * 0.5 : 0);
+      r += `<rect x="${u * inset}" y="${u * inset}" width="${u * (16 - inset * 2)}" height="${u * (16 - inset * 2)}" rx="${rx}" fill="${o.tile}"${o.edge ? ` stroke="${o.edge}" stroke-width="${Math.max(1, u * 0.12)}"` : ""}/>`;
+    }
+    const s = size >= 32 ? u * (o.dot ?? 0.8) : u;
+    rows.forEach((row, y) => [...row].forEach((ch, x) => {
+      const X = (ox + x) * u + (u - s) / 2, Y = (oy + y) * u + (u - s) / 2;
+      if (ch === "#" || ch === "o") r += `<rect x="${X}" y="${Y}" width="${s}" height="${s}" fill="${ch === "o" ? o.accent : o.ink}"/>`;
+      else if (o.off && size >= 48 && row.trim() !== "" && rows[y].replace(/\./g, "") !== "") {
+        const q = s * 0.36;
+        r += `<rect x="${X + (s - q) / 2}" y="${Y + (s - q) / 2}" width="${q}" height="${q}" fill="${o.off}"/>`;
+      }
+    }));
+    if (o.extra) r += o.extra(size, u);
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">${r}</svg>`;
+  }
+
+  // 小さいサイズ（32 px 未満）では「P1」だけにする
+  const stackOrP1 = size => size >= 32 ? { rows: STACK, ox: 3, oy: 2.5 } : { rows: P1, ox: 3.5, oy: 5.5 };
+  const snap = d => (size) => { const p = d(size); return size < 32 ? { ...p, ox: Math.floor(p.ox), oy: Math.floor(p.oy) } : p; };
+
+  const OPTIONS = [
+    { key: "now", name: "現行", desc: "cell の地に「PM / P1」を 2 段。消灯ドットあり。16 px では 10 × 11 のドットが詰まり、字が読みにくい。地が明るいので、明るい背景では輪郭が溶ける。",
+      o: { tile: "#e8e9e5", edge: "#c3c4bf", ink: "#111210", accent: "#ff4d0f", off: "#d3d4cf", dots: snap(() => ({ rows: STACK, ox: 3, oy: 2.5 })) } },
+    { key: "a", name: "A · Refined light", desc: "現行を整えた案。角の丸みを小さく、縁を少し濃く、消灯ドットは外して字だけにした。32 px 未満は「P1」だけにして大きく描く。",
+      o: { tile: "#e8e9e5", edge: "#8f908b", ink: "#111210", accent: "#ff4d0f", radius: 1.5, dots: snap(stackOrP1) } },
+    { key: "b", name: "B · Ink tile", desc: "墨の地に明るいドット、「1」だけオレンジ。暗いタスクバーでも明るいエクスプローラーでも輪郭がはっきりする。消灯ドットを墨より少し明るく残し、計器の表示窓のように見せる。32 px 未満は「P1」。",
+      o: { tile: "#111210", ink: "#e8e9e5", accent: "#ff4d0f", off: "#2e2f2c", radius: 1.5, dots: snap(stackOrP1) } },
+    { key: "c", name: "C · Signal", desc: "地をなくし、オレンジの四角い札に墨の「P1」だけを大きく置く。最も遠くから見つけやすいが、オレンジを面で使うので、アプリの中の「オレンジは点だけ」の規則からは外れる。",
+      o: { tile: "#ff4d0f", ink: "#111210", accent: "#f4f4f1", radius: 1.5, dots: snap(() => ({ rows: P1, ox: 3.5, oy: 5.5 })) } },
+    { key: "d", name: "D · Display", desc: "墨の地の上に、横一列の「PMP1」（メイン画面左上のロゴと同じ並び）を置き、下にオレンジのメーターを 1 本。ロゴとの一致が最も強い。32 px 未満は「P1」とメーターだけ。",
+      o: { tile: "#111210", ink: "#e8e9e5", accent: "#ff4d0f", off: "#2e2f2c", radius: 1.5, dot: 0.82,
+           dots: snap(size => size >= 32 ? { rows: PMP1.map(r => r), ox: -1.5, oy: 4.5 } : { rows: P1, ox: 3.5, oy: 4 }),
+           extra: (size, u) => {
+             // メーター: 下寄りに横 1 本。値までオレンジ、残りは消灯の色
+             const y = size >= 32 ? 11.5 : 11, h = size >= 32 ? u * 0.8 : u;
+             const x0 = 3 * u, full = 10 * u, val = size >= 32 ? 6.5 * u : 6 * u;
+             return `<rect x="${x0}" y="${y * u}" width="${full}" height="${h}" fill="#2e2f2c"/><rect x="${x0}" y="${y * u}" width="${val}" height="${h}" fill="#ff4d0f"/>`;
+           } } },
+  ];
+
+  // D の「PMP1」は 19 列あるので、16 升の中に 0.8 倍で収める（大きいサイズだけ）
+  const D = OPTIONS.find(x => x.key === "d");
+  const baseIcon = icon;
+  function iconD(size) {
+    if (size < 32) return baseIcon(size, D.o);
+    const u = size / 16, k = 13 / 19;   // 19 列を 13 升に
+    let r = `<rect x="${u * 0.5}" y="${u * 0.5}" width="${u * 15}" height="${u * 15}" rx="${u * 1.5}" fill="#111210"/>`;
+    const p = u * k, s = p * 0.82;
+    PMP1.forEach((row, y) => [...row].forEach((ch, x) => {
+      const X = 1.5 * u + x * p + (p - s) / 2, Y = 5 * u + y * p + (p - s) / 2;
+      if (ch === "#" || ch === "o") r += `<rect x="${X}" y="${Y}" width="${s}" height="${s}" fill="${ch === "o" ? "#ff4d0f" : "#e8e9e5"}"/>`;
+      else { const q = s * 0.36; r += `<rect x="${X + (s - q) / 2}" y="${Y + (s - q) / 2}" width="${q}" height="${q}" fill="#2e2f2c"/>`; }
+    }));
+    r += D.o.extra(size, u);
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${r}</svg>`;
+  }
+  const render = (opt, size) => opt.key === "d" ? iconD(size) : icon(size, opt.o);
+
+  const SIZES = [16, 24, 32, 48, 64];
+  document.getElementById("opts").innerHTML = OPTIONS.map(opt => `
+    <section class="opt">
+      <div class="big">${render(opt, 256)}</div>
+      <div>
+        <h2><i>${opt.key === "now" ? "—" : opt.key.toUpperCase()}</i>${opt.name}</h2>
+        <p>${opt.desc}</p>
+        <div style="margin-top:14px;border:1px solid var(--rule)">
+          ${["light", "dark", "wall"].map(bg => `<div class="row"><div class="bg ${bg}">${SIZES.map(s => `<span class="sz">${render(opt, s)}<span>${s}</span></span>`).join("")}
+            <span class="taskbar" style="margin-left:auto"><span>${render(opt, 24)}</span><span class="on">${render(opt, 24)}</span></span></div></div>`).join("")}
+        </div>
+      </div>
+    </section>`).join("");
+})();
+</script>
+</body>
+</html>

@@ -4,10 +4,9 @@
  *   build/icon.png (512)  … 確認用・Linux / macOS 用
  *   build/icon.ico        … Windows 用。16〜256px を 1 ファイルにまとめたもの
  *
- * 絵は PMP1 のロゴを 2 段に積んだ「PM / P1」。cell（#E8E9E5）の地に墨のドットで置き、
- * 最後の「1」だけ信号オレンジにする。字形はメイン画面左上のロゴ（src/renderer/index.html）と同じ 4 × 5
- * （M だけ 5 列）。消灯のドットは 48px 以上でだけ小さく描く。
- * 16 升の升目で設計し、16px では 1 ドット = 1 ピクセルにしてぼやけないようにしている。
+ * 絵は P のマーク（build/icon.svg と同じ図形）を信号オレンジ（#FF4D0F）で塗り、
+ * cell のグレー（#E8E9E5）の角丸の地に置いたもの。地に縁取りは付けない。
+ * アプリの中のロゴ（PMP1 のドット）とは別に、アイコンだけは P のマークを使う。
  *
  * 実行: node build/make-icon.cjs（sharp は devDependencies に入っている）
  * スマホ版のアイコン（scripts/mobile-icons.mjs）は、まだ旧 P-on の build/source/app-icon.jpg から作っている。
@@ -21,50 +20,33 @@ const SIZE = 512
 
 const ICO_SIZES = [16, 24, 32, 48, 64, 128, 256]
 
-const COLORS = { cell: '#e8e9e5', rule: '#c3c4bf', ink: '#111210', accent: '#ff4d0f', off: '#d3d4cf' }
+const COLORS = { tile: '#e8e9e5', mark: '#ff4d0f' }
+
+/** P のマーク。素の viewBox は 0 0 100 108.67（build/icon.svg と同じ） */
+const MARK =
+  'M0 50 L0 105.6 C0 107.5 1.3 108.7 3.1 108.7 C3.9 108.7 4.6 108.4 5.2 108 C7.5 103.5 14 98.5 25.5 93.6 ' +
+  'A50 50 0 1 0 0 50 Z M23.5 58 A34.3 34.3 0 1 1 92.1 58 A34.3 34.3 0 1 1 23.5 58 Z'
+const MARK_WIDTH = 100
+const MARK_HEIGHT = 108.67
+
+/** 地の角丸。一辺に対する割合で持つ（16px では角を立てて、1 ピクセルの丸みでぼけないようにする） */
+const CORNER_RATIO = 0.1
+
+/** マークの高さ。一辺に対する割合 */
+const MARK_RATIO = 0.6
 
 const root = join(__dirname, '..')
 
-const GLYPHS = {
-  P: ['###.', '#..#', '###.', '#...', '#...'],
-  M: ['#...#', '##.##', '#.#.#', '#...#', '#...#'],
-  1: ['.#..', '##..', '.#..', '.#..', '###.']
-}
-
-/** 字形を 1 列あけて横に並べる */
-const join2 = (a, b) => a.map((row, y) => `${row}.${b[y]}`)
-
-/** 「PM」の段と「P1」の段（1 はオレンジ = 'o'）を 1 行あけて積む。幅は 10 列にそろえる */
-const STACK = [
-  ...join2(GLYPHS.P, GLYPHS.M),
-  '..........',
-  ...join2(GLYPHS.P, GLYPHS[1].map((row) => row.replace(/#/g, 'o'))).map((row) => row.padEnd(10, '.'))
-]
-
 function iconSvg(size) {
-  const u = size / 16
-  const radius = size >= 48 ? u * 2 : 0
-  const stroke = Math.max(1, u * 0.12)
-  let body =
-    `<rect x="${u * 0.5}" y="${u * 0.5}" width="${u * 15}" height="${u * 15}" rx="${radius}" ` +
-    `fill="${COLORS.cell}" stroke="${COLORS.rule}" stroke-width="${stroke}"/>`
-  // 小さいサイズは 1 ドット = 1 升でぴったり置き、大きいサイズは升の 8 割にしてドットの間をあける
-  const dot = size >= 32 ? u * 0.8 : u
-  const left = 3
-  const top = size >= 32 ? 2.5 : 2
-  STACK.forEach((row, y) =>
-    [...row].forEach((ch, x) => {
-      const X = (left + x) * u + (u - dot) / 2
-      const Y = (top + y) * u + (u - dot) / 2
-      if (ch === '#' || ch === 'o') {
-        body += `<rect x="${X}" y="${Y}" width="${dot}" height="${dot}" fill="${ch === 'o' ? COLORS.accent : COLORS.ink}"/>`
-      } else if (size >= 48 && y !== 5) {
-        body += `<rect x="${X + dot * 0.3}" y="${Y + dot * 0.3}" width="${dot * 0.4}" height="${dot * 0.4}" fill="${COLORS.off}"/>`
-      }
-    })
-  )
+  const radius = size >= 32 ? size * CORNER_RATIO : 0
+  const scale = (size * MARK_RATIO) / MARK_HEIGHT
+  const x = (size - MARK_WIDTH * scale) / 2
+  const y = (size - MARK_HEIGHT * scale) / 2
   return Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">${body}</svg>`
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+      `<rect width="${size}" height="${size}" rx="${radius}" fill="${COLORS.tile}"/>` +
+      `<path transform="translate(${x} ${y}) scale(${scale})" fill="${COLORS.mark}" fill-rule="evenodd" d="${MARK}"/>` +
+      `</svg>`
   )
 }
 

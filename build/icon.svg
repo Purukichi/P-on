@@ -1,19 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <!--
-    P-on のマーク（図形版）。
-    輪の左上を太く、右下を細くした環に、左下へ伸びる尾を付けた形。
-    下敷きは置かず、図形そのものを使う（背景は透過）。
+    PMP1 のアプリアイコン（2.0.1〜）。
+    P のマーク（輪の左上を太く、右下を細くした環に、左下へ伸びる尾を付けた形）を信号オレンジで塗り、
+    cell のグレーの角丸の地に置く。地に縁取りは付けない。素の図形の viewBox は 0 0 100 108.67。
 
-    アプリ内（index.html の .brandmark / .about__mark）と同じ図形なので、
-    形を変えるときは両方そろえること。素の viewBox は 0 0 100 108.67。
-
-    配布するアイコン（build/icon.ico / icon.png）はこのファイルからは作らない。
-    build/source/app-icon.jpg（この形に写真を流し込み、白い下敷きを敷いたもの）を
-    build/make-icon.cjs が角丸にするだけ。図形を変えたときは元絵の描き直しが要る。
+    配布するアイコン（build/icon.ico / icon.png）は build/make-icon.cjs が同じ図形から作る。
+    形や色を変えるときは make-icon.cjs と揃えること。
   -->
-  <g transform="translate(47 29) scale(4.18)">
+  <rect width="512" height="512" rx="51.2" fill="#e8e9e5"/>
+  <g transform="translate(114.67 102.4) scale(2.8269)">
     <path
-      fill="#72e887"
+      fill="#ff4d0f"
       fill-rule="evenodd"
       d="M0 50 L0 105.6 C0 107.5 1.3 108.7 3.1 108.7 C3.9 108.7 4.6 108.4 5.2 108 C7.5 103.5 14 98.5 25.5 93.6 A50 50 0 1 0 0 50 Z M23.5 58 A34.3 34.3 0 1 1 92.1 58 A34.3 34.3 0 1 1 23.5 58 Z"
     />
