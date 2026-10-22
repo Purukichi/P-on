@@ -9,6 +9,19 @@
         "dev"
       ],
       "port": 3000
+    },
+    {
+      "name": "mobile",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "mobile:dev",
+        "--",
+        "--port",
+        "5173",
+        "--strictPort"
+      ],
+      "port": 5173
     }
   ]
 }

@@ -10,10 +10,10 @@
 }
 
 /*
- * 丸いキー。平らな面に輪郭の線を 1 本。押している間だけ少し縮める。
+ * キーは面も輪郭も持たない、アイコンだけの四角。押している間だけ少し縮める。
  */
 .transport__button {
-  --key-size: 42px;
+  --key-size: 40px;
 
   position: relative;
   appearance: none;
@@ -23,20 +23,23 @@
   height: var(--key-size);
   padding: 0;
   border: none;
-  border-radius: 50%;
-  background: var(--frost-hi);
-  box-shadow: var(--outline);
-  color: var(--color-text);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text-muted);
   cursor: pointer;
   transition:
-    background var(--transition-fast),
     box-shadow var(--transition-fast),
     color var(--transition-fast),
     transform var(--transition-fast);
 }
 
+.transport__button .icon {
+  width: 22px;
+  height: 22px;
+}
+
 .transport__button:hover:not(:disabled) {
-  box-shadow: 0 0 0 1px var(--color-accent);
+  color: var(--color-text);
 }
 
 .transport__button:active:not(:disabled) {
@@ -48,48 +51,26 @@
   cursor: default;
 }
 
-/*
- * 主役の再生ボタン。大きさは他と揃え、アクセントの緑で塗るだけで目立たせる。
- */
+/* 主役の再生ボタン。一回り大きな四角に細い罫線を 1 本だけ引き、アイコンは墨 */
 .transport__button--play {
-  background: var(--color-accent);
-  box-shadow: none;
-  color: var(--color-accent-contrast);
+  --key-size: 60px;
+
+  box-shadow: inset 0 0 0 1px var(--hairline);
+  color: var(--color-text);
+}
+
+.transport__button--play .icon {
+  width: 30px;
+  height: 30px;
 }
 
 .transport__button--play:hover:not(:disabled) {
-  background: var(--color-accent-hover);
-  box-shadow: none;
-}
-
-/*
- * ループとシャッフルの「効いている」印。
- * キーの上端の内側に小さな LED を灯す（オフの間は消灯した点だけ残す）。
- * 円なので右上の角には置けない。真上の、縁から少し内側に置く。
- */
-.transport__button--repeat::after,
-.transport__button--shuffle::after {
-  content: '';
-  position: absolute;
-  top: 5px;
-  left: calc(50% - 2px);
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--hairline);
-  transition:
-    background var(--transition-fast),
-    box-shadow var(--transition-fast);
-}
-
-.transport__button--repeat:not([data-repeat='off'])::after,
-.transport__button--shuffle[data-shuffle='true']::after {
-  background: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-text-faint);
 }
 
 /*
  * ループ。off / all / one の 3 状態を data-repeat で持つ。
- * off のときは他のボタンより控えめにし、効いている間だけアクセント色で示す。
+ * 効いている間だけアイコンをオレンジにする。
  */
 .transport__button--repeat .icon--repeat-one,
 .transport__button--repeat[data-repeat='one'] .icon--repeat {
@@ -100,21 +81,13 @@
   display: block;
 }
 
-.transport__button--repeat[data-repeat='off'] {
-  color: var(--color-text-faint);
-}
-
 .transport__button--repeat:not([data-repeat='off']) {
-  color: var(--color-text);
+  color: var(--color-accent);
 }
 
-/* シャッフル。ループと同じで、効いている間だけアクセント色で示す */
-.transport__button--shuffle[data-shuffle='false'] {
-  color: var(--color-text-faint);
-}
-
+/* シャッフル。ループと同じで、効いている間だけアイコンをオレンジにする */
 .transport__button--shuffle[data-shuffle='true'] {
-  color: var(--color-text);
+  color: var(--color-accent);
 }
 
 /* data-playing に応じて ▶ / ⏸ を差し替える */

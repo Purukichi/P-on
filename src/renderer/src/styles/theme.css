@@ -3,10 +3,18 @@
  * 通常（ライト）は :root、ナイトモードは [data-theme='night'] を上書きするだけ。
  * Theme クラスが <html data-theme="..."> を書き換える。
  *
- * 白をベースに、墨と緑の 3 色で組み立てている。
- * 面は平らに塗り、立体に見せる影や光は付けない。輪郭が要るところは細い線 1 本で引く。
- * 文字も線も真っ黒・真っ白にはせず、少しやわらげた墨（夜は灰白）にする。
+ * PMP1 のデザイン（docs/redesign/pmp1-redesign.html）。PC1 と同じ規則で組んでいる。
+ *   - 無彩色の面と墨の文字。アクセントは信号オレンジ 1 色だけで、
+ *     「再生中・オンになっている所」にしか使わない。警告もオレンジ（赤や緑は使わない）
+ *   - 区画は細い罫線 1 本で分け、影・グラデーション・立体表現は付けない
+ *   - 角はほぼ立てる。丸めるのは押せる札（ピル）だけ
+ *   - 文字の大きさは 3 段（S 11 / M 13 / L 22 px）。役割の違いは書体・太さ・色で付ける
  */
+
+/* 書体はアプリに同梱する（CSP が外部フォントを禁じているため） */
+@import '@fontsource/noto-sans-jp/400.css';
+@import '@fontsource/chivo-mono/300.css';
+@import '@fontsource/chivo-mono/400.css';
 
 :root {
   /*
@@ -18,123 +26,118 @@
    * 本体の面の不透明度。低いほどデスクトップが透ける。
    * Settings が書き込む。ウィンドウの外側のぼかしは OS のアクリルが担当している。
    */
-  --surface-alpha: 0.25;
+  --surface-alpha: 0.55;
+  /* 面の色（cell #E8E9E5）と墨の色。罫線や溝は墨の半透明にして、どの壁紙の上でも同じ濃さに見せる */
+  --cell-rgb: 232 233 229;
+  --ink-rgb: 17 18 16;
 
-  /*
-   * --- 面 ---
-   * すべて --surface-alpha からの相対で決める。
-   * 透け具合と明るさはトレードオフ（暗い壁紙だと透かすほど沈む）。
-   */
-  --color-bg: rgb(255 255 255 / calc(var(--surface-alpha) * 100%));
-  --color-panel: rgb(255 255 255 / calc(var(--surface-alpha) * 52%));
-  --color-sunken: rgb(255 255 255 / calc(var(--surface-alpha) * 105%));
-  --color-border: rgb(43 45 51 / 10%);
-  --color-border-strong: rgb(43 45 51 / 22%);
+  /* --- 面 --- */
+  --color-bg: rgb(var(--cell-rgb) / calc(var(--surface-alpha) * 100%));
+  --color-panel: rgb(var(--ink-rgb) / 3%);
+  --color-sunken: rgb(var(--ink-rgb) / 6%);
+  --color-border: rgb(var(--ink-rgb) / 16%);
+  --color-border-strong: rgb(var(--ink-rgb) / 30%);
 
-  /* --- 文字。真っ黒にはせず、少し青みのある墨 --- */
-  --color-text: #2b2d33;
-  --color-text-muted: #5d6068;
-  --color-text-faint: #8d9098;
+  /* --- 文字 --- */
+  --color-text: #111210;
+  --color-text-muted: #575854;
+  --color-text-faint: #8f908b;
 
   /* --- 墨の面（塗りつぶしボタンなど） --- */
-  --color-ink: #2b2d33;
-  --color-ink-contrast: #f7f7f8;
+  --color-ink: #111210;
+  --color-ink-contrast: #f4f4f1;
 
-  /*
-   * --- アクセント ---
-   * 落ち着いた深緑。どの画面でもこの 1 色だけを使う。
-   */
-  --color-accent: #3b8c66;
-  --color-accent-hover: #4a9b75;
-  /* アクセントの上に置く文字色。深い緑なので、真っ白ではない白を載せる */
-  --color-accent-contrast: #f7f7f8;
+  /* --- アクセント: 信号オレンジ。どの画面でもこの 1 色だけ --- */
+  --color-accent: #ff4d0f;
+  --color-accent-hover: #ff6a33;
+  --color-accent-contrast: #111210;
 
-  --color-track: rgb(43 45 51 / 14%);
-  --color-danger: #d5615e;
+  /* スライダーの溝 */
+  --color-track: rgb(var(--ink-rgb) / 14%);
+  /* 削除など取り返しのつかない操作も、赤ではなくオレンジで示す */
+  --color-danger: #ff4d0f;
 
   /*
    * --- 重なる面（メニュー・ダイアログ・ドロップ時の覆い・ミニの操作面） ---
-   * 半透明のすりガラスは背景次第で読みづらくなるのでやめ、不透明なパネルを重ねる。
+   * 透かすと下の文字と重なって読めなくなるので、不透明な cell を重ねる。
    * 影は付けず、輪郭の線だけで下の面と分ける。
    */
-  --panel-bg: #f6f6f8;
-  --panel-border: rgb(43 45 51 / 14%);
+  --panel-bg: #e8e9e5;
+  --panel-border: #c3c4bf;
   --panel-shadow: 0 0 0 1px var(--panel-border);
   /* ドロップ時に画面全体へかぶせる面 */
-  --color-veil: #f6f6f8;
+  --color-veil: #e8e9e5;
 
-  /*
-   * --- メインUIの上に浮くもの（メニュー・吹き出し）の面 ---
-   * アクリル（透過）の窓では backdrop-filter が下の絵をぼかしてくれない。
-   * 透かすと下の文字がそのまま重なって読めなくなるので、ここだけは透けさせず単色で塗る。
-   */
-  --glass-bg: #f6f6f8;
-  --glass-border: rgb(43 45 51 / 14%);
+  /* --- メインUIの上に浮くもの（メニュー）の面 --- */
+  --glass-bg: #e8e9e5;
+  --glass-border: #c3c4bf;
 
   /*
    * --- 面と線 ---
-   * frost      パネルの面（半透明。下のアクリルが透ける）
-   * frost-hi   押せるもの・選ばれているものの面（少し濃い）
-   * hairline   輪郭の細い線の色
+   * frost      押せるものの面（ほぼ透明。輪郭の線で見せる）
+   * frost-hi   選ばれているものの面（少し明るい）
+   * hairline   罫線の色
    * outline    輪郭の線そのもの（box-shadow で 1px 引く。枠線と違って寸法が変わらない）
    */
-  --frost: rgb(255 255 255 / 30%);
-  --frost-hi: rgb(255 255 255 / 52%);
-  --hairline: rgb(43 45 51 / 12%);
+  --frost: rgb(var(--ink-rgb) / 4%);
+  --frost-hi: rgb(255 255 255 / 45%);
+  --hairline: rgb(var(--ink-rgb) / 16%);
   --outline: 0 0 0 1px var(--hairline);
-  /* 小さな添え字（曲数など）の字間 */
+  /* 大文字のラベル（区画名・ボタン）の字間 */
   --label-tracking: 0.08em;
 
-  /* --- かたち --- */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
+  /* --- かたち。角はほぼ立て、丸めるのはピルだけ --- */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
   --radius-pill: 999px;
 
-  /* --- 余白 --- */
+  /* --- 余白（10 px のグリッドに乗せる） --- */
   --space-1: 4px;
   --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-7: 48px;
+  --space-3: 10px;
+  --space-4: 20px;
+  --space-5: 20px;
+  --space-6: 30px;
+  --space-7: 40px;
 
   /*
    * --- 書体 ---
-   * 標準的なゴシック。欧文と数字は Segoe UI、日本語は Yu Gothic UI（どちらも Windows の標準）。
-   * Yu Gothic UI は Semibold / Bold の実体を持つので、太くしても字が潰れない。
-   * macOS / スマホではそれぞれの標準のゴシックに回る。
+   * 和文と本文は Noto Sans JP、ラベル・数字は 0 に点や斜線のない等幅の Chivo Mono。
    */
-  --font-sans:
-    'Segoe UI', 'Yu Gothic UI', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, system-ui,
-    sans-serif;
-  /* 再生時間などの数字用。等幅の数字は font-variant-numeric: tabular-nums で揃える */
-  --font-mono: var(--font-sans);
+  --font-sans: 'Noto Sans JP', 'Yu Gothic UI', 'Hiragino Sans', Meiryo, system-ui, sans-serif;
+  --font-mono: 'Chivo Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
   /*
-   * 字の大きさ。小さすぎると和文が潰れるので、いちばん小さい字でも 11px を下回らない。
+   * 字の大きさは 3 段だけ。
+   *   S 11 px … ラベル・数字・補足
+   *   M 13 px … 本文（曲名以外の和文）
+   *   L 22 px … 曲名
+   * 既存の名前（2xs〜title）はこの 3 段に割り当ててある。
    */
-  --font-size-2xs: 11px;
-  --font-size-xs: 12px;
-  --font-size-sm: 13px;
-  --font-size-md: 14px;
-  --font-size-lg: 16px;
-  --font-size-title: 32px;
-  /* 字の太さ。見出しは 600（Semibold）、強調は 500 */
-  --weight-medium: 500;
-  --weight-strong: 600;
+  --font-size-s: 11px;
+  --font-size-m: 13px;
+  --font-size-l: 22px;
+  --font-size-2xs: var(--font-size-s);
+  --font-size-xs: var(--font-size-s);
+  --font-size-sm: var(--font-size-m);
+  --font-size-md: var(--font-size-m);
+  --font-size-lg: var(--font-size-m);
+  --font-size-title: var(--font-size-l);
+  /* 字の太さ。同梱する Noto Sans JP は Regular だけなので、太字は使わない */
+  --weight-medium: 400;
+  --weight-strong: 400;
 
   /*
    * --- 寸法の基準 ---
    * ブロックごとに余白がばらつかないよう、外周と内側の間隔をここに集約する。
    */
   /** 画面の外周（上下左右）に取る余白 */
-  --page-gutter: 40px;
+  --page-gutter: 30px;
   /** ブロック同士の間隔 */
-  --block-gap: 48px;
+  --block-gap: 40px;
   /** アイコンボタンなど、小さな正方形の一辺 */
-  --control-size: 32px;
+  --control-size: 30px;
   /** 再生中の情報（タイトル・シークバー・音量バー）を揃える幅 */
   --np-measure: 340px;
   /**
@@ -144,38 +147,30 @@
   --np-column: calc(var(--np-measure) + var(--page-gutter) + var(--block-gap) * 1.5);
 
   /* --- その他 --- */
-  --titlebar-height: 48px;
+  --titlebar-height: 40px;
   /* タイトルバー右端の最小化 / 最大化 / 閉じるボタンを避ける幅 */
-  --caption-width: 146px;
+  --caption-width: 138px;
   --transition-fast: 130ms cubic-bezier(0.22, 0.61, 0.36, 1);
   --transition-theme: 240ms ease;
 }
 
 [data-theme='night'] {
-  --color-bg: rgb(16 17 20 / calc(var(--surface-alpha) * 100%));
-  --color-panel: rgb(255 255 255 / calc(var(--surface-alpha) * 14%));
-  --color-sunken: rgb(255 255 255 / calc(var(--surface-alpha) * 32%));
-  --color-border: rgb(236 237 240 / 10%);
-  --color-border-strong: rgb(236 237 240 / 22%);
+  --cell-rgb: 22 23 21;
+  --ink-rgb: 232 233 229;
 
-  /* 真っ白にはせず、灰白にとどめる */
-  --color-text: #e4e5e9;
-  --color-text-muted: #a9acb4;
-  --color-text-faint: #787b84;
+  --color-text: #e8e9e5;
+  --color-text-muted: #a6a7a2;
+  --color-text-faint: #7d7e79;
 
-  --color-ink: #e4e5e9;
-  --color-ink-contrast: #24262b;
+  --color-ink: #e8e9e5;
+  --color-ink-contrast: #161715;
 
-  --color-track: rgb(236 237 240 / 16%);
+  --frost-hi: rgb(255 255 255 / 8%);
 
-  --frost: rgb(255 255 255 / 5%);
-  --frost-hi: rgb(255 255 255 / 10%);
-  --hairline: rgb(236 237 240 / 12%);
+  --panel-bg: #1b1c1a;
+  --panel-border: #343532;
+  --color-veil: #1b1c1a;
 
-  --panel-bg: #1d1e22;
-  --panel-border: rgb(236 237 240 / 14%);
-  --color-veil: #1d1e22;
-
-  --glass-bg: #1d1e22;
-  --glass-border: rgb(236 237 240 / 14%);
+  --glass-bg: #1b1c1a;
+  --glass-border: #343532;
 }

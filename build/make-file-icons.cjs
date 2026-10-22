@@ -1,15 +1,15 @@
 /*
- * P-on に関連付けた音声ファイルの、エクスプローラーでのアイコンを作る。
+ * PMP1 に関連付けた音声ファイルの、エクスプローラーでのアイコンを作る。
  *
  *   build/file-icons/<拡張子>.ico   … 例: wav.ico, mp3.ico
  *
- * 印は「伸びる芽」。左右で大きさの違う 2 枚の葉と、少し曲がった茎で、片方の葉が伸びはじめた芽の形。
- * アプリアイコンの葉の写真とつながる、ボタニカルな印にしている。
- * 地や縁取りは付けず、印を拡張子ごとの色で塗るだけにする（種類をひと目で見分けられるように）。
+ * 絵はジャケット（角を 1 画素落とした正方形）を正面に置いたピクセルアート。
+ * 中に再生の三角と拡張子（3 × 5 のピクセル文字）を墨で描き、右上の角に 1 枚だけオレンジのシールを貼る。
+ * 枠からはみ出すものを置かないので、16px でも輪郭が崩れない。
+ * 拡張子ごとの色分けはしない（オレンジ以外の色を使わないため）。見分けは拡張子の文字に任せる。
  *
- * エクスプローラーの詳細表示は 16px で並ぶので、印は 16 四方の升目で設計し、
- * ほかのサイズはそれをそのまま拡大して使う。
- * 48px 以上（中アイコン以上）では、芽の下に拡張子（MP3 / WAV …）を同じ色で添える。
+ * 升目は 2 種類。48px 以上は 32 升（拡張子を描く）、それより小さいサイズは 16 升（三角とシールだけ）。
+ * 横に続く画素は 1 本の矩形にまとめるので、拡大してもつなぎ目が出ない。
  *
  * 対象の拡張子は src/shared/ipc-channels.js の AUDIO_EXTENSIONS と揃えること。
  * electron-builder.yml の fileAssociations もここで作った .ico を参照している。
@@ -24,58 +24,111 @@ const EXTENSIONS = ['mp3', 'wav', 'flac', 'm4a', 'aac', 'ogg', 'opus', 'webm']
 
 const ICO_SIZES = [16, 24, 32, 48, 64, 128, 256]
 
-/** これ以上のサイズでは、芽の下に拡張子を添える */
+/** これ以上のサイズでは 32 升で描き、拡張子を添える */
 const MIN_LABEL_SIZE = 48
 
-/**
- * 拡張子ごとの色。明るい背景でも暗い背景でも見える中くらいの濃さにそろえ、原色は避けている。
- * MP3 はアプリのアクセント（src/renderer/src/styles/theme.css の --color-accent）と同じ深緑。
- */
-const COLORS = {
-  mp3: '#3b8c66',
-  wav: '#3e6fb0',
-  flac: '#7c56ad',
-  m4a: '#b8604a',
-  aac: '#a9742c',
-  ogg: '#2c8593',
-  opus: '#ad4f74',
-  webm: '#5a626e'
+/** p 紙 / e 縁 / i 墨 / o オレンジ */
+const COLORS = { p: '#f4f4f1', e: '#8f908b', i: '#111210', o: '#ff4d0f' }
+
+/** 3 × 5 のピクセル文字。拡張子に出てくる字だけ */
+const MICRO = {
+  A: ['.#.', '#.#', '###', '#.#', '#.#'],
+  B: ['##.', '#.#', '##.', '#.#', '##.'],
+  C: ['.##', '#..', '#..', '#..', '.##'],
+  E: ['###', '#..', '##.', '#..', '###'],
+  F: ['###', '#..', '##.', '#..', '#..'],
+  G: ['.##', '#..', '#.#', '#.#', '.##'],
+  L: ['#..', '#..', '#..', '#..', '###'],
+  M: ['#.#', '###', '###', '#.#', '#.#'],
+  O: ['.#.', '#.#', '#.#', '#.#', '.#.'],
+  P: ['##.', '#.#', '##.', '#..', '#..'],
+  S: ['.##', '#..', '.#.', '..#', '##.'],
+  U: ['#.#', '#.#', '#.#', '#.#', '###'],
+  V: ['#.#', '#.#', '#.#', '#.#', '.#.'],
+  W: ['#.#', '#.#', '###', '###', '#.#'],
+  3: ['##.', '..#', '.#.', '..#', '##.'],
+  4: ['#.#', '#.#', '###', '..#', '..#']
 }
+
+/** 再生の三角（9 画素と 5 画素） */
+const TRIANGLE_9 = ['#.......', '###.....', '#####...', '#######.', '########', '#######.', '#####...', '###.....', '#.......']
+const TRIANGLE_5 = ['#...', '###.', '####', '###.', '#...']
 
 const outDir = join(__dirname, 'file-icons')
 
-/**
- * 伸びる芽（16 四方の座標）。
- *   茎 … 下から右上へ少し曲がりながら伸びる線
- *   大きい葉 … 茎の先から右上へ
- *   小さい葉 … 茎の途中から左へ
- */
-function sprout(color) {
-  return `
-    <path d="M7.5 14 C7.5 11.5 7.9 9.4 9.2 7.8" fill="none" stroke="${color}" stroke-width="1.1" stroke-linecap="round"/>
-    <path d="M9.2 7.8 C9.1 4.7 11.1 2.6 14.2 2.4 C14.3 5.6 12.3 7.7 9.2 7.8 Z" fill="${color}"/>
-    <path d="M7.6 10.6 C5.5 10.7 3.9 9.5 3.4 7.4 C5.6 7.3 7.2 8.5 7.6 10.6 Z" fill="${color}"/>`
+/** G × G の升目。色の記号を 1 升ずつ置いていく */
+function createGrid(G) {
+  const cells = Array.from({ length: G }, () => Array(G).fill(''))
+  const set = (x, y, key) => {
+    if (x >= 0 && y >= 0 && x < G && y < G) cells[y][x] = key
+  }
+  return {
+    G,
+    cells,
+    set,
+    rect(x0, y0, x1, y1, key) {
+      for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, key)
+    },
+    rows(rows, x0, y0, key) {
+      rows.forEach((row, y) => [...row].forEach((ch, x) => ch === '#' && set(x0 + x, y0 + y, key)))
+    }
+  }
+}
+
+/** ジャケット: 角を 1 画素落とした正方形を紙で塗り、外周 1 画素を縁にする */
+function sleeve(grid, x0, y0, x1, y1) {
+  const inside = (x, y) =>
+    x >= x0 && x <= x1 && y >= y0 && y <= y1 && !((x === x0 || x === x1) && (y === y0 || y === y1))
+  for (let y = 0; y < grid.G; y++) {
+    for (let x = 0; x < grid.G; x++) {
+      if (!inside(x, y)) continue
+      const edge = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1)
+      grid.set(x, y, edge ? 'e' : 'p')
+    }
+  }
+}
+
+function draw(extension, big) {
+  if (big) {
+    const grid = createGrid(32)
+    sleeve(grid, 3, 3, 28, 28)
+    grid.rows(TRIANGLE_9, 7, 7, 'i')
+    grid.rect(23, 7, 25, 9, 'o')
+    const glyphs = [...extension.toUpperCase()].map((ch) => MICRO[ch])
+    const label = glyphs[0].map((_, y) => glyphs.map((g) => g[y]).join('.'))
+    grid.rows(label, 7, 21, 'i')
+    return grid
+  }
+  const grid = createGrid(16)
+  sleeve(grid, 1, 1, 14, 14)
+  grid.rows(TRIANGLE_5, 4, 4, 'i')
+  grid.rect(10, 4, 11, 5, 'o')
+  return grid
 }
 
 function iconSvg(extension, size) {
-  const color = COLORS[extension]
-
-  if (size < MIN_LABEL_SIZE) {
-    return Buffer.from(`
-<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 16 16">${sprout(color)}
-</svg>`)
+  const grid = draw(extension, size >= MIN_LABEL_SIZE)
+  const u = size / grid.G
+  let body = ''
+  for (const [key, color] of Object.entries(COLORS)) {
+    let d = ''
+    grid.cells.forEach((row, y) => {
+      for (let x = 0; x < grid.G; ) {
+        if (row[x] !== key) {
+          x++
+          continue
+        }
+        let run = 1
+        while (row[x + run] === key) run++
+        d += `M${x * u} ${y * u}h${run * u}v${u}h${-run * u}z`
+        x += run
+      }
+    })
+    if (d) body += `<path d="${d}" fill="${color}"/>`
   }
-
-  const label = extension.toUpperCase()
-  // 4 文字の拡張子（FLAC / OPUS / WEBM）は少し詰める
-  const fontSize = label.length >= 4 ? 46 : 56
-
-  return Buffer.from(`
-<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 256 256">
-  <g transform="translate(128 92) scale(9.2) translate(-8.8 -8.2)">${sprout(color)}</g>
-  <text x="128" y="222" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif"
-        font-weight="600" font-size="${fontSize}" fill="${color}">${label}</text>
-</svg>`)
+  return Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">${body}</svg>`
+  )
 }
 
 /** PNG を詰め込んだだけの ICO を組み立てる（Windows Vista 以降はこれで読める） */

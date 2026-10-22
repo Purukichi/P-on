@@ -158,7 +158,7 @@ export function registerIpcHandlers() {
     if (check.hasLibrary) {
       const { response } = await dialog.showMessageBox(parent, {
         type: 'question',
-        message: '選んだフォルダには、すでに P-on のライブラリがあります',
+        message: '選んだフォルダには、すでに PMP1 のライブラリがあります',
         detail: `${target}\n\nこちらに切り替えますか？\nいまのライブラリのデータは、元の場所にそのまま残ります。`,
         buttons: ['このライブラリを使う', 'キャンセル'],
         defaultId: 0,

@@ -46,8 +46,8 @@
 }
 
 .menu__item:hover {
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
 }
 
 /* 削除の項目。クラス名は CollectionShelf.js が menu__item--${variant} で組み立てる */
@@ -57,7 +57,7 @@
 
 .menu__item--danger:hover {
   background: var(--color-danger);
-  color: #f7f7f8;
+  color: var(--color-accent-contrast);
 }
 
 /* ---- 見出し ---- */
@@ -73,18 +73,13 @@
 
 .menu__type {
   justify-self: start;
-  padding: 1px 6px;
-  border-radius: var(--radius-sm);
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
-  font-size: var(--font-size-xs);
-  font-weight: var(--weight-strong);
-  /*
-   * 字間は最後の 1 字のうしろにも入るので、その分だけ右の詰まりが浅くなる。
-   * 詰めすぎると小さな字が団子になるため、控えめにしたうえで右側で相殺する。
-   */
-  letter-spacing: 0.12em;
-  padding-right: calc(6px - 0.12em);
+  /* 種類は区画名と同じ、等幅の大文字ラベル */
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-s);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--color-text-faint);
 }
 
 .menu__name {
@@ -146,8 +141,8 @@
 }
 
 .menu__track:hover {
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
+  background: var(--color-ink);
+  color: var(--color-ink-contrast);
 }
 
 .menu__index,
@@ -193,7 +188,7 @@
 }
 
 .menu__queue:hover {
-  background: var(--color-accent-contrast);
-  border-color: var(--color-accent-contrast);
-  color: var(--color-accent);
+  background: var(--color-ink-contrast);
+  border-color: var(--color-ink-contrast);
+  color: var(--color-ink);
 }

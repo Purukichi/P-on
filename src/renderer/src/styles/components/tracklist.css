@@ -3,19 +3,17 @@
  * 既定では隠れていて、アルバムやプレイリストを再生したときだけ開く。
  */
 /*
- * 右カラム。上下の余白をジャケットの列と揃え、
- * 同じ高さの角丸パネルとして見えるようにしている。
+ * 右カラム。板にはせず、左の列とは縦の罫線 1 本で分ける。
  */
 .tracklist {
   display: none;
   flex-direction: column;
   min-height: 0;
-  margin: var(--page-gutter) var(--page-gutter) var(--page-gutter) 0;
-  /* 無地のすりガラスの板。縁は線ではなく光と影で出す */
+  margin: 0;
   border: none;
-  border-radius: var(--radius-lg);
-  background: var(--frost);
-  box-shadow: var(--outline);
+  border-left: 1px solid var(--hairline);
+  border-radius: 0;
+  background: transparent;
   overflow: hidden;
   transition: background var(--transition-theme);
 }
@@ -30,15 +28,15 @@
   outline-offset: -2px;
 }
 
-/* 見出しの下に、刻んだ溝のような区切りを 1 本引く */
+/* 見出し。区画名と同じ高さに置き、下に罫線を 1 本引く */
 .tracklist__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-5) var(--space-5) var(--space-4);
+  margin: 0 var(--space-4);
+  padding: var(--space-4) 0 var(--space-3);
   border-bottom: 1px solid var(--hairline);
-  margin-bottom: var(--space-3);
 }
 
 /*
@@ -49,10 +47,8 @@
  */
 .tracklist__title {
   margin: 0;
-  font-size: var(--font-size-md);
-  font-weight: var(--weight-medium);
+  font-size: var(--font-size-m);
   line-height: 1.6;
-  letter-spacing: 0.02em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -60,9 +56,10 @@
 
 .tracklist__count {
   font-family: var(--font-mono);
-  font-size: var(--font-size-2xs);
-  letter-spacing: var(--label-tracking);
-  color: var(--color-text-muted);
+  font-weight: 300;
+  font-size: var(--font-size-s);
+  letter-spacing: 0.06em;
+  color: var(--color-text-faint);
   flex: none;
 }
 
@@ -72,12 +69,16 @@
   flex: none;
   border: none;
   border-radius: var(--radius-pill);
-  background: var(--frost-hi);
+  background: transparent;
   box-shadow: var(--outline);
   color: var(--color-text-muted);
   font: inherit;
-  font-size: var(--font-size-xs);
-  padding: 3px var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-s);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  line-height: 1.6;
+  padding: 1px var(--space-3);
   cursor: pointer;
   transition:
     background var(--transition-fast),
@@ -86,7 +87,7 @@
 }
 
 .tracklist__edit:hover {
-  box-shadow: 0 0 0 1px var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-text-faint);
   color: var(--color-text);
 }
 
@@ -98,7 +99,7 @@
 .tracklist__edit--danger:hover {
   background: var(--color-danger);
   box-shadow: 0 0 0 1px var(--color-danger);
-  color: #f7f7f8;
+  color: var(--color-accent-contrast);
 }
 
 .tracklist__edit[hidden] {
@@ -109,14 +110,13 @@
   background: var(--color-accent);
   box-shadow: none;
   color: var(--color-accent-contrast);
-  font-weight: var(--weight-strong);
 }
 
 .tracklist__items {
   flex: 1;
   min-height: 0;
   margin: 0;
-  padding: 0 var(--space-4) var(--space-5);
+  padding: 0 var(--space-4) var(--space-4);
   list-style: none;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -137,7 +137,7 @@
 }
 
 .tracklist__items::-webkit-scrollbar-thumb:hover {
-  background: var(--color-accent);
+  background: var(--color-text-faint);
 }
 
 .tracklist__empty {
@@ -161,9 +161,12 @@
   grid-template-columns: 2.2em minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  /* 行は罫線で区切った 40 px の帯 */
+  min-height: 40px;
+  padding: var(--space-1) var(--space-1);
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  border-bottom-color: var(--hairline);
+  border-radius: 0;
   cursor: pointer;
   /*
    * 戻り（短冊 -> ふだんの行）もここの指定で動く。
@@ -181,10 +184,10 @@
   background: var(--frost-hi);
 }
 
-/* 鳴っている行。少し濃い面を敷き、番号の代わりに緑の点を出す */
-.track[data-active='true'] {
-  background: var(--frost-hi);
-  box-shadow: var(--outline);
+/* 鳴っている行。番号の代わりにオレンジの四角を出し、文字を墨にする */
+.track[data-active='true'] .track__title,
+.track[data-active='true'] .track__duration {
+  color: var(--color-text);
 }
 
 /* 持ち出しのドラッグ（ゴミ箱・棚のカードへ）。掴んでいる間は薄くする */
@@ -257,7 +260,8 @@
 .track__index {
   position: relative;
   font-family: var(--font-mono);
-  font-size: var(--font-size-xs);
+  font-weight: 300;
+  font-size: var(--font-size-s);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.06em;
   color: var(--color-text-faint);
@@ -275,12 +279,7 @@
   width: 7px;
   height: 7px;
   margin-top: -3.5px;
-  border-radius: 50%;
   background: var(--color-accent);
-}
-
-.track[data-active='true'] .track__title {
-  font-weight: var(--weight-medium);
 }
 
 .track__main {
@@ -290,15 +289,16 @@
 }
 
 .track__title {
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-m);
+  color: var(--color-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .track__meta {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
+  font-size: var(--font-size-s);
+  color: var(--color-text-faint);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -306,9 +306,10 @@
 
 .track__duration {
   font-family: var(--font-mono);
-  font-size: var(--font-size-xs);
+  font-weight: 300;
+  font-size: var(--font-size-s);
   font-variant-numeric: tabular-nums;
-  color: var(--color-text-muted);
+  color: var(--color-text-faint);
 }
 
 /*
@@ -323,7 +324,7 @@
   height: 20px;
   padding: 0;
   border: none;
-  border-radius: 50%;
+  border-radius: 0;
   background: transparent;
   color: var(--color-text-faint);
   cursor: help;

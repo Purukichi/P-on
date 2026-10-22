@@ -9,8 +9,9 @@
   gap: var(--space-4);
   height: var(--titlebar-height);
   padding: 0 var(--caption-width) 0 var(--page-gutter);
-  /* 面は body（アクリル + 半透明）に任せ、区切り線も引かない */
+  /* 面は body（アクリル + 半透明）に任せ、下の区画とは罫線 1 本で分ける */
   background: transparent;
+  border-bottom: 1px solid var(--hairline);
   /* 空いている部分はウィンドウのドラッグに使う */
   -webkit-app-region: drag;
 }

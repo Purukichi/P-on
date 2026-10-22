@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PMP1 Redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo+Mono:wght@300;400;500&display=swap">
+<!-- 和文の候補（どれも SIL OFL なのでアプリに同梱できる） -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic&family=IBM+Plex+Sans+JP:wght@300;400&family=Zen+Kaku+Gothic+New:wght@400&family=M+PLUS+1:wght@300;400&family=Noto+Sans+JP:wght@300;400&family=Murecho:wght@300;400&family=DotGothic16&display=swap">
+<style>
+  /*
+   * PMP1（旧 P-on）リデザイン案。PC1 の見た目の規則（DESIGN_CONCEPT.md）をプレイヤーに当てはめたもの。
+   * 下のデスクトップ壁紙は、Windows 11 のアクリル越しに透ける様子を確かめるための見本。
+   * 窓の面は「cell の色 × 透過率」で塗り、セル・罫線は墨の半透明にして、どの壁紙の上でも同じ階調に見せる。
+   */
+  :root {
+    color-scheme: light;
+    --page: #d3d4cf;
+    --p-ink: #111210;
+    --p-ink2: #575854;
+    --p-rule: #c3c4bf;
+    --p-cell: #e8e9e5;
+    --p-plot: #f4f4f1;
+    --accent: #ff4d0f;
+    --mono: "Chivo Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    /* 文字の大きさは 3 段だけ: S = ラベル・数字・補足、M = 本文、L = 曲名 */
+    --fs-s: 11px;
+    --fs-m: 13px;
+    --fs-l: 22px;
+    --sans: "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", "Meiryo", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--page); color: var(--p-ink); }
+  body { font-family: var(--sans); font-size: 14px; line-height: 1.7; padding: 28px 16px 64px; }
+  .wrap { max-width: 1320px; margin: 0 auto; display: grid; gap: 28px; }
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--p-ink2); display: flex; gap: 14px; flex-wrap: wrap; }
+  .eyebrow span + span { padding-left: 14px; border-left: 1px solid var(--p-rule); }
+  h1 { font-family: var(--mono); font-weight: 400; font-size: 26px; margin: 6px 0 4px; }
+  .lede { max-width: 72ch; margin: 0; color: var(--p-ink2); }
+  h2.sec { font-family: var(--mono); font-weight: 400; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; margin: 0 0 12px; display: flex; gap: 10px; }
+  h2.sec i { font-style: normal; color: #8f908b; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--p-ink2); }
+  .toolbar label { display: inline-flex; gap: 8px; align-items: center; }
+  .seg { display: inline-flex; background: #c9cac5; border-radius: 999px; padding: 2px; gap: 2px; }
+  .seg button, .tbtn { font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--p-ink2); background: transparent; border: 1px solid transparent; border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--p-plot); border-color: var(--p-rule); color: var(--p-ink); }
+  .tbtn { border-color: var(--p-rule); background: var(--p-cell); border-radius: 3px; }
+  .tbtn[aria-pressed="true"] { background: var(--p-ink); color: var(--p-plot); border-color: var(--p-ink); }
+  input[type=range].plain { accent-color: var(--p-ink); width: 120px; }
+
+  /* ---------- デスクトップ（見本の壁紙） ---------- */
+  .desk { position: relative; overflow: hidden; padding: 40px; border-radius: 4px; }
+  .desk[data-wall="garden"] { background:
+      radial-gradient(60% 70% at 18% 25%, #9cc7a4 0%, transparent 60%),
+      radial-gradient(50% 60% at 85% 20%, #f2c27b 0%, transparent 60%),
+      radial-gradient(70% 70% at 70% 90%, #6f8fc9 0%, transparent 60%),
+      linear-gradient(160deg, #e8e2d0, #b9c7b0); }
+  .desk[data-wall="night"] { background:
+      radial-gradient(50% 60% at 25% 30%, #3a4f86 0%, transparent 60%),
+      radial-gradient(40% 50% at 80% 70%, #7a3f6a 0%, transparent 60%),
+      linear-gradient(170deg, #12162a, #0a0b10); }
+  .desk[data-wall="busy"] { background:
+      repeating-linear-gradient(115deg, #e94f37 0 60px, #f6f7eb 60px 110px, #393e41 110px 170px, #44bba4 170px 230px, #f7b538 230px 280px); }
+  .scaler { transform-origin: 0 0; }
+
+  /* ---------- PMP1 の窓 ---------- */
+  .win {
+    /* 面の透過率（Settings の「透け具合」）。低いほどデスクトップが透ける */
+    --alpha: 0.62;
+    --cell-rgb: 232 233 229;
+    --ink-rgb: 17 18 16;
+    --surface: rgb(var(--cell-rgb) / var(--alpha));
+    --ink: #111210;
+    --ink2: #575854;
+    --ink3: #8f908b;
+    --rule: rgb(var(--ink-rgb) / 16%);
+    --cell-off: rgb(var(--ink-rgb) / 8%);
+    --cell-tick: rgb(var(--ink-rgb) / 14%);
+    --cell-lit: rgb(var(--ink-rgb) / 30%);
+    --plot: rgb(255 255 255 / 55%);
+    --solid: #e8e9e5;     /* メニュー・吹き出し・ダイアログなど浮く面は透かさない */
+    --solid-rule: #c3c4bf;
+    --groove: rgb(var(--ink-rgb) / 8%);
+    position: relative; width: 1240px; height: 820px; overflow: hidden;
+    color: var(--ink); font-family: var(--sans);
+    /* 見本でだけ、OS のアクリルの代わりに backdrop-filter でぼかす */
+    background: var(--surface);
+    backdrop-filter: blur(40px) saturate(1.3);
+    -webkit-backdrop-filter: blur(40px) saturate(1.3);
+    outline: 1px solid rgb(0 0 0 / 18%);
+    font-size: var(--fs-m);
+    user-select: none;
+  }
+  .win[data-theme="night"] {
+    --cell-rgb: 22 23 21;
+    --ink-rgb: 232 233 229;
+    --ink: #e8e9e5;
+    --ink2: #a6a7a2;
+    --ink3: #6f706b;
+    --plot: rgb(255 255 255 / 8%);
+    --solid: #1b1c1a;
+    --solid-rule: #343532;
+  }
+  .grid-overlay { position: absolute; inset: 0; pointer-events: none; z-index: 50; display: none;
+    background-image: linear-gradient(to right, rgb(255 77 15 / 14%) 1px, transparent 1px), linear-gradient(to bottom, rgb(255 77 15 / 14%) 1px, transparent 1px);
+    background-size: 10px 10px; }
+  .win[data-grid="on"] .grid-overlay { display: block; }
+
+  /* 文字は 3 段（--fs-s / --fs-m / --fs-l）。ラベル・値・補足は同じ S で、太さと色で役割を分ける */
+  .label { font-family: var(--mono); font-weight: 400; font-size: var(--fs-s); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); line-height: 1; }
+  .value { font-family: var(--mono); font-weight: 300; font-size: var(--fs-s); font-variant-numeric: tabular-nums; line-height: 1; }
+  .meta  { font-family: var(--mono); font-weight: 300; font-size: var(--fs-s); letter-spacing: .06em; text-transform: uppercase; color: var(--ink3); line-height: 1; }
+  .head { display: flex; gap: 8px; align-items: baseline; }
+  .head .meta { color: var(--ink3); }
+
+  svg.dots { display: block; flex: none; }
+  .d-on { fill: currentColor; }
+  .d-acc { fill: var(--accent); }
+  .d-off { fill: var(--cell-off); }
+
+  .hit { cursor: pointer; background: none; border: 0; padding: 0; color: inherit; font: inherit; }
+  .hit:focus-visible { outline: 1px solid var(--ink); outline-offset: 2px; }
+
+  /* --- 上部バー（50） --- */
+  .topbar { position: absolute; left: 0; top: 0; right: 0; height: 40px; border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding-left: 20px; }
+  .logo { color: var(--ink); display: flex; align-items: center; height: 40px; padding-right: 10px; }
+  .vol { display: flex; align-items: center; gap: 8px; margin-left: 20px; width: 170px; }
+  .topbar .tbtn-app { height: 18px; padding: 0 8px; border-radius: 9px; }
+  .vol .value { width: 24px; text-align: right; }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; margin-left: 30px; }
+  .toggle .box { width: 7px; height: 7px; box-shadow: inset 0 0 0 1px var(--ink3); }
+  .toggle[aria-pressed="true"] .box { background: var(--accent); box-shadow: none; }
+  .toggle .label { color: var(--ink2); }
+  .toggle[aria-pressed="true"] .label { color: var(--ink); }
+  .spacer { flex: 1; }
+  .actions { display: flex; align-items: center; gap: 0; margin-right: 138px; height: 40px; }
+  .tbtn-app { height: 20px; padding: 0 10px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--rule); display: inline-flex; align-items: center; margin-right: 10px; }
+  .tbtn-app:hover { box-shadow: inset 0 0 0 1px var(--ink3); }
+  /* 枠付きボタン・EDIT など押せるラベルも、区画名（LIBRARY など）と同じ書体・大きさ・字間にそろえる。
+     .hit の font: inherit に負けないよう、ここで明示する */
+  .hit.label { font-family: var(--mono); font-weight: 400; font-size: var(--fs-s); letter-spacing: .08em; text-transform: uppercase; }
+  .ibtn { width: 26px; height: 26px; display: grid; place-items: center; color: var(--ink2); }
+  .ibtn:hover { color: var(--ink); }
+  .caption { position: absolute; right: 0; top: 0; width: 138px; height: 40px; display: flex; color: var(--ink2); }
+  .caption span { flex: 1; display: grid; place-items: center; font-size: var(--fs-s); font-family: var(--mono); }
+
+  /* --- 中段（50..570） --- */
+  .stage { position: absolute; left: 0; top: 40px; right: 0; height: 530px; display: grid; grid-template-columns: 380px 430px 1fr; }
+  .col { position: relative; padding: 20px; min-width: 0; }
+  .col + .col.q { border-left: 1px solid var(--rule); }
+
+  .album-tag { position: absolute; left: 30px; top: 50px; display: flex; gap: 10px; align-items: center; height: 30px; }
+  .album-tag .thumb { width: 30px; height: 30px; }
+  .album-tag .name { font-size: var(--fs-m); line-height: 1.2; }
+  .album-tag .meta { margin-top: 4px; }
+  .art { position: absolute; left: 30px; top: 100px; width: 320px; height: 320px; }
+  .art-cap { position: absolute; left: 30px; top: 430px; width: 320px; display: flex; justify-content: space-between; }
+
+  .np { padding: 0; }
+  .np .title { position: absolute; left: 20px; top: 100px; width: 390px; font-size: var(--fs-l); line-height: 30px; font-weight: 400; margin: 0; }
+  .np .artist { position: absolute; left: 20px; top: 140px; font-size: var(--fs-m); line-height: 20px; color: var(--ink2); margin: 0; }
+  .np .format { position: absolute; left: 20px; top: 170px; }
+  /* 再生時間は通常の書体で控えめに（Chivo Mono 300・M 13 px）。全体の長さは ink3 */
+  .np .clock { position: absolute; left: 20px; top: 270px; display: flex; align-items: baseline; gap: 8px; font-family: var(--mono); font-weight: 300; font-size: var(--fs-m); font-variant-numeric: tabular-nums; line-height: 1; }
+  .np .clock #dur { color: var(--ink3); }
+  .seek { position: absolute; left: 20px; top: 300px; width: 390px; height: 20px; cursor: pointer; }
+  .times { position: absolute; left: 20px; top: 326px; width: 390px; display: flex; justify-content: space-between; }
+  .transport { position: absolute; left: 20px; top: 360px; display: flex; align-items: center; gap: 0; }
+  .tp { width: 50px; height: 50px; display: grid; place-items: center; color: var(--ink); position: relative; }
+  .tp.small { color: var(--ink2); }
+  .tp.small:hover { color: var(--ink); }
+  .tp[aria-pressed="true"] { color: var(--accent); }
+  .tp.play { width: 60px; height: 60px; box-shadow: inset 0 0 0 1px var(--rule); margin: 0 10px; }
+  .tp.play:hover { box-shadow: inset 0 0 0 1px var(--ink3); }
+
+  /* セル列（シーク・音量） */
+  .cells { position: relative; height: 20px; }
+  .cells svg { position: absolute; left: 0; top: 0; display: block; }
+
+  .queue .head { justify-content: space-between; }
+  .qlist { list-style: none; margin: 20px 0 0; padding: 0; border-top: 1px solid var(--rule); }
+  .qlist li { display: grid; grid-template-columns: 30px 1fr auto; align-items: center; height: 40px; border-bottom: 1px solid var(--rule); gap: 0; cursor: default; }
+  .qlist li:hover { background: var(--plot); }
+  .qlist .idx { font-family: var(--mono); font-weight: 300; font-size: var(--fs-s); color: var(--ink3); padding-left: 2px; }
+  .qlist .t { font-size: var(--fs-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink2); }
+  .qlist .t small { display: block; font-size: var(--fs-s); color: var(--ink3); line-height: 1.3; }
+  .qlist .tm { font-family: var(--mono); font-weight: 300; font-size: var(--fs-s); color: var(--ink3); padding-right: 2px; }
+  .qlist li.now .t { color: var(--ink); }
+  .qlist li.now .tm { color: var(--ink); }
+  .qlist .playing { width: 7px; height: 7px; background: var(--accent); margin-left: 2px; }
+  .qtools { display: flex; gap: 10px; }
+  .qtools .hit { color: var(--ink2); }
+  .qtools .hit:hover { color: var(--ink); }
+
+  /* --- 棚（570..820） --- */
+  .shelf { position: absolute; left: 0; right: 0; bottom: 0; height: 250px; border-top: 1px solid var(--rule); }
+  .shelf-bar { height: 50px; display: flex; align-items: center; padding: 0 20px; gap: 20px; }
+  .search { display: flex; align-items: center; gap: 8px; width: 300px; height: 20px; border-bottom: 1px solid var(--rule); color: var(--ink3); margin-left: 10px; }
+  .search input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; font: var(--fs-m) var(--sans); color: var(--ink); padding: 0; }
+  .search input::placeholder { color: var(--ink3); }
+  .pill { display: inline-flex; height: 24px; padding: 2px; gap: 2px; background: var(--groove); border-radius: 12px; }
+  .pill .hit { height: 20px; min-width: 30px; padding: 0 8px; border-radius: 10px; display: grid; place-items: center; color: var(--ink3); }
+  .pill .hit[aria-pressed="true"] { background: var(--plot); box-shadow: inset 0 0 0 1px var(--rule); color: var(--ink); }
+  .cards { display: flex; gap: 20px; padding: 10px 20px 0; overflow: hidden; }
+  .card { width: 140px; flex: none; position: relative; }
+  .card .cart { width: 140px; height: 140px; position: relative; }
+  .card .type { position: absolute; left: 0; bottom: 0; width: 20px; height: 20px; background: var(--solid); display: grid; place-items: center; color: var(--ink); }
+  .card .nm { font-size: var(--fs-m); line-height: 18px; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card .sb { margin-top: 3px; }
+  .card.sel .cart::after { content: ""; position: absolute; inset: -4px; box-shadow: 0 0 0 1px var(--ink); }
+  .card.cur .nm::before { content: ""; display: inline-block; width: 7px; height: 7px; background: var(--accent); margin-right: 6px; vertical-align: 1px; }
+
+  /* 浮く面: 吹き出し・メニュー・情報パネル */
+  .tip { position: fixed; z-index: 100; pointer-events: none; max-width: 300px; background: rgb(17 18 16 / 96%); color: #f4f4f1; border-radius: 3px; padding: 9px 12px 10px; font: 300 var(--fs-m)/1.65 var(--sans); }
+  .tip b { display: block; font: 400 var(--fs-s) var(--mono); letter-spacing: .12em; color: var(--accent); margin-bottom: 4px; }
+
+  .about { position: absolute; left: 20px; top: 46px; width: 300px; background: var(--solid); box-shadow: 0 0 0 1px var(--solid-rule); padding: 20px; z-index: 20; display: none; }
+  .win[data-about="open"] .about { display: block; }
+  .about .row { display: flex; justify-content: space-between; margin-top: 20px; }
+  .about p { font-size: var(--fs-m); margin: 14px 0 0; color: var(--ink2); }
+  .about .act { margin-top: 20px; }
+
+
+  /* ---------- 下の説明 ---------- */
+  .row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px; align-items: start; }
+  .panel { background: var(--p-cell); border: 1px solid var(--p-rule); padding: 20px; }
+  .mini-desk { padding: 30px; display: flex; gap: 30px; flex-wrap: wrap; align-items: flex-start; border-radius: 4px; }
+  .mini { --alpha: 0.62; width: 300px; height: 300px; position: relative; overflow: hidden; outline: 1px solid rgb(0 0 0 / 18%); }
+  .mini .art { position: absolute; inset: 0; width: 300px; height: 300px; left: 0; top: 0; }
+  .mini .mp { position: absolute; left: 0; right: 0; bottom: 0; height: 130px; background: var(--solid); box-shadow: 0 -1px 0 var(--solid-rule); padding: 16px 20px 0; }
+  .mini .mp .nm { font-size: var(--fs-m); line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mini .mp .meta { margin-top: 4px; }
+  .mini .mtop { position: absolute; right: 6px; top: 6px; display: flex; background: var(--solid); box-shadow: 0 0 0 1px var(--solid-rule); color: var(--ink2); }
+  .mini .mtop span { width: 26px; height: 26px; display: grid; place-items: center; }
+  .mini .mtop span.on { color: var(--accent); }
+  .mini .mtr { display: flex; justify-content: center; margin-top: 2px; }
+  .mini .mtr .tp { width: 40px; height: 40px; }
+
+  .icons-grid { display: flex; flex-wrap: wrap; gap: 14px 22px; align-items: flex-end; }
+  .icons-grid .meta { color: #8f908b; }
+  .explorer { display: flex; gap: 28px; flex-wrap: wrap; padding: 20px; }
+  .explorer.light { background: #ffffff; }
+  .explorer.dark { background: #202020; color: #fff; }
+  .fi { display: grid; justify-items: center; gap: 6px; font: 12px "Segoe UI", sans-serif; }
+  .detail { display: grid; gap: 4px; padding: 14px 20px; font: 12px "Segoe UI", sans-serif; }
+  .detail div { display: flex; gap: 8px; align-items: center; }
+  .sheet { display: flex; flex-wrap: wrap; gap: 18px 26px; color: #111210; }
+  .sheet > div { display: grid; gap: 8px; justify-items: center; align-content: end; }
+  .sheet .meta { color: #8f908b; }
+  .fonts { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); border-top: 1px solid var(--p-rule); border-left: 1px solid var(--p-rule); }
+  .fcard { text-align: left; background: var(--p-cell); border: 0; border-right: 1px solid var(--p-rule); border-bottom: 1px solid var(--p-rule); padding: 16px 20px 18px; cursor: pointer; color: var(--p-ink); font: inherit; display: grid; gap: 2px; align-content: start; }
+  .fcard:hover { background: #eeefeb; }
+  .fcard[aria-pressed="true"] { background: var(--p-plot); box-shadow: inset 3px 0 0 var(--accent); }
+  .fcard .fhead { display: flex; justify-content: space-between; gap: 10px; font: 400 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+  .fcard .fhead span:last-child { color: #8f908b; }
+  .fcard .s22 { font-size: 22px; line-height: 30px; }
+  .fcard .s13 { font-size: 13px; line-height: 20px; margin-top: 6px; }
+  .fcard .s11 { font-size: 11px; line-height: 16px; color: #575854; }
+  .fcard .note { font: 12px/1.6 "Yu Gothic UI", sans-serif; color: #575854; margin-top: 10px; }
+  .swatches { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font: 12px var(--mono); }
+  .sw { display: inline-block; width: 12px; height: 12px; vertical-align: -2px; margin-right: 8px; border: 1px solid var(--p-rule); }
+  ol.q { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; }
+  .panel p { margin: 0 0 10px; }
+  .panel ul { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+  pre.k { font: 11px/1.3 var(--mono); margin: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><span>PMP1 · desktop player</span><span>Redesign proposal · v2</span><span>1240 × 820 · 10px module</span></div>
+    <h1>PMP1 Redesign</h1>
+    <p class="lede">P-on を PC1 の規則（グリッド・無彩色・信号オレンジ 1 色・極細の罫線）で組み直し、名前を PMP1 に変えた案です。v2 ではロゴとアプリアイコンのドットはそのままに、ボタン・スライダー・再生時間・ファイルアイコンを、すき間のないピクセルアートの SVG に描き直しました。窓の面は従来どおり Windows のアクリルの上に半透明で塗り、デスクトップが透けます。罫線やスライダーの溝は墨の半透明にしてあるので、どの壁紙でも同じ階調に見えます。下の壁紙と透過率を切り替えて確かめてください。再生・音量・シーク・ループ・シャッフル・自動調整・ロゴ（情報パネル）は操作できます。</p>
+  </header>
+
+  <div class="toolbar" role="group" aria-label="表示の切り替え">
+    <span class="seg" id="themeSeg"><button data-v="light" aria-pressed="true">Light</button><button data-v="night" aria-pressed="false">Night</button></span>
+    <span class="seg" id="wallSeg"><button data-v="garden" aria-pressed="true">Wall A</button><button data-v="night" aria-pressed="false">Wall B</button><button data-v="busy" aria-pressed="false">Wall C</button></span>
+    <label>Surface <input class="plain" type="range" id="alpha" min="0.2" max="1" step="0.01" value="0.62"><span id="alphaV">62%</span></label>
+    <button class="tbtn" id="gridBtn" aria-pressed="false">Grid overlay</button>
+  </div>
+
+  <div class="desk" id="desk" data-wall="garden">
+    <div class="scaler" id="scaler">
+      <div class="win" id="win" data-theme="light">
+        <div class="grid-overlay"></div>
+
+        <header class="topbar">
+          <button class="hit logo" id="logoBtn" data-tip="ABOUT|バージョン情報と更新の確認" aria-label="バージョン情報"></button>
+          <div class="vol" data-tip="VOLUME · 0…100|ドラッグかホイールで 1 刻み、Shift で細かく。数字のダブルクリックで直接入力">
+            <span id="volIcon"></span>
+            <div class="cells" id="volCells" style="flex:1"></div>
+            <span class="value" id="volV">80</span>
+          </div>
+          <button class="hit toggle" id="normBtn" aria-pressed="false" data-tip="NORMALIZE|曲ごとの音量差をそろえて再生します"><span class="box"></span><span class="label">Normalize</span></button>
+          <span class="spacer"></span>
+          <div class="actions">
+            <button class="hit tbtn-app label" data-tip="ADD|音源ファイルを選んでライブラリに取り込みます">+ Add</button>
+            <button class="hit ibtn" data-icon="mini" data-tip="MINI PLAYER|ミニプレイヤーに切り替え"></button>
+            <button class="hit ibtn" data-icon="folder" data-tip="OPEN FOLDER|保存フォルダを開く"></button>
+            <button class="hit ibtn" data-icon="library" data-tip="LIBRARY|ライブラリの保存先を変更"></button>
+            <button class="hit ibtn" id="themeBtn" data-icon="moon" data-tip="NIGHT|ナイトモード切替"></button>
+            <button class="hit ibtn" data-icon="trash" data-tip="TRASH|曲をここにドラッグすると音源とジャケットを削除します"></button>
+          </div>
+          <div class="caption" aria-hidden="true"><span>—</span><span>☐</span><span>✕</span></div>
+        </header>
+
+        <div class="about" id="about">
+          <div id="aboutLogo"></div>
+          <div class="row"><span class="label">Version</span><span class="value">1.5.0</span></div>
+          <p>最新のバージョンです。</p>
+          <button class="hit tbtn-app label act">Check update</button>
+        </div>
+
+        <main class="stage">
+          <section class="col">
+            <div class="head"><span class="label">Now playing</span></div>
+            <div class="album-tag" data-tip="ALBUM|いま鳴らしているアルバム。画像を落とすとアルバムのジャケットが変わります">
+              <div class="thumb" style="background:var(--art1)"></div>
+              <div><div class="name">夜の温室</div><div class="meta">Album · 8 tracks</div></div>
+            </div>
+            <div class="art" style="background:var(--art1)" data-tip="COVER|クリックか画像のドロップで、この曲のジャケットを設定"></div>
+          </section>
+
+          <section class="col np">
+            <h2 class="title">ガラス越しの雨</h2>
+            <p class="artist">Mio Hanabusa</p>
+            <div class="format meta">FLAC · 24 bit · 96 kHz</div>
+            <div class="clock"><span id="clock"></span><span id="dur">/ 4:05</span></div>
+            <div class="seek cells" id="seek" data-tip="SEEK|クリックかドラッグで再生位置を変えます"></div>
+            <div class="times"><span class="meta">-<span id="remain">2:23</span></span><span class="meta">4:05</span></div>
+            <div class="transport">
+              <button class="hit tp small" data-icon="prev" data-tip="PREV|前の曲"></button>
+              <button class="hit tp play" id="playBtn" data-icon="play" aria-label="再生"></button>
+              <button class="hit tp small" data-icon="stop" data-tip="STOP|停止"></button>
+              <button class="hit tp small" data-icon="next" data-tip="NEXT|次の曲"></button>
+              <button class="hit tp small" id="repeatBtn" data-icon="repeat" aria-pressed="false" data-tip="REPEAT|しない → 全曲 → 1 曲"></button>
+              <button class="hit tp small" id="shuffleBtn" data-icon="shuffle" aria-pressed="false" data-tip="SHUFFLE|並びはそのままで、次に鳴らす曲だけを散らします"></button>
+            </div>
+          </section>
+
+          <section class="col q queue">
+            <div class="head"><span style="display:flex;gap:8px"><span class="label">Album</span><span class="meta">8 tracks · 34:12</span></span>
+              <span class="qtools"><button class="hit label" style="color:var(--ink2)" data-tip="EDIT|タイトル・アーティスト・アルバムを直接編集する">Edit</button></span></div>
+            <ol class="qlist" id="qlist"></ol>
+          </section>
+        </main>
+
+        <footer class="shelf">
+          <div class="shelf-bar">
+            <div class="head"><span class="label">Library</span></div>
+            <label class="search"><span id="searchIcon"></span><input placeholder="アルバム・曲名・アーティストで検索" aria-label="検索"></label>
+            <span class="pill" id="typePill">
+              <button class="hit" data-icon="playlist" aria-pressed="true" data-tip="PLAYLIST|プレイリストを並べる"></button>
+              <button class="hit" data-icon="album" aria-pressed="true" data-tip="ALBUM|アルバムを並べる"></button>
+              <button class="hit" data-icon="single" aria-pressed="false" data-tip="SINGLE|シングルを並べる"></button>
+            </span>
+            <span class="pill" id="viewPill">
+              <button class="hit" data-icon="grid" aria-pressed="true" data-tip="GRID|グリッド表示"></button>
+              <button class="hit" data-icon="list" aria-pressed="false" data-tip="LIST|リスト表示"></button>
+            </span>
+            <span class="spacer"></span>
+            <button class="hit tbtn-app label" style="margin:0">More</button>
+            <button class="hit tbtn-app label" style="margin:0">+ Playlist</button>
+          </div>
+          <div class="cards" id="cards"></div>
+        </footer>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="row2">
+    <div>
+      <h2 class="sec"><i>A</i>Mini player</h2>
+      <div class="mini-desk desk" id="miniDesk" data-wall="garden" style="padding:30px">
+        <div class="win mini" id="mini" data-theme="light" style="width:300px;height:300px">
+          <div class="art" style="background:var(--art1)"></div>
+          <div class="mtop"><span class="on" data-icon="pin"></span><span data-icon="restore"></span><span data-icon="close"></span></div>
+          <div class="mp">
+            <div class="nm">ガラス越しの雨</div>
+            <div class="meta">Mio Hanabusa</div>
+            <div class="cells" id="miniSeek" style="margin-top:10px"></div>
+            <div class="mtr">
+              <span class="tp small" data-icon="prev"></span><span class="tp" data-icon="pause"></span><span class="tp small" data-icon="next"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="meta" style="color:#575854;margin-top:10px;line-height:1.5;text-transform:none;letter-spacing:0;font-size:12px">マウスが入っている間だけ下の操作面を出す（今と同じ）。操作面は読みやすさのため透かさない。</p>
+    </div>
+
+    <div>
+      <h2 class="sec"><i>B</i>Logo · App icon</h2>
+      <div class="panel">
+        <div id="bigLogo" style="margin-bottom:24px"></div>
+        <div class="icons-grid" id="appIcons"></div>
+        <p style="margin-top:18px;font-size:13px">ロゴは 4 × 5 のドットで組み（M だけ 5 列）、最後の「1」だけオレンジ。消灯ドットも小さく薄く描く。アプリのアイコンは 2 段に積んだ「PM / P1」を cell の地に置いたもの。16 px では 1 ドット = 1 ピクセルで組み、ぼやけないようにする。</p>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <h2 class="sec"><i>C</i>Icons</h2>
+    <div class="panel">
+      <div class="sheet" id="sheet"></div>
+      <p style="margin-top:16px;font-size:13px">アイコンは P-on の SVG をそのまま使う（形・線の太さとも元のまま、色だけ ink / ink2 / オレンジに）。大きさは上部バー 18 px、棚・カード・ミニの上の操作 14 px、再生まわり 22 px、再生 / 一時停止 30 px。上の段が 18 px、下の段が 3 倍。ピクセルアートはロゴ・アプリアイコン・ファイルアイコンだけに残す。</p>
+    </div>
+  </div>
+
+  <div>
+    <h2 class="sec"><i>D</i>File icons</h2>
+    <div class="toolbar" style="margin-bottom:12px">
+      <span class="seg" id="fiPill">
+        <button data-v="sleeve" aria-pressed="false">A</button>
+        <button data-v="sleeveUp" aria-pressed="false">A-1 · Pull-up</button>
+        <button data-v="sleeveFront" aria-pressed="true">A-2 · Front</button>
+        <button data-v="meter" aria-pressed="false">v2</button>
+        <button data-v="spectrum" aria-pressed="false">v2-1 · Spectrum</button>
+        <button data-v="lines" aria-pressed="false">v2-2 · Lines</button>
+      </span>
+    </div>
+    <div class="panel" style="padding:0">
+      <div class="explorer light" id="fiLight"></div>
+      <div class="explorer dark" id="fiDark"></div>
+      <div class="detail" id="fiDetail"></div>
+      <div class="explorer light" id="fiCompare" style="border-top:1px solid var(--p-rule)"></div>
+    </div>
+    <p class="meta" style="color:#575854;margin-top:10px;line-height:1.6;text-transform:none;letter-spacing:0;font-size:12px"><span id="fiNote"></span> どの案も拡張子ごとの色分けはせず、見分けはラベルに任せる（オレンジ以外の色を使わないため）。16 px 系は 16 升、48 px 以上は 32 升で設計。</p>
+  </div>
+
+  <div>
+    <h2 class="sec"><i>E</i>Japanese fonts</h2>
+    <div class="fonts" id="fonts"></div>
+    <p class="meta" style="color:#575854;margin-top:10px;line-height:1.6;text-transform:none;letter-spacing:0;font-size:12px">Noto Sans JP に決定（印の付いたカード）。ほかのカードを押すと、上のメイン画面とミニプレイヤーの和文がその書体に変わります。欧文のラベルと数字は Chivo Mono のまま。Yu Gothic UI 以外はどれも SIL OFL で、アプリに同梱できます（CSP が外部フォントを禁じているので、同梱が前提）。</p>
+  </div>
+
+  <div class="row2">
+    <div class="panel">
+      <h2 class="sec"><i>F</i>Tokens</h2>
+      <div class="swatches">
+        <span><span class="sw" style="background:#e8e9e5"></span>surface</span><span>cell #E8E9E5 × 透過率（既定 62%）。下はアクリル</span>
+        <span><span class="sw" style="background:rgb(17 18 16/16%)"></span>rule</span><span>ink 16% · 1 px（画面の 1 ピクセルを下回らない）</span>
+        <span><span class="sw" style="background:rgb(17 18 16/8%)"></span>cellOff</span><span>ink 8% · 消灯セル</span>
+        <span><span class="sw" style="background:rgb(17 18 16/30%)"></span>litCell</span><span>ink 30% · 点灯セル（シーク・音量）</span>
+        <span><span class="sw" style="background:#111210"></span>ink</span><span>#111210 · 文字・つまみ・再生ボタン</span>
+        <span><span class="sw" style="background:#575854"></span>ink2</span><span>#575854 · 二次の文字</span>
+        <span><span class="sw" style="background:#8f908b"></span>ink3</span><span>#8F908B · 補足・番号</span>
+        <span><span class="sw" style="background:#ff4d0f"></span>accent</span><span>#FF4D0F · 再生中の曲・オンのトグル・ロゴの「1」だけ</span>
+        <span><span class="sw" style="background:#e8e9e5"></span>solid</span><span>#E8E9E5 · メニュー・吹き出し・ダイアログ・ミニの操作面（透かさない）</span>
+      </div>
+      <p style="margin-top:14px;font-size:13px">ナイトは同じ構成を反転（cell #161715、ink #E8E9E5）。セルと罫線は ink の半透明なのでそのまま反転する。</p>
+    </div>
+
+    <div class="panel">
+      <h2 class="sec"><i>G</i>Type</h2>
+      <div class="swatches">
+        <span>S · 11 px</span><span>ラベル（Chivo Mono 400・大文字）、数字（Chivo Mono 300）、補足（Chivo Mono 300・ink3）、和文の補足</span>
+        <span>M · 13 px</span><span>和文の本文（Noto Sans JP 400）: アーティスト、曲の一覧、棚、検索、吹き出し</span>
+        <span>L · 22 px</span><span>曲名（Noto Sans JP 400）だけ</span>
+        <span>再生時間</span><span>Chivo Mono 300 · M 13 px（全体の長さは ink3）</span>
+      </div>
+      <p style="margin-top:14px;font-size:13px">大きさは 3 段だけにして、役割の違いは書体（Chivo Mono / Noto Sans JP）・太さ・色で付ける。和文は 11 px を下回らない。Chivo Mono と Noto Sans JP はアプリに同梱する（CSP が外部フォントを禁じているため）。Noto Sans JP は 1 ウェイトで数 MB あるので、Regular（400）だけを同梱する。</p>
+    </div>
+  </div>
+
+  <div class="panel" style="background:#f4f4f1">
+    <h2 class="sec"><i>H</i>決めていただきたいこと</h2>
+    <ol class="q">
+      <li><b>改名の範囲</b>: 画面上の名前・ウィンドウ名・インストーラーの製品名は PMP1 にします。ただしライブラリの保存フォルダ名（今は「P-on」）、GitHub のリポジトリ名（自動更新の配信元）、Windows のアプリ ID を変えると、既存の利用者のライブラリが見えなくなったり自動更新が途切れたりします。これらは据え置き（中身の識別子だけ P-on のまま）でよいですか。</li>
+      <li><b>ナイトモード</b>: PC1 は明るい 1 種類だけですが、P-on にはナイトモードがあるので、反転した配色で残す案にしています（上の Night で確認できます）。残しますか。</li>
+      <li><b>アクセント</b>: 深緑をやめて信号オレンジ 1 色にします。使うのは再生中の曲の印・オンのトグル（自動調整・ループ・シャッフル・最前面）・ロゴの「1」だけです。</li>
+      <li><b>ファイルアイコン</b>: 拡張子ごとの色分けをやめ、同じ図柄に拡張子のドット文字を添える形にしています。色分けを残したい場合は、メーターの柱をグレーの濃淡で変える案も作れます。</li>
+      <li><b>アプリアイコン</b>: 今の葉の写真をやめて、ドットのロゴだけにします。</li>
+      <li><b>文字の大きさ</b>: 上の E の寸法でよいですか（もう一段小さくすることもできます）。</li>
+      <li><b>バージョン</b>: 名前が変わるので 1.5.0 にする想定です。スマホ版（Android / iOS）の表示名も PMP1 にしてよいですか。</li>
+    </ol>
+  </div>
+</div>
+
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(() => {
+  "use strict";
+
+  // --- ドットの描画 -------------------------------------------------------------------------
+  // rows: 文字列の配列。'#' = 点灯、'o' = オレンジ、'.' = 消灯（off を渡したときだけ描く）
+  function dots(rows, { p = 4, s = 3, off = false, offScale = 1 } = {}) {
+    const h = rows.length, w = Math.max(...rows.map(r => r.length));
+    let out = "";
+    rows.forEach((r, y) => [...r].forEach((ch, x) => {
+      if (ch === "#" || ch === "o") {
+        out += `<rect class="${ch === "o" ? "d-acc" : "d-on"}" x="${x * p}" y="${y * p}" width="${s}" height="${s}"/>`;
+      } else if (off) {
+        const so = s * offScale, d = (s - so) / 2;
+        out += `<rect class="d-off" x="${x * p + d}" y="${y * p + d}" width="${so}" height="${so}"/>`;
+      }
+    }));
+    return `<svg class="dots" width="${w * p - (p - s)}" height="${h * p - (p - s)}" viewBox="0 0 ${w * p - (p - s)} ${h * p - (p - s)}" aria-hidden="true">${out}</svg>`;
+  }
+
+  // ロゴ: 4 × 5（M だけ 5 列）。最後の 1 文字をオレンジに
+  const LOGO = {
+    P: ["###.", "#..#", "###.", "#...", "#..."],
+    M: ["#...#", "##.##", "#.#.#", "#...#", "#...#"],
+    "1": [".#..", "##..", ".#..", ".#..", "###."],
+  };
+  function joinGlyphs(glyphs) {
+    return glyphs[0].map((_, r) => glyphs.map(g => g[r]).join("."));
+  }
+  function logoRows(text = "PMP1") {
+    const gl = [...text].map((c, i) => {
+      const g = LOGO[c];
+      return i === text.length - 1 ? g.map(r => r.replace(/#/g, "o")) : g;
+    });
+    return joinGlyphs(gl);
+  }
+
+  // --- ピクセルアート ------------------------------------------------------------------------
+  // ロゴとアプリアイコン以外はすき間のないピクセルアートで描く。
+  // 横に続く画素を 1 本の矩形にまとめて 1 つの path にするので、つなぎ目が出ない。
+  // rows: '#' = 墨（currentColor）、'o' = オレンジ。k = 1 画素の大きさ（px、整数）
+  function pix(rows, k = 2) {
+    const h = rows.length, w = Math.max(...rows.map(r => r.length));
+    const d = { "#": "", o: "" };
+    rows.forEach((r, y) => {
+      for (let x = 0; x < r.length;) {
+        const ch = r[x];
+        if (ch !== "#" && ch !== "o") { x++; continue; }
+        let n = 1;
+        while (r[x + n] === ch) n++;
+        d[ch] += `M${x * k} ${y * k}h${n * k}v${k}h${-n * k}z`;
+        x += n;
+      }
+    });
+    return `<svg class="dots" width="${w * k}" height="${h * k}" viewBox="0 0 ${w * k} ${h * k}" shape-rendering="crispEdges" aria-hidden="true">` +
+      (d["#"] ? `<path class="d-on" d="${d["#"]}"/>` : "") + (d.o ? `<path class="d-acc" d="${d.o}"/>` : "") + `</svg>`;
+  }
+
+  // 三角（高さ h、右向き / 左向き）。再生・送り・戻しで共用する
+  // 正三角形に近い三角（高さ h、幅 w ≒ 0.87h）
+  function triEq(h, w, dir) {
+    const c = (h - 1) / 2;
+    return Array.from({ length: h }, (_, y) => {
+      const n = Math.max(1, Math.round(w * (1 - Math.abs(y - c) / (c + 0.5))));
+      return dir === "r" ? "#".repeat(n).padEnd(w, ".") : "#".repeat(n).padStart(w, ".");
+    });
+  }
+  function tri(h, dir) {
+    const w = Math.ceil(h / 2);
+    return Array.from({ length: h }, (_, y) => {
+      const n = Math.min(y, h - 1 - y) + 1;
+      return dir === "r" ? "#".repeat(n).padEnd(w, ".") : "#".repeat(n).padStart(w, ".");
+    });
+  }
+  function crescent(n) {
+    const c = (n - 1) / 2, r = n / 2;
+    return Array.from({ length: n }, (_, y) => Array.from({ length: n }, (_, x) =>
+      Math.hypot(x - c, y - c) < r - 0.2 && Math.hypot(x - c - n * 0.28, y - c + n * 0.22) > r * 0.82 ? "#" : ".").join(""));
+  }
+  const side = (a, b, gap = "") => a.map((r, y) => r + gap + b[y]);
+  const block = (w, h) => Array.from({ length: h }, () => "#".repeat(w));
+
+  // アイコンは P-on の SVG をそのまま使う（src/renderer/index.html・mini.html・ui/type-icons.js と同じ形）。
+  // 24 四方の viewBox。f = 塗り、s = 線（太さは元のまま）
+  const svgF = d => `<path fill="currentColor" d="${d}"/>`;
+  const svgS = (d, w = 1.8) => `<path fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" d="${d}"/>`;
+  const REPEAT = svgS("M5 11V9a3 3 0 0 1 3-3h11") + svgS("m16 3 3 3-3 3") + svgS("M19 13v2a3 3 0 0 1-3 3H5") + svgS("m8 15-3 3 3 3");
+  const ICON = {
+    play:    svgF("M8 5.5v13l11-6.5z"),
+    pause:   svgF("M8 5h3v14H8zm5 0h3v14h-3z"),
+    stop:    `<rect fill="currentColor" x="7" y="7" width="10" height="10" rx="1.5"/>`,
+    prev:    svgF("M7 6h2v12H7zm11 0v12l-8-6z"),
+    next:    svgF("M15 6h2v12h-2zM6 6l8 6-8 6z"),
+    repeat:  REPEAT,
+    repeatOne: REPEAT + svgS("M11 10.5 12.6 9.6V15", 2),
+    shuffle: svgS("M4 7h3.5l9 10H20") + svgS("m17 4 3 3-3 3") + svgS("M4 17h3.5l2.6-2.9") + svgS("M13.9 9.9 16.5 7H20") + svgS("m17 14 3 3-3 3"),
+    vol:     svgF("M4 9.5h3.5L12 5.5v13L7.5 14.5H4z") + svgS("M15.5 9a4 4 0 0 1 0 6", 1.6),
+    mini:    svgF("M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1m1 2v10h14V7z") + `<rect fill="currentColor" x="12" y="12" width="6" height="4" rx="1"/>`,
+    folder:  svgF("M3 6.5A1.5 1.5 0 0 1 4.5 5h4l2 2h9A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"),
+    library: svgF("M3 6.5A1.5 1.5 0 0 1 4.5 5h4l2 2h9A1.5 1.5 0 0 1 21 8.5V11h-2V9h-8.8l-2-2H5v10h6v2H4.5A1.5 1.5 0 0 1 3 17.5z") + svgF("M17 13.5 22 17l-5 3.5V18h-4v-2h4z"),
+    moon:    svgF("M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5"),
+    sun:     svgF("M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10m0-5 1.5 3h-3zm0 20-1.5-3h3zM2 12l3-1.5v3zm20 0-3 1.5v-3zM5 5l3.2 1-2.2 2.2zm14 14-3.2-1 2.2-2.2zM19 5l-1 3.2-2.2-2.2zM5 19l1-3.2 2.2 2.2z"),
+    trash:   svgF("M9 3h6l1 2h4v2H4V5h4zM6 8h12l-1 12.2A2 2 0 0 1 15 22H9a2 2 0 0 1-2-1.8zm3.5 2.5v9h1.5v-9zm3.5 0v9h1.5v-9z"),
+    search:  `<circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/>` + svgS("m15.5 15.5 4 4", 2),
+    grid:    ["3 3", "13.5 3", "3 13.5", "13.5 13.5"].map(p => { const [x, y] = p.split(" "); return `<rect fill="currentColor" x="${x}" y="${y}" width="7.5" height="7.5" rx="1.5"/>`; }).join(""),
+    list:    [4, 10, 16].map(y => `<rect fill="currentColor" x="3" y="${y}" width="4" height="4" rx="1"/><rect fill="currentColor" x="9" y="${y + 1}" width="12" height="2" rx="1"/>`).join(""),
+    playlist:svgS("M4 6.5h12M4 11.5h12M4 16.5h7", 1.7) + svgS("M15 14.5v6l5-3z", 1.7),
+    album:   `<rect x="3" y="5" width="12" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.7"/>` + svgS("M15 6.4a6 6 0 0 1 0 11.2", 1.7) + svgS("M18.2 8.6a6 6 0 0 1 0 6.8", 1.7),
+    single:  `<circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.7"/>`,
+    pin:     svgF("M14.5 2.5 21.5 9.5l-1.8 1.8-1-.3-3.4 3.4.5 3.2-1.6 1.6-4-4L5 20.4 3.6 19l4.9-5.2-4-4L6.1 8.2l3.2.5 3.4-3.4-.3-1z"),
+    restore: `<rect fill="currentColor" x="5" y="11" width="14" height="2" rx="1"/>`,
+    close:   svgS("m6 6 12 12M18 6 6 18", 2),
+  };
+  const iconSvg = (name, px = 18) =>
+    `<svg class="dots" width="${px}" height="${px}" viewBox="0 0 24 24" aria-hidden="true">${ICON[name]}</svg>`;
+  // 大きさ: 上部バー 18 px（元のまま）、棚・カード・ミニの上の操作 14 px、再生まわり 22 px、再生 / 一時停止 30 px
+  function paintIcons(root = document) {
+    root.querySelectorAll("[data-icon]").forEach(el => {
+      const name = el.dataset.icon;
+      const px = el.classList.contains("tp") ? (name === "play" || name === "pause" ? 30 : 22)
+        : el.closest(".pill, .card, .mtop") ? 14 : 18;
+      el.innerHTML = iconSvg(name, px);
+    });
+  }
+
+  // ファイルアイコンの再生の三角（9 画素・7 画素）
+  const TRI9 = ["#.......", "###.....", "#####...", "#######.", "########", "#######.", "#####...", "###.....", "#......."];
+  const TRI7 = ["#.....", "###...", "#####.", "######", "#####.", "###...", "#....."];
+
+
+  // --- スライダー（シーク・音量） -----------------------------------------------------------
+  // 2 px の溝に、値までを墨で塗る。つまみは 2 × 6 画素の細い柱（2 倍で 4 × 12 px）。
+  // つまみの位置は 2 px 単位に揃え、どの値でも輪郭がにじまないようにする
+  const KNOB = block(2, 6);
+  function cellRow(el, frac) {
+    const w = Math.floor((el.clientWidth || 300) / 2) * 2;
+    const kx = Math.round(frac * (w - 4) / 2) * 2;
+    el.innerHTML = `<svg width="${w}" height="20" viewBox="0 0 ${w} 20" shape-rendering="crispEdges" aria-hidden="true">
+      <rect x="0" y="9" width="${w}" height="2" style="fill:var(--cell-tick)"/>
+      <rect x="0" y="9" width="${kx + 2}" height="2" style="fill:var(--ink)"/>
+      <g transform="translate(${kx} 4)" style="color:var(--ink)">${pix(KNOB, 2).replace('class="dots"', "")}</g>
+    </svg>`;
+  }
+
+  // --- 見本のデータ -----------------------------------------------------------------------
+  const ART = [
+    "linear-gradient(160deg,#2d3b36 0%,#2d3b36 40%,#c9a46a 40%,#c9a46a 44%,#19201d 44%)",
+    "radial-gradient(circle at 70% 30%,#f3d9b1 0 18%,transparent 19%),linear-gradient(200deg,#d06a4c,#5a2b3a)",
+    "repeating-linear-gradient(90deg,#1c1d1b 0 12px,#e8e9e5 12px 16px),linear-gradient(#000,#000)",
+    "linear-gradient(135deg,#8fb3c9,#e6eef2 60%,#c4cfa7)",
+    "conic-gradient(from 45deg at 40% 60%,#30304a,#9aa0d6,#30304a)",
+    "linear-gradient(0deg,#f2efe6 0 50%,#ff4d0f 50% 52%,#f2efe6 52%)",
+    "radial-gradient(circle at 30% 70%,#7c9a6e 0 30%,transparent 31%),linear-gradient(#243024,#101510)",
+    "linear-gradient(90deg,#5a626e,#b9bab5)",
+  ];
+  document.documentElement.style.setProperty("--art1", ART[0]);
+
+  const TRACKS = [
+    ["温室の朝", "3:48"], ["ガラス越しの雨", "4:05"], ["羊歯と時計", "5:12"], ["Night Bloom", "3:21"],
+    ["水やりの歌", "4:40"], ["Moss", "2:58"], ["遠い温度", "5:30"], ["閉館まで", "4:48"],
+  ];
+  const NOW = 1;
+  document.getElementById("qlist").innerHTML = TRACKS.map(([t, tm], i) =>
+    `<li class="${i === NOW ? "now" : ""}">${i === NOW ? '<span class="playing" aria-label="再生中"></span>' : `<span class="idx">${String(i + 1).padStart(2, "0")}</span>`}
+      <span class="t">${t}</span><span class="tm">${tm}</span></li>`).join("");
+
+  const CARDS = [
+    ["夜の温室", "Mio Hanabusa", "album", 0, "cur"], ["Sunday Drive", "Playlist · 24", "playlist", 1, ""],
+    ["BARCODE", "Kōji Ito", "album", 2, "sel"], ["Coastline", "Fen Isle", "album", 3, ""],
+    ["Late Shift", "Playlist · 12", "playlist", 4, ""], ["Orange Line", "PMP1 Demo", "single", 5, ""],
+    ["森の地図", "Ayumi Sato", "album", 6, ""], ["Archive 2019", "Playlist · 88", "playlist", 7, ""],
+  ];
+  document.getElementById("cards").innerHTML = CARDS.map(([n, s, ty, a, st]) =>
+    `<div class="card ${st}"><div class="cart" style="background:${ART[a]}"><span class="type" data-icon="${ty}"></span></div>
+      <div class="nm">${n}</div><div class="meta sb">${s}</div></div>`).join("");
+
+  document.getElementById("logoBtn").innerHTML = dots(logoRows(), { p: 3, s: 2.25, off: true, offScale: 0.5 });
+  document.getElementById("aboutLogo").innerHTML = dots(logoRows(), { p: 7, s: 5.5, off: true, offScale: 0.5 });
+  document.getElementById("bigLogo").innerHTML = `<div style="color:#111210;--cell-off:#d6d7d2">${dots(logoRows(), { p: 14, s: 11, off: true, offScale: 0.45 })}</div>`;
+  document.getElementById("volIcon").innerHTML = iconSvg("vol");
+  document.getElementById("searchIcon").innerHTML = iconSvg("search", 14);
+  paintIcons();
+
+  document.getElementById("sheet").innerHTML = Object.keys(ICON).map(n =>
+    `<div>${iconSvg(n, 18)}${iconSvg(n, 54)}<span class="meta">${n}</span></div>`).join("");
+
+  // --- アプリアイコン ----------------------------------------------------------------------
+  // 「PM / P1」を 2 段に積み、cell の地に置く。16 px では 1 ドット = 1 px
+  const STACK = (() => {
+    const top = joinGlyphs([LOGO.P, LOGO.M]);
+    const bot = joinGlyphs([LOGO.P, LOGO["1"].map(r => r.replace(/#/g, "o"))]).map(r => r.padEnd(10, "."));
+    return [...top, "..........", ...bot];
+  })();
+  function appIcon(size) {
+    const grid = 16, u = size / grid;
+    const radius = size >= 48 ? u * 2 : 0;
+    let r = `<rect x="${u * 0.5}" y="${u * 0.5}" width="${u * 15}" height="${u * 15}" rx="${radius}" fill="#e8e9e5" stroke="#c3c4bf" stroke-width="${Math.max(1, u * 0.12)}"/>`;
+    const ox = 3, oy = 2.5;
+    const s = size >= 32 ? u * 0.8 : u;
+    STACK.forEach((row, y) => [...row].forEach((ch, x) => {
+      const X = (ox + x) * u + (u - s) / 2, Y = (oy + y) * u + (u - s) / 2;
+      if (ch === "#" || ch === "o") r += `<rect x="${X}" y="${Y}" width="${s}" height="${s}" fill="${ch === "o" ? "#ff4d0f" : "#111210"}"/>`;
+      else if (size >= 48 && y !== 5) r += `<rect x="${X + s * 0.3}" y="${Y + s * 0.3}" width="${s * 0.4}" height="${s * 0.4}" fill="#d3d4cf"/>`;
+    }));
+    return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">${r}</svg>`;
+  }
+  document.getElementById("appIcons").innerHTML =
+    `<span class="meta">App</span>` + [16, 24, 32, 48, 96].map(s => `<div style="display:grid;gap:6px;justify-items:center">${appIcon(s)}<span class="meta">${s}</span></div>`).join("");
+
+  // --- ファイルアイコン --------------------------------------------------------------------
+  const MICRO = {
+    A: [".#.", "#.#", "###", "#.#", "#.#"], B: ["##.", "#.#", "##.", "#.#", "##."], C: [".##", "#..", "#..", "#..", ".##"],
+    E: ["###", "#..", "##.", "#..", "###"], F: ["###", "#..", "##.", "#..", "#.."], G: [".##", "#..", "#.#", "#.#", ".##"],
+    L: ["#..", "#..", "#..", "#..", "###"], M: ["#.#", "###", "###", "#.#", "#.#"], O: [".#.", "#.#", "#.#", "#.#", ".#."],
+    P: ["##.", "#.#", "##.", "#..", "#.."], S: [".##", "#..", ".#.", "..#", "##."], U: ["#.#", "#.#", "#.#", "#.#", "###"],
+    V: ["#.#", "#.#", "#.#", "#.#", ".#."], W: ["#.#", "#.#", "###", "###", "#.#"], "3": ["##.", "..#", ".#.", "..#", "##."],
+    "4": ["#.#", "#.#", "###", "..#", "..#"],
+  };
+  const EXT = ["mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "webm"];
+
+  // 1 枚の升目（G × G）に描き、色ごとに横の連なりを 1 本の矩形にまとめて SVG にする
+  //   p 紙 / e 縁 / i 墨 / o オレンジ / t 墨の上の文字 / g 盤の溝
+  function grid(G) {
+    const g = Array.from({ length: G }, () => Array(G).fill(""));
+    const set = (x, y, k) => { if (x >= 0 && y >= 0 && x < G && y < G) g[y][x] = k; };
+    return {
+      set,
+      rect(x0, y0, x1, y1, k) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, k); },
+      // 形を紙で塗り、外周 1 画素を縁にする
+      shape(inside, fill = "p", edge = "e") {
+        for (let y = 0; y < G; y++) for (let x = 0; x < G; x++) {
+          if (!inside(x, y)) continue;
+          const onEdge = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1);
+          set(x, y, onEdge ? edge : fill);
+        }
+      },
+      disc(cx, cy, r, k) { for (let y = 0; y < G; y++) for (let x = 0; x < G; x++) if (Math.hypot(x - cx, y - cy) < r) set(x, y, k); },
+      ring(cx, cy, r, k) { for (let y = 0; y < G; y++) for (let x = 0; x < G; x++) { const d = Math.hypot(x - cx, y - cy); if (d >= r && d < r + 0.9) set(x, y, k); } },
+      rows(rows, x0, y0, k) { rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === "#") set(x0 + x, y0 + y, k); })); },
+      label(ext) { return joinGlyphs([...ext.toUpperCase()].map(c => MICRO[c])); },
+      svg(size, COL) {
+        const u = size / G;
+        let r = "";
+        for (const key of Object.keys(COL)) {
+          let d = "";
+          g.forEach((row, y) => {
+            for (let x = 0; x < G;) {
+              if (row[x] !== key) { x++; continue; }
+              let n = 1;
+              while (row[x + n] === key) n++;
+              d += `M${x * u} ${y * u}h${n * u}v${u}h${-n * u}z`;
+              x += n;
+            }
+          });
+          if (d) r += `<path d="${d}" fill="${COL[key]}"/>`;
+        }
+        return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">${r}</svg>`;
+      },
+    };
+  }
+  // 角を 1 画素落とした矩形
+  const chamfer = (x0, y0, x1, y1) => (x, y) =>
+    x >= x0 && x <= x1 && y >= y0 && y <= y1 && !((x === x0 || x === x1) && (y === y0 || y === y1));
+  // 右上を fold 画素ぶん 45° で折った紙と、折り返しの内側の線
+  function foldedPage(c, x0, y0, x1, y1, fold) {
+    c.shape((x, y) => x >= x0 && x <= x1 && y >= y0 && y <= y1 && x - (x1 - fold) <= y - y0);
+    for (let k = 0; k <= fold; k++) { c.set(x1 - fold + k, y0 + fold, "e"); c.set(x1 - fold, y0 + k, "e"); }
+  }
+  // メーターの柱。いちばん高い柱のてっぺんだけオレンジ
+  function meterBars(c, bars, bx, base, bw) {
+    const top = Math.max(...bars);
+    bars.forEach((h, i) => { for (let k = 0; k < h; k++) for (let w = 0; w < bw; w++) c.set(bx + i * (bw + 1) + w, base - k, h === top && k === h - 1 ? "o" : "i"); });
+  }
+
+  const FILE_DESIGNS = {
+    // A: ジャケットから盤がのぞく。ジャケットに再生の三角と拡張子、盤の中心だけオレンジ
+    sleeve(c, ext, big) {
+      if (big) {
+        c.disc(21.5, 15.5, 9.6, "i");
+        c.ring(21.5, 15.5, 6.2, "g");
+        c.ring(21.5, 15.5, 3.9, "g");
+        c.disc(21.5, 15.5, 2.4, "o");
+        c.shape(chamfer(2, 6, 21, 25));
+        c.rows(TRI7, 5, 9, "i");
+        c.rows(c.label(ext), 5, 18, "i");
+      } else {
+        c.disc(10.5, 7.5, 5.2, "i");
+        c.disc(10.5, 7.5, 1.4, "o");
+        c.shape(chamfer(1, 3, 10, 12));
+        c.rows(triEq(5, 4, "r"), 4, 5, "i");
+      }
+    },
+    // A-1: 盤を上に引き出した形。正方形に収まり、オレンジの盤の中心がジャケットの上にのぞく
+    sleeveUp(c, ext, big) {
+      if (big) {
+        c.disc(15.5, 11, 9.5, "i");
+        c.ring(15.5, 11, 6.2, "g");
+        c.ring(15.5, 11, 3.9, "g");
+        c.disc(15.5, 11, 2.4, "o");
+        c.shape(chamfer(3, 12, 28, 29));
+        c.rows(TRI7, 6, 15, "i");
+        c.rows(c.label(ext), 6, 23, "i");
+      } else {
+        c.disc(7.5, 6, 5.2, "i");
+        c.disc(7.5, 6, 1.4, "o");
+        c.shape(chamfer(1, 7, 14, 14));
+        c.rows(triEq(5, 4, "r"), 3, 8, "i");
+      }
+    },
+    // A-2: ジャケットだけを正面に置く（盤は描かない）。再生の三角と拡張子、オレンジは角のシール 1 枚
+    sleeveFront(c, ext, big) {
+      if (big) {
+        c.shape(chamfer(3, 3, 28, 28));
+        c.rows(TRI9, 7, 7, "i");
+        c.rect(23, 7, 25, 9, "o");
+        c.rows(c.label(ext), 7, 21, "i");
+      } else {
+        c.shape(chamfer(1, 1, 14, 14));
+        c.rows(["#...", "###.", "####", "###.", "#..."], 4, 4, "i");
+        c.rect(10, 4, 11, 5, "o");
+      }
+    },
+    // v2 の案
+    meter(c, ext, big) {
+      if (big) {
+        foldedPage(c, 5, 2, 26, 29, 7);
+        meterBars(c, [5, 10, 7, 3, 8], 9, 19, 2);
+        const lab = c.label(ext);
+        c.rows(lab, Math.round(16 - lab[0].length / 2), 22, "i");
+      } else {
+        foldedPage(c, 2, 1, 13, 14, 4);
+        meterBars(c, [3, 7, 5, 2], 4, 11, 1);
+      }
+    },
+    // v2-1: 細い柱 7 本のスペクトル。いちばん高い柱の上に 1 画素あけてオレンジのピークホールド。拡張子の上に罫線
+    spectrum(c, ext, big) {
+      if (big) {
+        foldedPage(c, 6, 2, 25, 29, 6);
+        const bars = [4, 7, 10, 8, 6, 9, 5], base = 18, top = Math.max(...bars);
+        bars.forEach((h, i) => { for (let k = 0; k < h; k++) c.set(9 + i * 2, base - k, "i"); if (h === top) c.set(9 + i * 2, base - h - 1, "o"); });
+        for (let x = 8; x <= 23; x++) c.set(x, 21, "e");
+        const lab = c.label(ext);
+        c.rows(lab, Math.round(16 - lab[0].length / 2), 23, "i");
+      } else {
+        foldedPage(c, 2, 1, 13, 14, 4);
+        const bars = [3, 5, 7, 4, 6], base = 12, top = Math.max(...bars);
+        bars.forEach((h, i) => { for (let k = 0; k < h; k++) c.set(4 + i * 2, base - k, "i"); if (h === top) c.set(4 + i * 2, base - h - 1, "o"); });
+      }
+    },
+    // v2-2: メーターを横に寝かせ、文書の行のように並べる。いちばん長い行の先だけオレンジ
+    lines(c, ext, big) {
+      if (big) {
+        foldedPage(c, 5, 2, 26, 29, 7);
+        const lens = [14, 9, 12], longest = Math.max(...lens);
+        lens.forEach((n, i) => { for (let x = 0; x < n; x++) for (let t = 0; t < 2; t++) c.set(9 + x, 11 + i * 3 + t, n === longest && x >= n - 2 ? "o" : "i"); });
+        const lab = c.label(ext);
+        c.rows(lab, Math.round(16 - lab[0].length / 2), 22, "i");
+      } else {
+        foldedPage(c, 2, 1, 13, 14, 4);
+        const lens = [8, 5, 7], longest = Math.max(...lens);
+        lens.forEach((n, i) => { for (let x = 0; x < n; x++) c.set(4 + x, 6 + i * 2, n === longest && x === n - 1 ? "o" : "i"); });
+      }
+    },
+  };
+  const FILE_NOTES = {
+    sleeve: "A（前回の案）: ジャケットから盤が右にのぞく。横長に見えるのが弱点。",
+    sleeveUp: "A-1 · Pull-up: 盤をジャケットの上に引き出し、正方形に収めた。盤の中心のオレンジが半分のぞく。16 px でも「盤＋ジャケット」の輪郭が残る。",
+    sleeveFront: "A-2 · Front: 盤をなくし、ジャケットだけを正面に置いた。枠からはみ出すものがないので、16 px でも輪郭が崩れない。再生の三角と拡張子を大きく描け、オレンジはジャケットの角のシール 1 枚。",
+    meter: "v2（前回の案）: 折り返しのある紙にメーター、拡張子は墨の文字で下に添える。",
+    spectrum: "v2-1 · Spectrum: 細い柱 7 本のスペクトルにして軽くした。いちばん高い柱の上に 1 画素あけてオレンジのピークホールド。拡張子の上に罫線を 1 本引いて区切る。",
+    lines: "v2-2 · Lines: メーターを横に寝かせ、文書の行のように 3 本並べた。いちばん長い行の先だけオレンジ。紙のアイコンらしさがいちばん強い。",
+  };
+  let fileDesign = "sleeveFront";
+  function fileIcon(ext, size, dark = false, design = fileDesign) {
+    const big = size >= 48;
+    const c = grid(big ? 32 : 16);
+    FILE_DESIGNS[design](c, ext, big);
+    return c.svg(size, {
+      p: dark ? "#2a2b29" : "#f4f4f1", e: dark ? "#6f706b" : "#8f908b", i: dark ? "#e8e9e5" : "#111210",
+      g: dark ? "#a6a7a2" : "#575854", t: dark ? "#2a2b29" : "#f4f4f1", o: "#ff4d0f",
+    });
+  }
+  function renderFileIcons() {
+    const big = (dark) => EXT.map(e => `<div class="fi">${fileIcon(e, 96, dark)}<span>song.${e}</span></div>`).join("");
+    document.getElementById("fiLight").innerHTML = big(false);
+    document.getElementById("fiDark").innerHTML = big(true);
+    document.getElementById("fiDetail").innerHTML =
+      `<div style="gap:20px;margin-bottom:8px">${[16, 24, 32, 48, 64, 256].map(s => `<span style="display:grid;gap:4px;justify-items:center">${fileIcon("flac", s)}<span class="meta" style="color:#8f908b">${s}</span></span>`).join("")}</div>` +
+      EXT.slice(0, 4).map(e => `<div>${fileIcon(e, 16)}<span>ガラス越しの雨.${e}</span></div>`).join("");
+    document.getElementById("fiNote").textContent = FILE_NOTES[fileDesign];
+    document.getElementById("fiCompare").innerHTML = Object.keys(FILE_NOTES).map(d =>
+      `<div class="fi">${fileIcon("mp3", 48, false, d)}<span style="display:flex;gap:6px;align-items:center">${fileIcon("mp3", 16, false, d)}${document.querySelector(`#fiPill [data-v=${d}]`).textContent}</span></div>`).join("");
+  }
+  document.querySelectorAll("#fiPill button").forEach(b => b.addEventListener("click", () => {
+    fileDesign = b.dataset.v;
+    document.querySelectorAll("#fiPill button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    renderFileIcons();
+  }));
+  renderFileIcons();
+
+
+  // --- 和文の候補 ---------------------------------------------------------------------------
+  const FONTS = [
+    ["Yu Gothic UI", '"Yu Gothic UI", "Segoe UI", sans-serif', "今の書体", "Windows の標準なので同梱が要らない。Mac・スマホでは別の書体に置き換わる。"],
+    ["BIZ UDPGothic", '"BIZ UDPGothic", sans-serif', "OFL", "モリサワのユニバーサルデザイン書体。小さい字でも字形がつぶれにくい。癖が少なく実直。"],
+    ["IBM Plex Sans JP", '"IBM Plex Sans JP", sans-serif', "OFL", "欧文が IBM Plex なので、等幅の Chivo Mono と並べても計器らしい硬さが揃う。ウェイトが多い。"],
+    ["Zen Kaku Gothic New", '"Zen Kaku Gothic New", sans-serif', "OFL", "字面がやや小さく端正。余白が多く見え、静かな印象。"],
+    ["M PLUS 1", '"M PLUS 1", sans-serif', "OFL", "幾何学的で軽い。等幅版（M PLUS 1 Code）もあり、数字を揃えたい所にも使える。"],
+    ["Noto Sans JP", '"Noto Sans JP", sans-serif', "OFL", "もっとも癖がない標準的なゴシック。同梱するとファイルが大きい。"],
+    ["Murecho", '"Murecho", sans-serif', "OFL", "角ばった硬い字形。ピクセルアイコンや罫線のグリッドと馴染みやすい。"],
+    ["DotGothic16", '"DotGothic16", sans-serif', "OFL", "ドットの書体。ピクセルアイコンと完全に揃うが、長い文は読みにくい。曲名・見出しだけに使う組み合わせ向き。"],
+  ];
+  let fontPick = 5;   // Noto Sans JP に決定
+  function renderFonts() {
+    document.getElementById("fonts").innerHTML = FONTS.map(([name, stack, lic, note], i) =>
+      `<button class="fcard" data-i="${i}" aria-pressed="${i === fontPick}">
+        <span class="fhead"><span>${name}</span><span>${lic}</span></span>
+        <span style="font-family:${stack.replace(/"/g, "&quot;")};display:grid">
+          <span class="s22">ガラス越しの雨</span>
+          <span class="s13" style="margin-top:0;color:#575854">Mio Hanabusa — 夜の温室</span>
+          <span class="s13">曲をここにドラッグすると音源とジャケットを削除します</span>
+          <span class="s11">アルバム・曲名・アーティストで検索　0123456789</span>
+        </span>
+        <span class="note">${note}</span>
+      </button>`).join("");
+  }
+  document.getElementById("fonts").addEventListener("click", e => {
+    const card = e.target.closest(".fcard");
+    if (!card) return;
+    fontPick = +card.dataset.i;
+    const stack = FONTS[fontPick][1];
+    document.getElementById("win").style.fontFamily = stack;
+    document.getElementById("mini").style.fontFamily = stack;
+    renderFonts();
+  });
+  renderFonts();
+
+  // --- 操作 ---------------------------------------------------------------------------------
+  const win = document.getElementById("win"), mini = document.getElementById("mini");
+  let vol = 0.8, pos = 102, dur = 245, playing = false;
+  const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+  function render() {
+    cellRow(document.getElementById("volCells"), vol);
+    document.getElementById("volV").textContent = Math.round(vol * 100);
+    cellRow(document.getElementById("seek"), pos / dur);
+    cellRow(document.getElementById("miniSeek"), pos / dur);
+    document.getElementById("clock").textContent = fmt(pos);
+    document.getElementById("remain").textContent = fmt(dur - pos);
+  }
+  function dragCells(el, set) {
+    const go = e => { const r = el.getBoundingClientRect(); set(Math.min(1, Math.max(0, (e.clientX - r.left) / r.width))); render(); };
+    el.addEventListener("pointerdown", e => { el.setPointerCapture(e.pointerId); go(e); el.onpointermove = go; });
+    el.addEventListener("pointerup", () => (el.onpointermove = null));
+  }
+  dragCells(document.getElementById("volCells"), f => (vol = Math.round(f * 100) / 100));
+  dragCells(document.getElementById("seek"), f => (pos = f * dur));
+  document.getElementById("volCells").addEventListener("wheel", e => { e.preventDefault(); vol = Math.min(1, Math.max(0, vol + (e.deltaY < 0 ? 1 : -1) * (e.shiftKey ? 0.002 : 0.01))); vol = Math.round(vol * 1000) / 1000; render(); }, { passive: false });
+
+  const playBtn = document.getElementById("playBtn");
+  playBtn.addEventListener("click", () => {
+    playing = !playing;
+    playBtn.dataset.icon = playing ? "pause" : "play";
+    playBtn.setAttribute("aria-label", playing ? "一時停止" : "再生");
+    paintIcons(playBtn.parentElement);
+  });
+  setInterval(() => { if (playing) { pos = (pos + 0.25) % dur; render(); } }, 250);
+
+  const toggle = el => el.addEventListener("click", () => el.setAttribute("aria-pressed", el.getAttribute("aria-pressed") !== "true"));
+  toggle(document.getElementById("normBtn"));
+  toggle(document.getElementById("shuffleBtn"));
+  const repeatBtn = document.getElementById("repeatBtn");
+  let rep = 0;
+  repeatBtn.addEventListener("click", () => {
+    rep = (rep + 1) % 3;
+    repeatBtn.setAttribute("aria-pressed", rep > 0);
+    repeatBtn.dataset.icon = rep === 2 ? "repeatOne" : "repeat";
+    paintIcons(repeatBtn.parentElement);
+    repeatBtn.dataset.tip = ["REPEAT|ループしない", "REPEAT ALL|全曲をループ", "REPEAT ONE|1 曲をループ"][rep];
+  });
+  document.querySelectorAll("#typePill .hit").forEach(toggle);
+  document.querySelectorAll("#viewPill .hit").forEach(b => b.addEventListener("click", () =>
+    document.querySelectorAll("#viewPill .hit").forEach(x => x.setAttribute("aria-pressed", x === b))));
+  document.getElementById("logoBtn").addEventListener("click", () => (win.dataset.about = win.dataset.about === "open" ? "" : "open"));
+
+  function setTheme(v) {
+    win.dataset.theme = mini.dataset.theme = v;
+    document.querySelectorAll("#themeSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v));
+    const tb = document.getElementById("themeBtn");
+    tb.dataset.icon = v === "night" ? "sun" : "moon";
+    paintIcons(tb.parentElement);
+  }
+  document.querySelectorAll("#themeSeg button").forEach(b => b.addEventListener("click", () => setTheme(b.dataset.v)));
+  document.getElementById("themeBtn").addEventListener("click", () => setTheme(win.dataset.theme === "night" ? "light" : "night"));
+  document.querySelectorAll("#wallSeg button").forEach(b => b.addEventListener("click", () => {
+    document.getElementById("desk").dataset.wall = document.getElementById("miniDesk").dataset.wall = b.dataset.v;
+    document.querySelectorAll("#wallSeg button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  }));
+  const alpha = document.getElementById("alpha");
+  alpha.addEventListener("input", () => {
+    win.style.setProperty("--alpha", alpha.value); mini.style.setProperty("--alpha", alpha.value);
+    document.getElementById("alphaV").textContent = Math.round(alpha.value * 100) + "%";
+  });
+  const gridBtn = document.getElementById("gridBtn");
+  gridBtn.addEventListener("click", () => { const on = gridBtn.getAttribute("aria-pressed") !== "true"; gridBtn.setAttribute("aria-pressed", on); win.dataset.grid = on ? "on" : ""; });
+
+  // 吹き出し: 0.5 秒ホバーで出す。1 行目はオレンジの見出し、2 行目は和文
+  const tip = document.getElementById("tip");
+  let timer = 0;
+  document.addEventListener("pointerover", e => {
+    const el = e.target.closest("[data-tip]");
+    clearTimeout(timer); tip.hidden = true;
+    if (!el) return;
+    timer = setTimeout(() => {
+      const [h, b] = el.dataset.tip.split("|");
+      tip.innerHTML = `<b>${h}</b>${b || ""}`;
+      tip.hidden = false;
+      const r = el.getBoundingClientRect(), tw = tip.offsetWidth;
+      tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, r.left + r.width / 2 - tw / 2)) + "px";
+      tip.style.top = (r.bottom + 8) + "px";
+    }, 500);
+  });
+
+  // 窓の拡縮（見本のページ幅に合わせるだけ）
+  const desk = document.getElementById("desk"), scaler = document.getElementById("scaler");
+  function fit() {
+    const avail = desk.clientWidth - 80, k = Math.min(1, avail / 1240);
+    scaler.style.transform = `scale(${k})`;
+    scaler.style.height = 820 * k + "px";
+    scaler.style.width = 1240 * k + "px";
+  }
+  window.addEventListener("resize", fit);
+  fit(); render();
+  document.fonts && document.fonts.ready.then(render);
+})();
+</script>
+</body>
+</html>

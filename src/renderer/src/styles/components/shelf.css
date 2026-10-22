@@ -30,19 +30,20 @@
   gap: var(--space-2);
   flex: 1;
   min-width: 0;
-  max-width: 360px;
-  padding: 6px var(--space-4);
-  /* 入力欄は彫り込んだ溝 */
+  max-width: 300px;
+  margin: 0 var(--space-3);
+  padding: 2px 0;
+  /* 入力欄は下線 1 本だけ */
   border: none;
-  border-radius: var(--radius-pill);
-  background: var(--frost);
-  box-shadow: var(--outline);
-  color: var(--color-text-muted);
-  transition: box-shadow var(--transition-fast);
+  border-bottom: 1px solid var(--hairline);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text-faint);
+  transition: border-color var(--transition-fast);
 }
 
 .search:focus-within {
-  box-shadow: 0 0 0 1px var(--color-accent);
+  border-bottom-color: var(--color-text);
 }
 
 .search__icon {
@@ -58,7 +59,7 @@
   background: transparent;
   color: var(--color-text);
   font: inherit;
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-m);
   outline: none;
 }
 
@@ -99,23 +100,22 @@
   height: 14px;
 }
 
-/* 切り替えは溝の中を駒が動く、成形のセレクタ */
+/* 切り替えは溝の中を駒が動くピル。選ばれている駒だけ明るくし、細い枠を付ける */
 .viewswitch {
   display: flex;
   gap: 2px;
-  padding: 3px;
+  padding: 2px;
   border: none;
   border-radius: var(--radius-pill);
-  background: var(--frost);
-  box-shadow: var(--outline);
+  background: var(--color-sunken);
 }
 
 .viewswitch__button {
   appearance: none;
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 22px;
+  width: 30px;
+  height: 20px;
   padding: 0;
   border: none;
   border-radius: var(--radius-pill);
@@ -194,7 +194,7 @@
 }
 
 .shelf__body::-webkit-scrollbar-thumb:hover {
-  background: var(--color-accent);
+  background: var(--color-text-faint);
 }
 
 /*
@@ -284,8 +284,8 @@
   place-items: center;
   width: 100%;
   aspect-ratio: 1;
-  /* 輪郭は線ではなく、上辺の光と細い縁で出す */
-  border-radius: var(--radius-md);
+  /* 角は立て、輪郭は細い線 1 本 */
+  border-radius: 0;
   background: var(--frost);
   overflow: hidden;
   /* 細い線で囲む。offset ぶんは .shelf__list の padding が受け止める */
@@ -330,22 +330,21 @@
 /* 種類の印 */
 .card__badge {
   position: absolute;
-  left: 6px;
-  bottom: 6px;
+  left: 0;
+  bottom: 0;
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: var(--radius-sm);
-  /* どんな絵の上でも見分けられるよう、暗いすりガラスの地に白い細線で描く */
-  background: rgb(43 45 51 / 58%);
-  backdrop-filter: blur(6px);
-  color: #f7f7f8;
+  width: 20px;
+  height: 20px;
+  border-radius: 0;
+  /* どんな絵の上でも見分けられるよう、不透明な面の上に墨で描く */
+  background: var(--panel-bg);
+  color: var(--color-text);
 }
 
 .card__badge svg {
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
 }
 
 
@@ -378,9 +377,9 @@
 }
 
 .card[data-selected='true'] .card__check {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-accent-contrast);
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-ink-contrast);
 }
 
 .card__check svg {
@@ -389,10 +388,9 @@
 }
 
 .card__name {
-  margin-top: 10px;
+  margin-top: 8px;
   max-width: 100%;
-  font-size: var(--font-size-xs);
-  font-weight: var(--weight-medium);
+  font-size: var(--font-size-m);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -400,9 +398,11 @@
 
 .card__sub {
   max-width: 100%;
-  font-size: var(--font-size-2xs);
-  letter-spacing: 0.04em;
-  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-weight: 300;
+  font-size: var(--font-size-s);
+  letter-spacing: 0.06em;
+  color: var(--color-text-faint);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

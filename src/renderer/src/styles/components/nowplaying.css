@@ -44,9 +44,8 @@
 .nowplaying__title {
   margin: 0;
   font-size: var(--font-size-title);
-  font-weight: var(--weight-strong);
-  line-height: 1.2;
-  letter-spacing: -0.01em;
+  font-weight: 400;
+  line-height: 1.35;
   overflow: hidden;
   white-space: nowrap;
 }
@@ -60,20 +59,17 @@
   white-space: nowrap;
 }
 
-/* 再生中の音源のフォーマット（例: FLAC · 44.1 kHz · 16 bit · ステレオ） */
+/* 再生中の音源のフォーマット（例: FLAC · 44.1 kHz · 16 bit · ステレオ）。枠は付けず補足の文字だけ */
 .nowplaying__format {
-  margin: var(--space-3) 0 var(--space-5);
+  margin: var(--space-2) 0 var(--space-6);
   align-self: flex-start;
   max-width: 100%;
-  /* 筐体に彫った銘板のように、溝の中へ小さく刻む */
-  padding: 3px var(--space-3);
-  border-radius: var(--radius-sm);
-  background: var(--frost);
-  box-shadow: var(--outline);
   font-family: var(--font-mono);
-  font-size: var(--font-size-2xs);
-  letter-spacing: 0.1em;
-  color: var(--color-text-muted);
+  font-weight: 300;
+  font-size: var(--font-size-s);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -57,8 +57,7 @@ export class NowPlaying extends Emitter {
       'volume',
       'volume-value',
       'volume-entry',
-      'loudness',
-      'loudness-label'
+      'loudness'
     ])
 
     this.#bindControls()
@@ -113,7 +112,7 @@ export class NowPlaying extends Emitter {
     const on = mode !== 'off'
     button.dataset.mode = mode
     button.dataset.state = state
-    this.#el.loudnessLabel.textContent = on ? 'オン' : 'オフ'
+    // 文字は「Normalize」のまま。オン / オフは左の四角（オンでオレンジ）で示す
 
     const heading = on
       ? `音量の自動調整: オン（${formatDb(profile.target, { digits: 0 })} LUFS に揃える）`

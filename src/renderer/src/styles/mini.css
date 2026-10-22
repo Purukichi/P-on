@@ -185,8 +185,7 @@ body {
 /* 長いタイトルは setMarqueeText が往復スクロールさせる */
 .mini__title {
   margin: 0;
-  font-size: var(--font-size-md);
-  font-weight: var(--weight-strong);
+  font-size: var(--font-size-m);
   overflow: hidden;
   white-space: nowrap;
 }
@@ -212,8 +211,11 @@ body {
 
 .mini__artist {
   margin: 0;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-weight: 300;
+  font-size: var(--font-size-s);
+  letter-spacing: 0.06em;
+  color: var(--color-text-faint);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -238,13 +240,12 @@ body {
 }
 
 .mini__iconbutton:hover {
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
+  color: var(--color-text);
 }
 
 .mini__iconbutton--close:hover {
   background: var(--color-danger);
-  color: #f7f7f8;
+  color: var(--color-accent-contrast);
 }
 
 .mini__iconbutton svg {
@@ -252,10 +253,9 @@ body {
   height: 16px;
 }
 
-/* ピン留め中は色を点ける */
+/* ピン留め中はアイコンをオレンジにする */
 .mini__iconbutton[data-active='true'] {
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
+  color: var(--color-accent);
 }
 
 /* ---- シークと音量 ---- */
@@ -269,14 +269,15 @@ body {
 .mini__range {
   --fill: 0;
 
+  /* メインと同じ: 2 px の溝に値までを墨で塗り、つまみは 4 × 12 px の細い柱 */
   appearance: none;
   width: 100%;
-  height: 4px;
+  height: 2px;
   margin: 0;
-  border-radius: var(--radius-pill);
+  border-radius: 0;
   background: linear-gradient(
     to right,
-    var(--color-accent) calc(var(--fill) * 100%),
+    var(--color-text) calc(var(--fill) * 100%),
     var(--color-track) calc(var(--fill) * 100%)
   );
   cursor: pointer;
@@ -284,16 +285,11 @@ body {
 
 .mini__range::-webkit-slider-thumb {
   appearance: none;
-  width: 11px;
-  height: 11px;
+  width: 4px;
+  height: 12px;
   border: none;
-  border-radius: 50%;
+  border-radius: 0;
   background: var(--color-text);
-  transition: transform var(--transition-fast);
-}
-
-.mini__range:hover::-webkit-slider-thumb {
-  transform: scale(1.2);
 }
 
 .mini__range:disabled {
@@ -305,9 +301,10 @@ body {
   display: flex;
   justify-content: space-between;
   font-family: var(--font-mono);
-  font-size: var(--font-size-2xs);
+  font-weight: 300;
+  font-size: var(--font-size-s);
   font-variant-numeric: tabular-nums;
-  color: var(--color-text-muted);
+  color: var(--color-text-faint);
 }
 
 .mini__controls {
@@ -324,10 +321,10 @@ body {
   height: 28px;
   flex: none;
   padding: 0;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 50%;
+  border: 1px solid transparent;
+  border-radius: 0;
   background: transparent;
-  color: var(--color-text);
+  color: var(--color-text-muted);
   cursor: pointer;
   transition:
     background var(--transition-fast),
@@ -336,9 +333,7 @@ body {
 }
 
 .mini__button:hover:not(:disabled) {
-  background: var(--color-ink);
-  border-color: var(--color-ink);
-  color: var(--color-ink-contrast);
+  color: var(--color-text);
 }
 
 .mini__button:disabled {
@@ -351,18 +346,16 @@ body {
   height: 14px;
 }
 
+/* 再生ボタンはメインと同じく、細い罫線の四角に墨のアイコン */
 .mini__button--play {
   width: 36px;
   height: 36px;
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: var(--color-accent-contrast);
+  border-color: var(--hairline);
+  color: var(--color-text);
 }
 
 .mini__button--play:hover:not(:disabled) {
-  background: var(--color-accent-hover);
-  border-color: var(--color-accent-hover);
-  color: var(--color-accent-contrast);
+  border-color: var(--color-text-faint);
 }
 
 .mini__button--play svg {

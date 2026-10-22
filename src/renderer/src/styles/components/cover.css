@@ -33,8 +33,8 @@
   aspect-ratio: 1;
   display: grid;
   place-items: center;
-  /* 絵を枠いっぱいに出す。縁取りは付けず、輪郭の細い線だけ */
-  border-radius: var(--radius-lg);
+  /* 絵を枠いっぱいに出す。角は立て、輪郭の細い線だけ */
+  border-radius: 0;
   background: var(--frost);
   box-shadow: var(--outline);
   overflow: hidden;
@@ -78,8 +78,7 @@
   padding: var(--space-2);
   background: var(--color-accent);
   color: var(--color-accent-contrast);
-  font-size: var(--font-size-xs);
-  font-weight: var(--weight-strong);
+  font-size: var(--font-size-s);
   text-align: center;
   opacity: 0;
   transform: translateY(100%);
@@ -110,11 +109,10 @@
   align-items: center;
   gap: var(--space-2);
   max-width: 100%;
-  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+  padding: var(--space-1) var(--space-3) var(--space-1) 0;
   border: none;
   border-radius: var(--radius-md);
-  background: var(--frost-hi);
-  box-shadow: var(--outline);
+  background: transparent;
   color: var(--color-text);
   cursor: pointer;
   transition:
@@ -128,7 +126,7 @@
 }
 
 .cover__album:hover {
-  box-shadow: 0 0 0 1px var(--color-accent);
+  background: var(--color-sunken);
 }
 
 .cover__album[data-dropping='true'] {
@@ -139,9 +137,9 @@
 
 .cover__album-art {
   flex: none;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
+  width: 30px;
+  height: 30px;
+  border-radius: 0;
   box-shadow: 0 0 0 1px var(--hairline);
   background: var(--color-sunken);
   overflow: hidden;
@@ -174,9 +172,11 @@
 }
 
 .cover__album-sub {
-  font-size: var(--font-size-2xs);
-  letter-spacing: 0.04em;
-  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-weight: 300;
+  font-size: var(--font-size-s);
+  letter-spacing: 0.06em;
+  color: var(--color-text-faint);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

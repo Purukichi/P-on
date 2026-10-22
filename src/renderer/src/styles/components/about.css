@@ -1,21 +1,31 @@
 /*
- * 左上のブランドマークと、押したときに出るバージョン情報。
- * マークの形は build/icon.svg と同じ図形を使う。
+ * 左上のロゴ（PMP1 のドット）と、押したときに出るバージョン情報。
+ * 点灯のドットは墨、最後の「1」だけオレンジ、消灯のドットは薄い墨。
  */
+
+.logo__on {
+  fill: var(--color-text);
+}
+
+.logo__accent {
+  fill: var(--color-accent);
+}
+
+.logo__off {
+  fill: var(--color-track);
+}
 
 .brandmark {
   appearance: none;
   display: grid;
   place-items: center;
-  width: var(--control-size);
   height: var(--control-size);
   flex: none;
-  padding: 0;
+  padding: 0 var(--space-1);
+  margin-left: calc(var(--space-1) * -1);
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
-  /* 色相スライダーを動かすと、このマークも一緒に変わる */
-  color: var(--color-accent);
   cursor: pointer;
   transition:
     background var(--transition-fast),
@@ -31,9 +41,8 @@
 }
 
 .brandmark__icon {
-  /* 図形が縦長なので、高さを基準に合わせる */
-  width: 18px;
-  height: 20px;
+  width: 59px;
+  height: 14px;
   display: block;
 }
 
@@ -45,7 +54,7 @@
   width: 260px;
   padding: var(--space-4);
   border: 1px solid var(--panel-border);
-  border-radius: var(--radius-lg);
+  border-radius: 0;
   background: var(--panel-bg);
   box-shadow: var(--panel-shadow);
 }
@@ -56,22 +65,22 @@
 
 .about__head {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: var(--space-3);
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
 }
 
 .about__mark {
-  width: 30px;
-  height: 33px;
-  color: var(--color-accent);
+  width: 118px;
+  height: 28px;
 }
 
+/* 名前はロゴで読めるので、読み上げ用に残すだけ */
 .about__name {
-  margin: 0;
-  font-size: var(--font-size-lg);
-  font-weight: var(--weight-strong);
-  letter-spacing: 0.06em;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 
 .about__version {
@@ -93,7 +102,6 @@
 /* 更新が見つかったときだけ目立たせる */
 .about__status[data-tone='ready'] {
   color: var(--color-accent);
-  font-weight: var(--weight-strong);
 }
 
 .about__status[data-tone='error'] {

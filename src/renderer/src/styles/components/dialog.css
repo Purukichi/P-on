@@ -1,9 +1,9 @@
-/* ダイアログもすりガラスで統一する */
+/* ダイアログは不透明な cell の板に、輪郭の線 1 本 */
 .dialog {
   width: min(560px, calc(100vw - 64px));
   padding: 0;
   border: 1px solid var(--panel-border);
-  border-radius: var(--radius-xl);
+  border-radius: 0;
   background: var(--panel-bg);
   color: var(--color-text);
   box-shadow: var(--panel-shadow);
@@ -14,7 +14,7 @@
 }
 
 .dialog::backdrop {
-  background: rgb(43 45 51 / 40%);
+  background: rgb(17 18 16 / 40%);
 }
 
 .dialog__form {
@@ -26,10 +26,10 @@
 
 .dialog__heading {
   margin: 0;
-  font-size: var(--font-size-xs);
-  font-weight: var(--weight-strong);
-  letter-spacing: 0.18em;
-  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-s);
+  letter-spacing: var(--label-tracking);
+  color: var(--color-text);
 }
 
 .dialog__body {

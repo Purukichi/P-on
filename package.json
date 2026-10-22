@@ -1,7 +1,7 @@
 {
   "name": "p-on",
-  "version": "1.4.7",
-  "description": "P-on - a customizable desktop audio player",
+  "version": "2.0.0",
+  "description": "PMP1 - a customizable desktop audio player",
   "private": true,
   "license": "MIT",
   "//author": "exe のプロパティと「アプリと機能」の発行元に出る。空だと発行元が空欄になる",
@@ -34,6 +34,8 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.2",
+    "@fontsource/chivo-mono": "^5.3.0",
+    "@fontsource/noto-sans-jp": "^5.3.1",
     "@playwright/test": "^1.63.0",
     "electron": "^43.3.0",
     "electron-builder": "^26.15.3",

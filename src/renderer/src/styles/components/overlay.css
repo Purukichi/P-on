@@ -20,8 +20,8 @@
   gap: var(--space-2);
   justify-items: center;
   padding: var(--space-7);
-  border: 2px dashed var(--color-accent);
-  border-radius: var(--radius-xl);
+  border: 1px dashed var(--color-accent);
+  border-radius: 0;
   text-align: center;
 }
 
@@ -51,10 +51,10 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-5) var(--space-2) var(--space-4);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-md);
   background: var(--panel-bg);
   color: var(--color-text);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-m);
   font-weight: var(--weight-medium);
   box-shadow: var(--outline), var(--panel-shadow);
   max-width: calc(100vw - 96px);
@@ -66,7 +66,7 @@
   width: 6px;
   height: 6px;
   flex: none;
-  border-radius: 50%;
+  border-radius: 0;
   background: var(--color-accent);
 }
 

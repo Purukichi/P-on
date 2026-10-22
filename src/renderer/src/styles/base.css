@@ -41,6 +41,18 @@ textarea {
   flex: none;
 }
 
+/* 区画名（NOW PLAYING・LIBRARY）。ボタンの文字とも同じ書体・大きさ・字間 */
+.section-label {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-s);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
 /* ---- 収まらないテキストの自動スクロール（setMarqueeText とペア） ---- */
 
 [data-scrolling] {
@@ -101,6 +113,7 @@ textarea {
  * 再生中の情報とリストの間に無駄な隙間が空かない。
  */
 .stage {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(240px, 380px) minmax(320px, 1fr);
   min-height: 0;
@@ -119,4 +132,11 @@ textarea {
   .app[data-list='visible'] .stage {
     grid-template-columns: minmax(200px, 260px) var(--np-column) minmax(240px, 1fr);
   }
+}
+
+/* NOW PLAYING の区画名は、ジャケットの列の左上に置く */
+.stage__label {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--page-gutter);
 }

@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import { app, BrowserWindow } from 'electron'
 import { registerIpcHandlers } from './ipc.js'
 import { registerMediaProtocol, registerMediaScheme } from './media-protocol.js'
@@ -14,6 +15,14 @@ import { audioPathsFromArgv, queueOpenedFiles } from './opened-files.js'
  */
 const APP_ID = 'com.hamon.player'
 app.setAppUserModelId(APP_ID)
+
+/*
+ * 2.0.0 で表示名を P-on から PMP1 に変えた。
+ * userData のフォルダ名は既定では製品名から決まるので、そのままだと
+ * ライブラリの保存先の記録（config.json）が見つからなくなる。置き場所は P-on のまま据え置く。
+ * 単一起動のロックも userData に作られるので、requestSingleInstanceLock より前に呼ぶこと。
+ */
+app.setPath('userData', join(app.getPath('appData'), 'P-on'))
 
 // whenReady より前に呼ぶ必要がある
 registerMediaScheme()
