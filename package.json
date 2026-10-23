@@ -34,7 +34,6 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.2",
-    "@fontsource/chivo-mono": "^5.3.0",
     "@fontsource/noto-sans-jp": "^5.3.1",
     "@playwright/test": "^1.63.0",
     "electron": "^43.3.0",

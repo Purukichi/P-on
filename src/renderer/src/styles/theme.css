@@ -13,8 +13,7 @@
 
 /* 書体はアプリに同梱する（CSP が外部フォントを禁じているため） */
 @import '@fontsource/noto-sans-jp/400.css';
-@import '@fontsource/chivo-mono/300.css';
-@import '@fontsource/chivo-mono/400.css';
+@import '@fontsource/noto-sans-jp/300.css';
 
 :root {
   /*
@@ -104,10 +103,10 @@
 
   /*
    * --- 書体 ---
-   * 和文と本文は Noto Sans JP、ラベル・数字は 0 に点や斜線のない等幅の Chivo Mono。
+   * すべて Noto Sans JP。ラベル・数字（--font-mono）も同じ書体で、細字（300）で差を付ける。
    */
   --font-sans: 'Noto Sans JP', 'Yu Gothic UI', 'Hiragino Sans', Meiryo, system-ui, sans-serif;
-  --font-mono: 'Chivo Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --font-mono: var(--font-sans);
   /*
    * 字の大きさは 3 段だけ。
    *   S 11 px … ラベル・数字・補足
@@ -124,7 +123,7 @@
   --font-size-md: var(--font-size-m);
   --font-size-lg: var(--font-size-m);
   --font-size-title: var(--font-size-l);
-  /* 字の太さ。同梱する Noto Sans JP は Regular だけなので、太字は使わない */
+  /* 字の太さ。同梱する Noto Sans JP は Light と Regular だけなので、太字は使わない */
   --weight-medium: 400;
   --weight-strong: 400;
 

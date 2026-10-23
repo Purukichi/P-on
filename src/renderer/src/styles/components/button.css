@@ -1,7 +1,7 @@
 /* 汎用ボタン。再生系のボタンは transport.css を参照。 */
 /*
  * 面は塗らず、輪郭の線を 1 本だけ引いたピル。
- * 文字は区画名（.section-label）と同じ Chivo Mono・S・大文字。和文はそのまま Noto Sans JP に落ちる
+ * 文字は区画名（.section-label）と同じ Noto Sans JP・S・大文字
  */
 .button {
   appearance: none;
