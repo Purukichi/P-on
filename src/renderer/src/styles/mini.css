@@ -386,3 +386,8 @@ body {
   height: 14px;
   flex: none;
 }
+
+/* 音量のつまみはメインの音量と同じく 4 × 6 px（シークの半分の高さ） */
+.mini__range--volume::-webkit-slider-thumb {
+  height: 6px;
+}

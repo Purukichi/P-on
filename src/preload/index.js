@@ -109,6 +109,10 @@ const api = {
     closeMini: () => ipcRenderer.send(IPC.WINDOW_CLOSE_MINI),
     /** アプリごと終了する */
     quit: () => ipcRenderer.send(IPC.WINDOW_QUIT),
+    /** メインウィンドウの最小化 / 最大化（元に戻す） / 閉じる */
+    minimize: () => ipcRenderer.send(IPC.WINDOW_MINIMIZE),
+    toggleMaximize: () => ipcRenderer.send(IPC.WINDOW_TOGGLE_MAXIMIZE),
+    close: () => ipcRenderer.send(IPC.WINDOW_CLOSE),
     /** ミニプレイヤーを常に手前に出すか */
     setMiniAlwaysOnTop: (onTop) => ipcRenderer.send(IPC.WINDOW_MINI_ON_TOP, onTop),
     /**

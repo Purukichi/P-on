@@ -90,7 +90,7 @@
 .volume__input {
   --fill: 0.8;
 
-  /* シークバーと同じ: 2 px の溝に、値までを墨で塗る。つまみは 4 × 12 px の細い柱 */
+  /* シークバーと同じ: 2 px の溝に、値までを墨で塗る。つまみは 4 × 6 px（シークバーの半分の高さ） */
   appearance: none;
   width: 100%;
   height: 2px;
@@ -107,7 +107,7 @@
 .volume__input::-webkit-slider-thumb {
   appearance: none;
   width: 4px;
-  height: 12px;
+  height: 6px;
   border: none;
   border-radius: 0;
   background: var(--color-text);

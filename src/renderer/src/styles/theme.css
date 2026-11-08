@@ -11,7 +11,14 @@
  *   - 文字の大きさは 3 段（S 11 / M 13 / L 22 px）。役割の違いは書体・太さ・色で付ける
  */
 
-/* 書体はアプリに同梱する（CSP が外部フォントを禁じているため） */
+/*
+ * 書体はアプリに同梱する（CSP が外部フォントを禁じているため）。
+ * 欧文とロゴは Figtree（SIL OFL）、和文は Noto Sans JP。Figtree に無い字（かな・漢字）は
+ * 自動で次の Noto Sans JP に落ちるので、書体の指定は 1 本の並びで済む。
+ */
+@import '@fontsource/figtree/300.css';
+@import '@fontsource/figtree/400.css';
+@import '@fontsource/figtree/700.css';
 @import '@fontsource/noto-sans-jp/400.css';
 @import '@fontsource/noto-sans-jp/300.css';
 
@@ -103,9 +110,10 @@
 
   /*
    * --- 書体 ---
-   * すべて Noto Sans JP。ラベル・数字（--font-mono）も同じ書体で、細字（300）で差を付ける。
+   * 欧文は Figtree、和文は Noto Sans JP。ラベル・数字（--font-mono）も同じ並びで、細字（300）で差を付ける。
+   * ロゴだけ Figtree Bold（700）を使う。
    */
-  --font-sans: 'Noto Sans JP', 'Yu Gothic UI', 'Hiragino Sans', Meiryo, system-ui, sans-serif;
+  --font-sans: 'Figtree', 'Noto Sans JP', 'Yu Gothic UI', 'Hiragino Sans', Meiryo, system-ui, sans-serif;
   --font-mono: var(--font-sans);
   /*
    * 字の大きさは 3 段だけ。
@@ -123,7 +131,7 @@
   --font-size-md: var(--font-size-m);
   --font-size-lg: var(--font-size-m);
   --font-size-title: var(--font-size-l);
-  /* 字の太さ。同梱する Noto Sans JP は Light と Regular だけなので、太字は使わない */
+  /* 字の太さ。同梱する Noto Sans JP は Light と Regular だけなので、太字はロゴ（Figtree）以外に使わない */
   --weight-medium: 400;
   --weight-strong: 400;
 
@@ -131,8 +139,13 @@
    * --- 寸法の基準 ---
    * ブロックごとに余白がばらつかないよう、外周と内側の間隔をここに集約する。
    */
-  /** 画面の外周（上下左右）に取る余白 */
-  --page-gutter: 30px;
+  /**
+   * 窓の外周に取るセーフティエリア。ここには何も置かない（区切り線も引かない）。
+   * 上部バー・中段・棚はすべてこの内側に収める。
+   */
+  --safe-area: 20px;
+  /** セーフティエリアの内側から、各区画の中身までの余白（窓の縁からは --safe-area + これ） */
+  --page-gutter: 10px;
   /** ブロック同士の間隔 */
   --block-gap: 40px;
   /** アイコンボタンなど、小さな正方形の一辺 */
@@ -146,9 +159,13 @@
   --np-column: calc(var(--np-measure) + var(--page-gutter) + var(--block-gap) * 1.5);
 
   /* --- その他 --- */
-  --titlebar-height: 40px;
-  /* タイトルバー右端の最小化 / 最大化 / 閉じるボタンを避ける幅 */
-  --caption-width: 138px;
+  /*
+   * 上部バー（ロゴ列）の高さ。セーフティエリアの内側、窓の y 20〜50 に置く。
+   * ロゴ・音量・ボタン・最小化 / 最大化 / 閉じるはすべてこの行の中央（窓の y 35）にそろえる。
+   */
+  --titlebar-height: 30px;
+  /* 最小化 / 最大化 / 閉じるボタン（自前で描く。40 × 3） */
+  --caption-width: 120px;
   --transition-fast: 130ms cubic-bezier(0.22, 0.61, 0.36, 1);
   --transition-theme: 240ms ease;
 }

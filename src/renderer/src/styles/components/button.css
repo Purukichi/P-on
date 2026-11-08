@@ -61,6 +61,21 @@
   color: var(--color-text);
 }
 
+/* 枠を描かない文字だけのボタン（ADD MUSIC・SHOW MORE・+ PLAYLIST など）。ホバーで墨に */
+.button--text,
+.button--text:hover:not(:disabled),
+.button--text:active:not(:disabled) {
+  box-shadow: none;
+}
+
+.button--text {
+  color: var(--color-text-muted);
+}
+
+.button--text:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
 .button--small {
   padding: 1px var(--space-3);
 }

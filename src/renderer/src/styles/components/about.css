@@ -1,6 +1,5 @@
 /*
- * 左上のロゴ（PMP1 のドット）と、押したときに出るバージョン情報。
- * 点灯のドットは墨、最後の「1」だけオレンジ、消灯のドットは薄い墨。
+ * 左上のロゴ（Figtree Bold の「PMP1」）と、押したときに出るバージョン情報・設定のパネル。
  */
 
 .logo__on {
@@ -40,10 +39,26 @@
   transform: scale(0.94);
 }
 
-.brandmark__icon {
-  width: 59px;
-  height: 14px;
+/*
+ * ロゴは Figtree Bold の文字「PMP1」。最後の「1」だけオレンジ。
+ * 大きさは大文字の高さで決める（Figtree の大文字は 0.700 em。14 px の高さなら 20 px）
+ */
+.logotype {
   display: block;
+  font-family: 'Figtree', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.logotype__accent {
+  color: var(--color-accent);
+}
+
+.brandmark__icon {
+  font-size: 20px;
 }
 
 /* ---- バージョン情報のパネル ---- */
@@ -70,8 +85,7 @@
 }
 
 .about__mark {
-  width: 118px;
-  height: 28px;
+  font-size: 40px;
 }
 
 /* 名前はロゴで読めるので、読み上げ用に残すだけ */
@@ -112,4 +126,38 @@
   display: flex;
   justify-content: flex-end;
   margin-top: var(--space-3);
+}
+
+/* ---- 設定のパネル（歯車から開く。見た目はバージョン情報のパネルと同じ） ---- */
+
+.settings {
+  width: 300px;
+  display: grid;
+  gap: var(--space-4);
+}
+
+.settings[hidden] {
+  display: none;
+}
+
+.settings__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* 言語の切り替えは文字のピル（棚の .viewswitch__button の幅 30 より強く当てる） */
+.settings .settings__lang {
+  width: auto;
+  padding: 0 var(--space-3);
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: var(--font-size-s);
+  line-height: 1;
+}
+
+.settings__actions {
+  display: flex;
+  gap: var(--space-1);
 }

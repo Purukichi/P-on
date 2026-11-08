@@ -61,12 +61,6 @@ let mainWindow = null
 /** @type {BrowserWindow|null} */
 let miniWindow = null
 
-/**
- * OS が描く最小化 / 最大化 / 閉じるボタンの高さ。
- * 上部バー（theme.css の --titlebar-height）と同じにしないと、
- * ボタンにホバーしたときの面がバーの下の罫線からはみ出す。
- */
-export const TITLEBAR_HEIGHT = 40
 
 export function getMainWindow() {
   return mainWindow && !mainWindow.isDestroyed() ? mainWindow : null
@@ -87,14 +81,15 @@ export function createMainWindow() {
     // 本文の下からデスクトップが透けるよう、メインもアクリル素材にする
     ...BACKDROP(),
     backgroundColor: '#00000000',
-    // タイトルバーは自前の面に溶け込ませる（操作ボタンだけ OS が上に描く）
+    /*
+     * タイトルバーは自前の面に溶け込ませる。
+     * 最小化 / 最大化 / 閉じるも OS には描かせず、ページ側（上部バーの右端）で描く。
+     * OS のボタンは窓の右上の角に固定されてしまい、外周のセーフティエリア（20 px）の内側や
+     * ロゴ列の中央（窓の y 35）にそろえられないため。
+     * macOS だけは信号機ボタンを残し、ロゴ列の中央にそろう位置へずらす（ボタンの高さは 12）。
+     */
     titleBarStyle: 'hidden',
-    trafficLightPosition: process.platform === 'darwin' ? { x: 16, y: 13 } : undefined,
-    titleBarOverlay: process.platform === 'darwin' ? false : {
-      color: '#00000000',
-      symbolColor: '#0a0a0a',
-      height: TITLEBAR_HEIGHT
-    },
+    trafficLightPosition: process.platform === 'darwin' ? { x: 30, y: 29 } : undefined,
     autoHideMenuBar: true,
     webPreferences: SHARED_WEB_PREFERENCES()
   })

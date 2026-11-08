@@ -7,8 +7,7 @@ import {
   getMainWindow,
   getMiniWindow,
   openMiniPlayer,
-  setMiniAlwaysOnTop,
-  TITLEBAR_HEIGHT
+  setMiniAlwaysOnTop
 } from './windows.js'
 import { appInfo, checkForUpdatesManually } from './updater.js'
 import { takeOpenedFiles } from './opened-files.js'
@@ -221,10 +220,10 @@ export function registerIpcHandlers() {
   // ---- 共通 --------------------------------------------------------------
 
   // 削除のような取り消せない操作の前に、OS 標準のダイアログで確認を取る
-  handle(IPC.CONFIRM, async (event, { message, detail, confirmLabel = 'OK' } = {}) => {
+  handle(IPC.CONFIRM, async (event, { message, detail, confirmLabel = 'OK', cancelLabel = 'Cancel' } = {}) => {
     const { response } = await dialog.showMessageBox(windowOf(event), {
       type: 'warning',
-      buttons: [confirmLabel, 'Cancel'],
+      buttons: [confirmLabel, cancelLabel],
       defaultId: 1,
       cancelId: 1,
       message: message ?? 'Continue?',
@@ -257,6 +256,16 @@ function registerPlayerRelay() {
   ipcMain.on(IPC.WINDOW_QUIT, () => app.quit())
   ipcMain.on(IPC.WINDOW_MINI_ON_TOP, (_event, onTop) => setMiniAlwaysOnTop(onTop))
 
+  // メインウィンドウの最小化 / 最大化 / 閉じる（上部バーの自前のボタンから）
+  ipcMain.on(IPC.WINDOW_MINIMIZE, () => getMainWindow()?.minimize())
+  ipcMain.on(IPC.WINDOW_TOGGLE_MAXIMIZE, () => {
+    const main = getMainWindow()
+    if (!main) return
+    if (main.isMaximized()) main.unmaximize()
+    else main.maximize()
+  })
+  ipcMain.on(IPC.WINDOW_CLOSE, () => getMainWindow()?.close())
+
   ipcMain.on(IPC.WINDOW_SET_TITLEBAR, (_event, { color, symbolColor, theme } = {}) => {
     /*
      * Windows のアクリルは OS のダーク / ライト設定に従って濃さが変わる。
@@ -264,15 +273,7 @@ function registerPlayerRelay() {
      * アプリのテーマに合わせてアクリル側の明暗も揃える。
      */
     if (theme === 'light' || theme === 'dark') nativeTheme.themeSource = theme
-
-    const main = getMainWindow()
-    if (!main || !color || !symbolColor) return
-    try {
-      main.setTitleBarOverlay({ color, symbolColor, height: TITLEBAR_HEIGHT })
-    } catch (error) {
-      // titleBarOverlay に対応していないプラットフォームでは何もしない
-      console.warn('[window] タイトルバーの色を変更できませんでした:', error.message)
-    }
+    // 最小化 / 最大化 / 閉じるはページ側で描いているので、OS のタイトルバーの色は合わせなくてよい
   })
 }
 

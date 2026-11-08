@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PMP1 Redesign</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo+Mono:wght@300;400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;700&display=swap">
 <!-- 和文の候補（どれも SIL OFL なのでアプリに同梱できる） -->
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic&family=IBM+Plex+Sans+JP:wght@300;400&family=Zen+Kaku+Gothic+New:wght@400&family=M+PLUS+1:wght@300;400&family=Noto+Sans+JP:wght@300;400&family=Murecho:wght@300;400&family=DotGothic16&display=swap">
 <style>
@@ -23,12 +23,12 @@
     --p-cell: #e8e9e5;
     --p-plot: #f4f4f1;
     --accent: #ff4d0f;
-    --mono: "Chivo Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    --mono: "Figtree", "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", "Meiryo", sans-serif;
     /* 文字の大きさは 3 段だけ: S = ラベル・数字・補足、M = 本文、L = 曲名 */
     --fs-s: 11px;
     --fs-m: 13px;
     --fs-l: 22px;
-    --sans: "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", "Meiryo", sans-serif;
+    --sans: "Figtree", "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", "Meiryo", sans-serif;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--page); color: var(--p-ink); }
@@ -123,9 +123,10 @@
   .hit { cursor: pointer; background: none; border: 0; padding: 0; color: inherit; font: inherit; }
   .hit:focus-visible { outline: 1px solid var(--ink); outline-offset: 2px; }
 
-  /* --- 上部バー（50） --- */
-  .topbar { position: absolute; left: 0; top: 0; right: 0; height: 40px; border-bottom: 1px solid var(--rule); display: flex; align-items: center; padding-left: 20px; }
-  .logo { color: var(--ink); display: flex; align-items: center; height: 40px; padding-right: 10px; }
+  /* --- 上部バー（ロゴ列 20..50）。窓の外周 20 px はセーフティエリアで、何も置かない。
+     ロゴ列の部品はすべて高さ 30 の行の中央（窓の y 35）に中心をそろえる --- */
+  .topbar { position: absolute; left: 20px; top: 20px; right: 20px; height: 30px; box-shadow: inset 0 -1px 0 var(--rule); display: flex; align-items: center; padding-left: 10px; }
+  .logo { color: var(--ink); display: flex; align-items: center; height: 30px; padding-right: 10px; }
   .vol { display: flex; align-items: center; gap: 8px; margin-left: 20px; width: 170px; }
   .topbar .tbtn-app { height: 18px; padding: 0 8px; border-radius: 9px; }
   .vol .value { width: 24px; text-align: right; }
@@ -135,34 +136,38 @@
   .toggle .label { color: var(--ink2); }
   .toggle[aria-pressed="true"] .label { color: var(--ink); }
   .spacer { flex: 1; }
-  .actions { display: flex; align-items: center; gap: 0; margin-right: 138px; height: 40px; }
+  .actions { display: flex; align-items: center; gap: 0; margin-right: 120px; height: 30px; }
   .tbtn-app { height: 20px; padding: 0 10px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--rule); display: inline-flex; align-items: center; margin-right: 10px; }
   .tbtn-app:hover { box-shadow: inset 0 0 0 1px var(--ink3); }
+  /* 枠のない文字だけのボタン（+ ADD・MORE・+ PLAYLIST） */
+  .tbtn-app.plain, .tbtn-app.plain:hover { box-shadow: none; padding: 0 6px; color: var(--ink2); }
+  .tbtn-app.plain:hover { color: var(--ink); }
   /* 枠付きボタン・EDIT など押せるラベルも、区画名（LIBRARY など）と同じ書体・大きさ・字間にそろえる。
      .hit の font: inherit に負けないよう、ここで明示する */
   .hit.label { font-family: var(--mono); font-weight: 400; font-size: var(--fs-s); letter-spacing: .08em; text-transform: uppercase; }
   .ibtn { width: 26px; height: 26px; display: grid; place-items: center; color: var(--ink2); }
   .ibtn:hover { color: var(--ink); }
-  .caption { position: absolute; right: 0; top: 0; width: 138px; height: 40px; display: flex; color: var(--ink2); }
-  .caption span { flex: 1; display: grid; place-items: center; font-size: var(--fs-s); font-family: var(--mono); }
+  .caption { position: absolute; right: 0; top: 0; width: 120px; height: 30px; display: flex; color: var(--ink2); }
+  .caption span { flex: 1; display: grid; place-items: center; }
 
-  /* --- 中段（50..570） --- */
-  .stage { position: absolute; left: 0; top: 40px; right: 0; height: 530px; display: grid; grid-template-columns: 380px 430px 1fr; }
-  .col { position: relative; padding: 20px; min-width: 0; }
+  /* --- 中段（50..560） --- */
+  .stage { position: absolute; left: 20px; top: 50px; right: 20px; height: 510px; display: grid; grid-template-columns: 360px 430px 1fr; }
+  .col { position: relative; padding: 20px 10px; min-width: 0; }
   .col + .col.q { border-left: 1px solid var(--rule); }
+  .col.q { padding-left: 20px; }
 
-  .album-tag { position: absolute; left: 30px; top: 50px; display: flex; gap: 10px; align-items: center; height: 30px; }
+  .album-tag { position: absolute; left: 10px; top: 50px; display: flex; gap: 10px; align-items: center; height: 30px; }
   .album-tag .thumb { width: 30px; height: 30px; }
   .album-tag .name { font-size: var(--fs-m); line-height: 1.2; }
   .album-tag .meta { margin-top: 4px; }
-  .art { position: absolute; left: 30px; top: 100px; width: 320px; height: 320px; }
-  .art-cap { position: absolute; left: 30px; top: 430px; width: 320px; display: flex; justify-content: space-between; }
+  .art { position: absolute; left: 10px; top: 100px; width: 320px; height: 320px; }
+  .art-cap { position: absolute; left: 10px; top: 430px; width: 320px; display: flex; justify-content: space-between; }
 
   .np { padding: 0; }
   .np .title { position: absolute; left: 20px; top: 100px; width: 390px; font-size: var(--fs-l); line-height: 30px; font-weight: 400; margin: 0; }
   .np .artist { position: absolute; left: 20px; top: 140px; font-size: var(--fs-m); line-height: 20px; color: var(--ink2); margin: 0; }
   .np .format { position: absolute; left: 20px; top: 170px; }
-  /* 再生時間は通常の書体で控えめに（Chivo Mono 300・M 13 px）。全体の長さは ink3 */
+  /* 再生時間は通常の書体で控えめに（Figtree 300・M 13 px）。全体の長さは ink3 */
   .np .clock { position: absolute; left: 20px; top: 270px; display: flex; align-items: baseline; gap: 8px; font-family: var(--mono); font-weight: 300; font-size: var(--fs-m); font-variant-numeric: tabular-nums; line-height: 1; }
   .np .clock #dur { color: var(--ink3); }
   .seek { position: absolute; left: 20px; top: 300px; width: 390px; height: 20px; cursor: pointer; }
@@ -194,16 +199,16 @@
   .qtools .hit { color: var(--ink2); }
   .qtools .hit:hover { color: var(--ink); }
 
-  /* --- 棚（570..820） --- */
-  .shelf { position: absolute; left: 0; right: 0; bottom: 0; height: 250px; border-top: 1px solid var(--rule); }
-  .shelf-bar { height: 50px; display: flex; align-items: center; padding: 0 20px; gap: 20px; }
+  /* --- 棚（560..800） --- */
+  .shelf { position: absolute; left: 20px; right: 20px; bottom: 20px; height: 240px; box-shadow: inset 0 1px 0 var(--rule); }
+  .shelf-bar { height: 50px; display: flex; align-items: center; padding: 0 10px; gap: 20px; }
   .search { display: flex; align-items: center; gap: 8px; width: 300px; height: 20px; border-bottom: 1px solid var(--rule); color: var(--ink3); margin-left: 10px; }
   .search input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; font: var(--fs-m) var(--sans); color: var(--ink); padding: 0; }
   .search input::placeholder { color: var(--ink3); }
   .pill { display: inline-flex; height: 24px; padding: 2px; gap: 2px; background: var(--groove); border-radius: 12px; }
   .pill .hit { height: 20px; min-width: 30px; padding: 0 8px; border-radius: 10px; display: grid; place-items: center; color: var(--ink3); }
   .pill .hit[aria-pressed="true"] { background: var(--plot); box-shadow: inset 0 0 0 1px var(--rule); color: var(--ink); }
-  .cards { display: flex; gap: 20px; padding: 10px 20px 0; overflow: hidden; }
+  .cards { display: flex; gap: 20px; padding: 10px 10px 0; overflow: hidden; }
   .card { width: 140px; flex: none; position: relative; }
   .card .cart { width: 140px; height: 140px; position: relative; }
   .card .type { position: absolute; left: 0; bottom: 0; width: 20px; height: 20px; background: var(--solid); display: grid; place-items: center; color: var(--ink); }
@@ -216,11 +221,21 @@
   .tip { position: fixed; z-index: 100; pointer-events: none; max-width: 300px; background: rgb(17 18 16 / 96%); color: #f4f4f1; border-radius: 3px; padding: 9px 12px 10px; font: 300 var(--fs-m)/1.65 var(--sans); }
   .tip b { display: block; font: 400 var(--fs-s) var(--mono); letter-spacing: .12em; color: var(--accent); margin-bottom: 4px; }
 
-  .about { position: absolute; left: 20px; top: 46px; width: 300px; background: var(--solid); box-shadow: 0 0 0 1px var(--solid-rule); padding: 20px; z-index: 20; display: none; }
+  .about { position: absolute; left: 30px; top: 56px; width: 300px; background: var(--solid); box-shadow: 0 0 0 1px var(--solid-rule); padding: 20px; z-index: 20; display: none; }
   .win[data-about="open"] .about { display: block; }
   .about .row { display: flex; justify-content: space-between; margin-top: 20px; }
   .about p { font-size: var(--fs-m); margin: 14px 0 0; color: var(--ink2); }
   .about .act { margin-top: 20px; }
+
+  /* 設定パネル（右上の歯車から開く） */
+  .settings { left: auto; right: 140px; width: 320px; }
+  .win[data-about="open"] .settings { display: none; }
+  .win[data-settings="open"] .settings { display: block; }
+  .settings .row { align-items: center; }
+  .settings .row:first-child { margin-top: 0; }
+  .settings .acts { display: flex; gap: 10px; margin-top: 10px; justify-content: flex-end; }
+  .settings .path { margin-top: 8px; text-align: right; text-transform: none; letter-spacing: 0; }
+  .settings .pill .hit { min-width: 0; padding: 0 10px; }
 
 
   /* ---------- 下の説明 ---------- */
@@ -297,21 +312,34 @@
           <button class="hit toggle" id="normBtn" aria-pressed="false" data-tip="NORMALIZE|曲ごとの音量差をそろえて再生します"><span class="box"></span><span class="label">Normalize</span></button>
           <span class="spacer"></span>
           <div class="actions">
-            <button class="hit tbtn-app label" data-tip="ADD|音源ファイルを選んでライブラリに取り込みます">+ Add</button>
+            <button class="hit tbtn-app plain label" data-tip="ADD|音源ファイルを選んでライブラリに取り込みます">+ Add</button>
             <button class="hit ibtn" data-icon="mini" data-tip="MINI PLAYER|ミニプレイヤーに切り替え"></button>
-            <button class="hit ibtn" data-icon="folder" data-tip="OPEN FOLDER|保存フォルダを開く"></button>
-            <button class="hit ibtn" data-icon="library" data-tip="LIBRARY|ライブラリの保存先を変更"></button>
             <button class="hit ibtn" id="themeBtn" data-icon="moon" data-tip="NIGHT|ナイトモード切替"></button>
             <button class="hit ibtn" data-icon="trash" data-tip="TRASH|曲をここにドラッグすると音源とジャケットを削除します"></button>
+            <button class="hit ibtn" id="settingsBtn" data-icon="gear" data-tip="SETTINGS|言語・保存フォルダ・保存先の変更"></button>
           </div>
-          <div class="caption" aria-hidden="true"><span>—</span><span>☐</span><span>✕</span></div>
+          <div class="caption" aria-hidden="true"><span><svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 5h10" stroke="currentColor" stroke-width="1.2"/></svg></span><span><svg width="10" height="10" viewBox="0 0 10 10"><rect x=".6" y=".6" width="8.8" height="8.8" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></span><span><svg width="10" height="10" viewBox="0 0 10 10"><path d="M.5 .5l9 9M9.5 .5l-9 9" stroke="currentColor" stroke-width="1.2"/></svg></span></div>
         </header>
 
         <div class="about" id="about">
           <div id="aboutLogo"></div>
           <div class="row"><span class="label">Version</span><span class="value">1.5.0</span></div>
-          <p>最新のバージョンです。</p>
+          <p data-i18n="latest">最新のバージョンです。</p>
           <button class="hit tbtn-app label act">Check update</button>
+        </div>
+
+        <div class="about settings" id="settings">
+          <div class="row"><span class="label">Language</span>
+            <span class="pill" id="langPill">
+              <button class="hit value" data-v="ja" aria-pressed="true">日本語</button>
+              <button class="hit value" data-v="en" aria-pressed="false">English</button>
+            </span>
+          </div>
+          <div class="row"><span class="label">Library</span><span class="meta path">C:\Users\…\Music\PMP1</span></div>
+          <div class="acts">
+            <button class="hit tbtn-app plain label" data-tip="OPEN FOLDER|保存フォルダを開く">Open folder</button>
+            <button class="hit tbtn-app plain label" data-tip="MOVE LIBRARY|ライブラリの保存先を変え、音源とジャケットをそこへ移します">Move library</button>
+          </div>
         </div>
 
         <main class="stage">
@@ -351,7 +379,7 @@
         <footer class="shelf">
           <div class="shelf-bar">
             <div class="head"><span class="label">Library</span></div>
-            <label class="search"><span id="searchIcon"></span><input placeholder="アルバム・曲名・アーティストで検索" aria-label="検索"></label>
+            <label class="search"><span id="searchIcon"></span><input id="searchInput" placeholder="アルバム・曲名・アーティストで検索" aria-label="検索"></label>
             <span class="pill" id="typePill">
               <button class="hit" data-icon="playlist" aria-pressed="true" data-tip="PLAYLIST|プレイリストを並べる"></button>
               <button class="hit" data-icon="album" aria-pressed="true" data-tip="ALBUM|アルバムを並べる"></button>
@@ -362,8 +390,8 @@
               <button class="hit" data-icon="list" aria-pressed="false" data-tip="LIST|リスト表示"></button>
             </span>
             <span class="spacer"></span>
-            <button class="hit tbtn-app label" style="margin:0">More</button>
-            <button class="hit tbtn-app label" style="margin:0">+ Playlist</button>
+            <button class="hit tbtn-app plain label" style="margin:0">More</button>
+            <button class="hit tbtn-app plain label" style="margin:0">+ Playlist</button>
           </div>
           <div class="cards" id="cards"></div>
         </footer>
@@ -397,7 +425,7 @@
       <div class="panel">
         <div id="bigLogo" style="margin-bottom:24px"></div>
         <div class="icons-grid" id="appIcons"></div>
-        <p style="margin-top:18px;font-size:13px">ロゴは 4 × 5 のドットで組み（M だけ 5 列）、最後の「1」だけオレンジ。消灯ドットも小さく薄く描く。アプリのアイコンは 2 段に積んだ「PM / P1」を cell の地に置いたもの。16 px では 1 ドット = 1 ピクセルで組み、ぼやけないようにする。</p>
+        <p style="margin-top:18px;font-size:13px">ロゴは Figtree Bold の文字にし、最後の「1」だけオレンジ。アプリのアイコンは 2 段に積んだ「PM / P1」を cell の地に置いたもの。16 px では 1 ドット = 1 ピクセルで組み、ぼやけないようにする。</p>
       </div>
     </div>
   </div>
@@ -434,7 +462,7 @@
   <div>
     <h2 class="sec"><i>E</i>Japanese fonts</h2>
     <div class="fonts" id="fonts"></div>
-    <p class="meta" style="color:#575854;margin-top:10px;line-height:1.6;text-transform:none;letter-spacing:0;font-size:12px">Noto Sans JP に決定（印の付いたカード）。ほかのカードを押すと、上のメイン画面とミニプレイヤーの和文がその書体に変わります。欧文のラベルと数字は Chivo Mono のまま。Yu Gothic UI 以外はどれも SIL OFL で、アプリに同梱できます（CSP が外部フォントを禁じているので、同梱が前提）。</p>
+    <p class="meta" style="color:#575854;margin-top:10px;line-height:1.6;text-transform:none;letter-spacing:0;font-size:12px">Noto Sans JP に決定（印の付いたカード）。ほかのカードを押すと、上のメイン画面とミニプレイヤーの和文がその書体に変わります。欧文のラベルと数字は Figtree（和文の書体より先に当てる）。Yu Gothic UI 以外はどれも SIL OFL で、アプリに同梱できます（CSP が外部フォントを禁じているので、同梱が前提）。</p>
   </div>
 
   <div class="row2">
@@ -457,12 +485,12 @@
     <div class="panel">
       <h2 class="sec"><i>G</i>Type</h2>
       <div class="swatches">
-        <span>S · 11 px</span><span>ラベル（Chivo Mono 400・大文字）、数字（Chivo Mono 300）、補足（Chivo Mono 300・ink3）、和文の補足</span>
+        <span>S · 11 px</span><span>ラベル（Figtree 400・大文字）、数字（Figtree 300）、補足（Figtree 300・ink3）、和文の補足</span>
         <span>M · 13 px</span><span>和文の本文（Noto Sans JP 400）: アーティスト、曲の一覧、棚、検索、吹き出し</span>
         <span>L · 22 px</span><span>曲名（Noto Sans JP 400）だけ</span>
-        <span>再生時間</span><span>Chivo Mono 300 · M 13 px（全体の長さは ink3）</span>
+        <span>再生時間</span><span>Figtree 300 · M 13 px（全体の長さは ink3）</span>
       </div>
-      <p style="margin-top:14px;font-size:13px">大きさは 3 段だけにして、役割の違いは書体（Chivo Mono / Noto Sans JP）・太さ・色で付ける。和文は 11 px を下回らない。Chivo Mono と Noto Sans JP はアプリに同梱する（CSP が外部フォントを禁じているため）。Noto Sans JP は 1 ウェイトで数 MB あるので、Regular（400）だけを同梱する。</p>
+      <p style="margin-top:14px;font-size:13px">大きさは 3 段だけにして、役割の違いは書体（Figtree / Noto Sans JP）・太さ・色で付ける。和文は 11 px を下回らない。Figtree と Noto Sans JP はアプリに同梱する（CSP が外部フォントを禁じているため）。Noto Sans JP は 1 ウェイトで数 MB あるので、Regular（400）だけを同梱する。</p>
     </div>
   </div>
 
@@ -502,7 +530,9 @@
     return `<svg class="dots" width="${w * p - (p - s)}" height="${h * p - (p - s)}" viewBox="0 0 ${w * p - (p - s)} ${h * p - (p - s)}" aria-hidden="true">${out}</svg>`;
   }
 
-  // ロゴ: 4 × 5（M だけ 5 列）。最後の 1 文字をオレンジに
+  // ロゴは Figtree Bold の文字。最後の 1 文字をオレンジに（cap = 大文字の高さ。Figtree の大文字は 0.700 em）
+  const logoText = (cap, ink = "var(--ink)") => `<span style="display:block;font:700 ${(cap / 0.7).toFixed(2)}px/1 Figtree, sans-serif;letter-spacing:0;color:${ink}">PMP<span style="color:var(--accent)">1</span></span>`;
+  // （アプリアイコン用のドットの字形）
   const LOGO = {
     P: ["###.", "#..#", "###.", "#...", "#..."],
     M: ["#...#", "##.##", "#.#.#", "#...#", "#...#"],
@@ -594,6 +624,8 @@
     pin:     svgF("M14.5 2.5 21.5 9.5l-1.8 1.8-1-.3-3.4 3.4.5 3.2-1.6 1.6-4-4L5 20.4 3.6 19l4.9-5.2-4-4L6.1 8.2l3.2.5 3.4-3.4-.3-1z"),
     restore: `<rect fill="currentColor" x="5" y="11" width="14" height="2" rx="1"/>`,
     close:   svgS("m6 6 12 12M18 6 6 18", 2),
+    gear:    [0, 45, 90, 135, 180, 225, 270, 315].map(a => `<rect fill="currentColor" x="10.5" y="2.5" width="3" height="4" rx=".8" transform="rotate(${a} 12 12)"/>`).join("") +
+             `<circle cx="12" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/>`,
   };
   const iconSvg = (name, px = 18) =>
     `<svg class="dots" width="${px}" height="${px}" viewBox="0 0 24 24" aria-hidden="true">${ICON[name]}</svg>`;
@@ -616,13 +648,14 @@
   // 2 px の溝に、値までを墨で塗る。つまみは 2 × 6 画素の細い柱（2 倍で 4 × 12 px）。
   // つまみの位置は 2 px 単位に揃え、どの値でも輪郭がにじまないようにする
   const KNOB = block(2, 6);
-  function cellRow(el, frac) {
+  const KNOB_S = block(2, 3);   // 音量のつまみ（4 × 6 px）
+  function cellRow(el, frac, knob = KNOB) {
     const w = Math.floor((el.clientWidth || 300) / 2) * 2;
     const kx = Math.round(frac * (w - 4) / 2) * 2;
     el.innerHTML = `<svg width="${w}" height="20" viewBox="0 0 ${w} 20" shape-rendering="crispEdges" aria-hidden="true">
       <rect x="0" y="9" width="${w}" height="2" style="fill:var(--cell-tick)"/>
       <rect x="0" y="9" width="${kx + 2}" height="2" style="fill:var(--ink)"/>
-      <g transform="translate(${kx} 4)" style="color:var(--ink)">${pix(KNOB, 2).replace('class="dots"', "")}</g>
+      <g transform="translate(${kx} ${10 - knob.length})" style="color:var(--ink)">${pix(knob, 2).replace('class="dots"', "")}</g>
     </svg>`;
   }
 
@@ -658,9 +691,9 @@
     `<div class="card ${st}"><div class="cart" style="background:${ART[a]}"><span class="type" data-icon="${ty}"></span></div>
       <div class="nm">${n}</div><div class="meta sb">${s}</div></div>`).join("");
 
-  document.getElementById("logoBtn").innerHTML = dots(logoRows(), { p: 3, s: 2.25, off: true, offScale: 0.5 });
-  document.getElementById("aboutLogo").innerHTML = dots(logoRows(), { p: 7, s: 5.5, off: true, offScale: 0.5 });
-  document.getElementById("bigLogo").innerHTML = `<div style="color:#111210;--cell-off:#d6d7d2">${dots(logoRows(), { p: 14, s: 11, off: true, offScale: 0.45 })}</div>`;
+  document.getElementById("logoBtn").innerHTML = logoText(14);
+  document.getElementById("aboutLogo").innerHTML = logoText(33);
+  document.getElementById("bigLogo").innerHTML = logoText(66, "#111210");
   document.getElementById("volIcon").innerHTML = iconSvg("vol");
   document.getElementById("searchIcon").innerHTML = iconSvg("search", 14);
   paintIcons();
@@ -912,7 +945,7 @@
     const card = e.target.closest(".fcard");
     if (!card) return;
     fontPick = +card.dataset.i;
-    const stack = FONTS[fontPick][1];
+    const stack = "\"Figtree\", " + FONTS[fontPick][1];
     document.getElementById("win").style.fontFamily = stack;
     document.getElementById("mini").style.fontFamily = stack;
     renderFonts();
@@ -924,7 +957,7 @@
   let vol = 0.8, pos = 102, dur = 245, playing = false;
   const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   function render() {
-    cellRow(document.getElementById("volCells"), vol);
+    cellRow(document.getElementById("volCells"), vol, KNOB_S);
     document.getElementById("volV").textContent = Math.round(vol * 100);
     cellRow(document.getElementById("seek"), pos / dur);
     cellRow(document.getElementById("miniSeek"), pos / dur);
@@ -964,7 +997,54 @@
   document.querySelectorAll("#typePill .hit").forEach(toggle);
   document.querySelectorAll("#viewPill .hit").forEach(b => b.addEventListener("click", () =>
     document.querySelectorAll("#viewPill .hit").forEach(x => x.setAttribute("aria-pressed", x === b))));
-  document.getElementById("logoBtn").addEventListener("click", () => (win.dataset.about = win.dataset.about === "open" ? "" : "open"));
+  document.getElementById("logoBtn").addEventListener("click", () => {
+    win.dataset.about = win.dataset.about === "open" ? "" : "open";
+    win.dataset.settings = "";
+  });
+  document.getElementById("settingsBtn").addEventListener("click", () => {
+    win.dataset.settings = win.dataset.settings === "open" ? "" : "open";
+    win.dataset.about = "";
+  });
+
+  // --- 言語（日本語 / English） ---
+  // 曲名などの中身は訳さない。ツールチップの本文・検索欄・パネルの文だけを切り替える
+  let lang = "ja";
+  const EN = {
+    "バージョン情報と更新の確認": "Version info and update check",
+    "ドラッグかホイールで 1 刻み、Shift で細かく。数字のダブルクリックで直接入力": "Drag or scroll in steps of 1, Shift for finer steps. Double-click the number to type a value",
+    "曲ごとの音量差をそろえて再生します": "Evens out loudness between tracks",
+    "音源ファイルを選んでライブラリに取り込みます": "Choose audio files to import into the library",
+    "ミニプレイヤーに切り替え": "Switch to the mini player",
+    "ナイトモード切替": "Toggle night mode",
+    "曲をここにドラッグすると音源とジャケットを削除します": "Drag a track here to delete its audio and cover",
+    "言語・保存フォルダ・保存先の変更": "Language, library folder and location",
+    "保存フォルダを開く": "Open the library folder",
+    "ライブラリの保存先を変え、音源とジャケットをそこへ移します": "Choose a new library location and move the audio and covers there",
+    "いま鳴らしているアルバム。画像を落とすとアルバムのジャケットが変わります": "The album now playing. Drop an image to change its cover",
+    "クリックか画像のドロップで、この曲のジャケットを設定": "Click or drop an image to set this track's cover",
+    "クリックかドラッグで再生位置を変えます": "Click or drag to change the position",
+    "前の曲": "Previous track", "停止": "Stop", "次の曲": "Next track",
+    "しない → 全曲 → 1 曲": "Off → All → One",
+    "ループしない": "Repeat off", "全曲をループ": "Repeat all", "1 曲をループ": "Repeat one",
+    "並びはそのままで、次に鳴らす曲だけを散らします": "Keeps the order, but picks the next track at random",
+    "タイトル・アーティスト・アルバムを直接編集する": "Edit title, artist and album in place",
+    "プレイリストを並べる": "Show playlists", "アルバムを並べる": "Show albums", "シングルを並べる": "Show singles",
+    "グリッド表示": "Grid view", "リスト表示": "List view",
+    "アルバム・曲名・アーティストで検索": "Search albums, titles, artists",
+    "最新のバージョンです。": "You're on the latest version.",
+  };
+  const tr = s => (lang === "en" && EN[s]) || s;
+  const searchInput = document.getElementById("searchInput");
+  const i18nEls = [...document.querySelectorAll("[data-i18n]")].map(el => [el, el.textContent]);
+  function setLang(v) {
+    lang = v;
+    document.documentElement.lang = v;
+    document.querySelectorAll("#langPill .hit").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v));
+    searchInput.placeholder = tr("アルバム・曲名・アーティストで検索");
+    searchInput.setAttribute("aria-label", v === "en" ? "Search" : "検索");
+    i18nEls.forEach(([el, ja]) => (el.textContent = tr(ja)));
+  }
+  document.querySelectorAll("#langPill .hit").forEach(b => b.addEventListener("click", () => setLang(b.dataset.v)));
 
   function setTheme(v) {
     win.dataset.theme = mini.dataset.theme = v;
@@ -996,7 +1076,7 @@
     if (!el) return;
     timer = setTimeout(() => {
       const [h, b] = el.dataset.tip.split("|");
-      tip.innerHTML = `<b>${h}</b>${b || ""}`;
+      tip.innerHTML = `<b>${h}</b>${tr(b || "")}`;
       tip.hidden = false;
       const r = el.getBoundingClientRect(), tw = tip.offsetWidth;
       tip.style.left = Math.min(window.innerWidth - tw - 8, Math.max(8, r.left + r.width / 2 - tw / 2)) + "px";

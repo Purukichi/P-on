@@ -99,7 +99,21 @@ textarea {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: var(--titlebar-height) minmax(0, 1fr) auto;
   height: 100%;
+  /* 外周のセーフティエリア。上部バー・中段・棚はすべてこの内側に収める */
+  padding: var(--safe-area);
   overflow: hidden;
+}
+
+/*
+ * セーフティエリアの上の帯も、上部バーと同じくウィンドウのドラッグに使う
+ * （上部バーが窓の縁から 20 下がったぶん、掴める所が減らないように）
+ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: var(--safe-area);
+  -webkit-app-region: drag;
 }
 
 /*

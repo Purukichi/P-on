@@ -13,6 +13,8 @@ import {
   findCollection
 } from './core/Collections.js'
 import { AboutPanel } from './ui/AboutPanel.js'
+import { SettingsPanel } from './ui/SettingsPanel.js'
+import { localize, t } from './i18n.js'
 import { bindArtistLinks } from './ui/ArtistLinks.js'
 import { CollectionShelf } from './ui/CollectionShelf.js'
 import { DropZones } from './ui/DropZones.js'
@@ -40,8 +42,29 @@ const editor = new TrackEditor(root).mount()
 const nameDialog = new NameDialog(root).mount()
 const dropZones = new DropZones(root).mount()
 const about = new AboutPanel(root).mount()
+new SettingsPanel(root).mount()
 // data-tip を持つものすべての説明を受け持つ（OS 標準の title は使わない）
 new Tooltip(root).mount()
+// 画面の文言を選んだ言語にする（あとから書き込まれる文言も見張って訳す）
+localize(document.body)
+
+// 最小化 / 最大化 / 閉じる（OS には描かせず、上部バーの右端に自前で置いている）
+pick(root, 'window-minimize').addEventListener('click', () => window.hamon.windows.minimize())
+pick(root, 'window-maximize').addEventListener('click', () => window.hamon.windows.toggleMaximize())
+pick(root, 'window-close').addEventListener('click', () => window.hamon.windows.close())
+
+/**
+ * OS 標準の確認ダイアログ。文言は DOM を通らないので、ここで選んだ言語に訳してから渡す。
+ * @param {{message: string, detail?: string, confirmLabel?: string}} options
+ */
+function confirmDialog({ message, detail, confirmLabel = 'OK' }) {
+  return window.hamon.confirm({
+    message: t(message),
+    detail: t(detail),
+    confirmLabel: t(confirmLabel),
+    cancelLabel: t('Cancel')
+  })
+}
 
 /** アルバム / プレイリスト / シングル @type {import('./core/Collections.js').Collection[]} */
 let collections = []
@@ -550,7 +573,7 @@ shelf.on('rename-playlist', async (playlistId) => {
 shelf.on('delete-playlist', async (playlistId) => {
   const playlist = library.getPlaylist(playlistId)
   if (!playlist) return
-  const ok = await window.hamon.confirm({
+  const ok = await confirmDialog({
     message: `Delete the playlist “${playlist.name}”?`,
     detail: 'The tracks stay in your library.',
     confirmLabel: 'Delete'
@@ -860,7 +883,7 @@ async function deleteCollections(collectionIds) {
     .filter(Boolean)
     .join('\n')
 
-  const ok = await window.hamon.confirm({
+  const ok = await confirmDialog({
     message: `Delete ${count(targets.length, 'selected item')}?`,
     detail: `${detail}\nThis can’t be undone.`,
     confirmLabel: 'Delete'
@@ -886,7 +909,7 @@ async function deleteCollection(collectionId) {
   if (!collection) return
 
   if (collection.type === CollectionType.PLAYLIST) {
-    const ok = await window.hamon.confirm({
+    const ok = await confirmDialog({
       message: `Delete the playlist “${collection.name}”?`,
       detail: 'The tracks stay in your library.',
       confirmLabel: 'Delete'
@@ -896,7 +919,7 @@ async function deleteCollection(collectionId) {
   }
 
   const label = collection.type === CollectionType.ALBUM ? 'album' : 'track'
-  const ok = await window.hamon.confirm({
+  const ok = await confirmDialog({
     message: `Delete the ${label} “${collection.name}”?`,
     detail: `The audio files and artwork of ${count(collection.size, 'track')} will be permanently deleted from your library. This can’t be undone.`,
     confirmLabel: 'Delete'
@@ -920,7 +943,7 @@ async function deleteTracks(trackIds, { confirm = true, label = null } = {}) {
   if (tracks.length === 0) return
 
   if (confirm) {
-    const ok = await window.hamon.confirm({
+    const ok = await confirmDialog({
       message: `Delete “${tracks[0].displayTitle}”?`,
       detail: 'The audio file and artwork will be permanently deleted from your library. This can’t be undone.',
       confirmLabel: 'Delete'

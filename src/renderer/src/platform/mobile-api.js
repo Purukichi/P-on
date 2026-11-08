@@ -188,7 +188,7 @@ export function createMobileApi({ store = createMobileStore(), picker = pickFile
       checkUpdate: async () => ({ status: 'unsupported', message: 'Please update the app from where you got it.' })
     },
     player: { publishState: noop, onState: subscribe, sendCommand: noop, onCommand: subscribe, requestState: noop, onStateRequested: subscribe },
-    windows: { openMini: noop, closeMini: noop, quit: noop, setMiniAlwaysOnTop: noop, onMiniHover: subscribe, setTitleBar: noop },
+    windows: { openMini: noop, closeMini: noop, quit: noop, minimize: noop, toggleMaximize: noop, close: noop, setMiniAlwaysOnTop: noop, onMiniHover: subscribe, setTitleBar: noop },
     pathForFile(file) {
       const path = `${key()}/${file.name}`
       droppedFiles.set(path, file)

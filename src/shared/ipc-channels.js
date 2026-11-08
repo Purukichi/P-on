@@ -82,6 +82,10 @@ export const IPC = {
    * マウスイベントが届かない。位置は main 側で見て知らせる。
    */
   WINDOW_MINI_HOVER: 'window:mini-hover',
+  /** メインウィンドウの最小化 / 最大化（元に戻す） / 閉じる */
+  WINDOW_MINIMIZE: 'window:minimize',
+  WINDOW_TOGGLE_MAXIMIZE: 'window:toggle-maximize',
+  WINDOW_CLOSE: 'window:close',
   /** テーマ変更時に、OS が描くタイトルバーの色を本文と揃える */
   WINDOW_SET_TITLEBAR: 'window:set-titlebar'
 }

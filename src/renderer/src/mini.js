@@ -1,6 +1,7 @@
 import './styles/mini.css'
 import { formatTime } from './utils/time.js'
 import { pick, setMarqueeText } from './ui/dom.js'
+import { localize } from './i18n.js'
 
 /**
  * ミニプレイヤー。
@@ -10,6 +11,8 @@ import { pick, setMarqueeText } from './ui/dom.js'
  * だからウィンドウを切り替えても再生は途切れない。
  */
 const root = document.querySelector('#mini')
+// 文言はメインの窓で選んだ言語にそろえる（設定はメインの歯車から。storage で追従）
+localize(document.body)
 
 const el = {
   art: pick(root, 'mini-art'),

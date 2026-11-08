@@ -1,18 +1,24 @@
 /* Desktop layout is unchanged except for macOS window button clearance. */
+/* macOS は OS の信号機ボタン（窓の x 30〜88）を避け、自前の最小化 / 最大化 / 閉じるは出さない */
 html[data-platform='darwin'] .topbar {
-  padding-left: 90px;
-  padding-right: var(--page-gutter);
+  padding-left: 76px;
 }
+html[data-platform='darwin'] .caption { display: none; }
 html[data-platform='mobile'] {
   --surface-alpha: 1 !important;
   --caption-width: 12px;
+  /* スマホは OS の安全領域（env）を body で取るので、自前のセーフティエリアは使わない */
+  --safe-area: 0px;
+  --page-gutter: 30px;
+  --titlebar-height: 40px;
   -webkit-touch-callout: none;
 }
 html[data-platform='mobile'] body {
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 html[data-platform='mobile'] .app { overflow: clip; }
-html[data-platform='mobile'] .topbar { -webkit-app-region: no-drag; }
+html[data-platform='mobile'] .topbar { -webkit-app-region: no-drag; padding-right: var(--caption-width); }
+html[data-platform='mobile'] .caption { display: none; }
 html[data-platform='mobile'] [data-el='open-mini'],
 html[data-platform='mobile'] [data-el='open-folder'],
 html[data-platform='mobile'] [data-el='change-library'] { display: none; }
