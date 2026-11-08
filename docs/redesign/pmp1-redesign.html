@@ -68,7 +68,7 @@
   /* ---------- PMP1 の窓 ---------- */
   .win {
     /* 面の透過率（Settings の「透け具合」）。低いほどデスクトップが透ける */
-    --alpha: 0.62;
+    --alpha: 0.55;
     --cell-rgb: 232 233 229;
     --ink-rgb: 17 18 16;
     --surface: rgb(var(--cell-rgb) / var(--alpha));
@@ -123,10 +123,11 @@
   .hit { cursor: pointer; background: none; border: 0; padding: 0; color: inherit; font: inherit; }
   .hit:focus-visible { outline: 1px solid var(--ink); outline-offset: 2px; }
 
-  /* --- 上部バー（ロゴ列 10..40）。窓の外周はセーフティエリア（上 10・左右下 20）で、何も置かない。
-     ロゴ列の部品はすべて高さ 30 の行の中央（窓の y 25）に中心をそろえる --- */
-  .topbar { position: absolute; left: 20px; top: 10px; right: 20px; height: 30px; box-shadow: inset 0 -1px 0 var(--rule); display: flex; align-items: center; padding-left: 10px; }
-  .logo { color: var(--ink); display: flex; align-items: center; height: 30px; padding-right: 10px; }
+  /* --- 上部バー（ロゴ列 0..40）。窓の上端から始め、左右下の外周 20 px はセーフティエリアで何も置かない。
+     ロゴ列の部品はすべて高さ 40 の行の中央（窓の y 20）に中心をそろえる。
+     最小化 / 最大化 / 閉じるのホバーの四角が、窓の上端からバーの下の線までを埋める --- */
+  .topbar { position: absolute; left: 20px; top: 0; right: 20px; height: 40px; box-shadow: inset 0 -1px 0 var(--rule); display: flex; align-items: center; padding-left: 10px; }
+  .logo { color: var(--ink); display: flex; align-items: center; height: 40px; padding-right: 10px; }
   .vol { display: flex; align-items: center; gap: 8px; margin-left: 20px; width: 170px; }
   .topbar .tbtn-app { height: 18px; padding: 0 8px; border-radius: 9px; }
   .vol .value { width: 24px; text-align: right; }
@@ -136,7 +137,7 @@
   .toggle .label { color: var(--ink2); }
   .toggle[aria-pressed="true"] .label { color: var(--ink); }
   .spacer { flex: 1; }
-  .actions { display: flex; align-items: center; gap: 0; margin-right: 120px; height: 30px; }
+  .actions { display: flex; align-items: center; gap: 0; margin-right: 120px; height: 40px; }
   .tbtn-app { height: 20px; padding: 0 10px; border-radius: 10px; box-shadow: inset 0 0 0 1px var(--rule); display: inline-flex; align-items: center; margin-right: 10px; }
   .tbtn-app:hover { box-shadow: inset 0 0 0 1px var(--ink3); }
   /* 枠のない文字だけのボタン（+ ADD・MORE・+ PLAYLIST） */
@@ -147,8 +148,9 @@
   .hit.label { font-family: var(--mono); font-weight: 400; font-size: var(--fs-s); letter-spacing: .08em; text-transform: uppercase; }
   .ibtn { width: 26px; height: 26px; display: grid; place-items: center; color: var(--ink2); }
   .ibtn:hover { color: var(--ink); }
-  .caption { position: absolute; right: 0; top: 0; width: 120px; height: 30px; display: flex; color: var(--ink2); }
+  .caption { position: absolute; right: 0; top: 0; width: 120px; height: 40px; display: flex; color: var(--ink2); }
   .caption span { flex: 1; display: grid; place-items: center; }
+  .caption span:hover { background: rgb(var(--ink-rgb) / 6%); color: var(--ink); }
 
   /* --- 中段（40..560） --- */
   .stage { position: absolute; left: 20px; top: 40px; right: 20px; height: 520px; display: grid; grid-template-columns: 360px 430px 1fr; }
@@ -242,7 +244,7 @@
   .row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px; align-items: start; }
   .panel { background: var(--p-cell); border: 1px solid var(--p-rule); padding: 20px; }
   .mini-desk { padding: 30px; display: flex; gap: 30px; flex-wrap: wrap; align-items: flex-start; border-radius: 4px; }
-  .mini { --alpha: 0.62; width: 300px; height: 300px; position: relative; overflow: hidden; outline: 1px solid rgb(0 0 0 / 18%); }
+  .mini { --alpha: 0.55; width: 300px; height: 300px; position: relative; overflow: hidden; outline: 1px solid rgb(0 0 0 / 18%); }
   .mini .art { position: absolute; inset: 0; width: 300px; height: 300px; left: 0; top: 0; }
   .mini .mp { position: absolute; left: 0; right: 0; bottom: 0; height: 130px; background: var(--solid); box-shadow: 0 -1px 0 var(--solid-rule); padding: 16px 20px 0; }
   .mini .mp .nm { font-size: var(--fs-m); line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -285,15 +287,15 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="eyebrow"><span>PMP1 · desktop player</span><span>Redesign proposal · v2</span><span>1240 × 820 · 10px module</span></div>
+    <div class="eyebrow"><span>PMP1 · desktop player</span><span>Design · as of 2.0.6</span><span>1240 × 820 · 10px module · safe area 0 / 20</span></div>
     <h1>PMP1 Redesign</h1>
-    <p class="lede">P-on を PC1 の規則（グリッド・無彩色・信号オレンジ 1 色・極細の罫線）で組み直し、名前を PMP1 に変えた案です。v2 ではロゴとアプリアイコンのドットはそのままに、ボタン・スライダー・再生時間・ファイルアイコンを、すき間のないピクセルアートの SVG に描き直しました。窓の面は従来どおり Windows のアクリルの上に半透明で塗り、デスクトップが透けます。罫線やスライダーの溝は墨の半透明にしてあるので、どの壁紙でも同じ階調に見えます。下の壁紙と透過率を切り替えて確かめてください。再生・音量・シーク・ループ・シャッフル・自動調整・ロゴ（情報パネル）は操作できます。</p>
+    <p class="lede">P-on を PC1 の規則（グリッド・無彩色・信号オレンジ 1 色・極細の罫線）で組み直し、名前を PMP1 に変えたデザインです。このモックは公開中の 2.0.6 と同じ内容にそろえてあります。欧文とロゴは Figtree（ロゴは Bold の文字）、和文は Noto Sans JP。窓の外周は上 10 px・左右下 20 px のセーフティエリアで、ロゴ列の部品はすべて中心を窓の y 25 にそろえています。最小化 / 最大化 / 閉じるはアプリが自前で描き、歯車の設定パネルに言語（English / 日本語）・フォルダを開く・保存先の変更をまとめています。窓の面は Windows のアクリルの上に半透明で塗り、デスクトップが透けます（下の壁紙と透過率で確かめられます）。再生・音量・シーク・ループ・シャッフル・自動調整・ロゴ（バージョン情報）・歯車（設定）は操作できます。</p>
   </header>
 
   <div class="toolbar" role="group" aria-label="表示の切り替え">
     <span class="seg" id="themeSeg"><button data-v="light" aria-pressed="true">Light</button><button data-v="night" aria-pressed="false">Night</button></span>
     <span class="seg" id="wallSeg"><button data-v="garden" aria-pressed="true">Wall A</button><button data-v="night" aria-pressed="false">Wall B</button><button data-v="busy" aria-pressed="false">Wall C</button></span>
-    <label>Surface <input class="plain" type="range" id="alpha" min="0.2" max="1" step="0.01" value="0.62"><span id="alphaV">62%</span></label>
+    <label>Surface <input class="plain" type="range" id="alpha" min="0.2" max="1" step="0.01" value="0.55"><span id="alphaV">55%</span></label>
     <button class="tbtn" id="gridBtn" aria-pressed="false">Grid overlay</button>
   </div>
 
@@ -312,7 +314,7 @@
           <button class="hit toggle" id="normBtn" aria-pressed="false" data-tip="NORMALIZE|曲ごとの音量差をそろえて再生します"><span class="box"></span><span class="label">Normalize</span></button>
           <span class="spacer"></span>
           <div class="actions">
-            <button class="hit tbtn-app plain label" data-tip="ADD|音源ファイルを選んでライブラリに取り込みます">+ Add</button>
+            <button class="hit tbtn-app plain label" data-tip="ADD MUSIC|音源ファイルを選んでライブラリに取り込みます">Add music</button>
             <button class="hit ibtn" data-icon="mini" data-tip="MINI PLAYER|ミニプレイヤーに切り替え"></button>
             <button class="hit ibtn" id="themeBtn" data-icon="moon" data-tip="NIGHT|ナイトモード切替"></button>
             <button class="hit ibtn" data-icon="trash" data-tip="TRASH|曲をここにドラッグすると音源とジャケットを削除します"></button>
@@ -323,9 +325,9 @@
 
         <div class="about" id="about">
           <div id="aboutLogo"></div>
-          <div class="row"><span class="label">Version</span><span class="value">1.5.0</span></div>
+          <div class="row"><span class="label">Version</span><span class="value">2.0.6</span></div>
           <p data-i18n="latest">最新のバージョンです。</p>
-          <button class="hit tbtn-app label act">Check update</button>
+          <button class="hit tbtn-app label act">Check for updates</button>
         </div>
 
         <div class="about settings" id="settings">
@@ -390,7 +392,7 @@
               <button class="hit" data-icon="list" aria-pressed="false" data-tip="LIST|リスト表示"></button>
             </span>
             <span class="spacer"></span>
-            <button class="hit tbtn-app plain label" style="margin:0">More</button>
+            <button class="hit tbtn-app plain label" style="margin:0">Show more</button>
             <button class="hit tbtn-app plain label" style="margin:0">+ Playlist</button>
           </div>
           <div class="cards" id="cards"></div>
@@ -469,7 +471,7 @@
     <div class="panel">
       <h2 class="sec"><i>F</i>Tokens</h2>
       <div class="swatches">
-        <span><span class="sw" style="background:#e8e9e5"></span>surface</span><span>cell #E8E9E5 × 透過率（既定 62%）。下はアクリル</span>
+        <span><span class="sw" style="background:#e8e9e5"></span>surface</span><span>cell #E8E9E5 × 透過率（55%）。下はアクリル</span>
         <span><span class="sw" style="background:rgb(17 18 16/16%)"></span>rule</span><span>ink 16% · 1 px（画面の 1 ピクセルを下回らない）</span>
         <span><span class="sw" style="background:rgb(17 18 16/8%)"></span>cellOff</span><span>ink 8% · 消灯セル</span>
         <span><span class="sw" style="background:rgb(17 18 16/30%)"></span>litCell</span><span>ink 30% · 点灯セル（シーク・音量）</span>
@@ -486,6 +488,7 @@
       <h2 class="sec"><i>G</i>Type</h2>
       <div class="swatches">
         <span>S · 11 px</span><span>ラベル（Figtree 400・大文字）、数字（Figtree 300）、補足（Figtree 300・ink3）、和文の補足</span>
+        <span>ロゴ</span><span>Figtree 700 · 大文字の高さ 14 px（20 px）。最後の「1」だけ accent</span>
         <span>M · 13 px</span><span>和文の本文（Noto Sans JP 400）: アーティスト、曲の一覧、棚、検索、吹き出し</span>
         <span>L · 22 px</span><span>曲名（Noto Sans JP 400）だけ</span>
         <span>再生時間</span><span>Figtree 300 · M 13 px（全体の長さは ink3）</span>
@@ -495,15 +498,15 @@
   </div>
 
   <div class="panel" style="background:#f4f4f1">
-    <h2 class="sec"><i>H</i>決めていただきたいこと</h2>
+    <h2 class="sec"><i>H</i>2.0.6 までに決まったこと</h2>
     <ol class="q">
-      <li><b>改名の範囲</b>: 画面上の名前・ウィンドウ名・インストーラーの製品名は PMP1 にします。ただしライブラリの保存フォルダ名（今は「P-on」）、GitHub のリポジトリ名（自動更新の配信元）、Windows のアプリ ID を変えると、既存の利用者のライブラリが見えなくなったり自動更新が途切れたりします。これらは据え置き（中身の識別子だけ P-on のまま）でよいですか。</li>
-      <li><b>ナイトモード</b>: PC1 は明るい 1 種類だけですが、P-on にはナイトモードがあるので、反転した配色で残す案にしています（上の Night で確認できます）。残しますか。</li>
-      <li><b>アクセント</b>: 深緑をやめて信号オレンジ 1 色にします。使うのは再生中の曲の印・オンのトグル（自動調整・ループ・シャッフル・最前面）・ロゴの「1」だけです。</li>
-      <li><b>ファイルアイコン</b>: 拡張子ごとの色分けをやめ、同じ図柄に拡張子のドット文字を添える形にしています。色分けを残したい場合は、メーターの柱をグレーの濃淡で変える案も作れます。</li>
-      <li><b>アプリアイコン</b>: 今の葉の写真をやめて、ドットのロゴだけにします。</li>
-      <li><b>文字の大きさ</b>: 上の E の寸法でよいですか（もう一段小さくすることもできます）。</li>
-      <li><b>バージョン</b>: 名前が変わるので 1.5.0 にする想定です。スマホ版（Android / iOS）の表示名も PMP1 にしてよいですか。</li>
+      <li><b>名前</b>: 画面・ウィンドウ・インストーラーは PMP1。ライブラリの保存フォルダ（P-on）・配信元のリポジトリ・アプリ ID は据え置き。</li>
+      <li><b>配色</b>: ライトとナイトの 2 つ。アクセントは信号オレンジ 1 色だけで、再生中の印・オンのトグル・ロゴの「1」に使う。</li>
+      <li><b>書体</b>: 欧文とロゴは Figtree、和文は Noto Sans JP（どちらもアプリに同梱）。</li>
+      <li><b>ボタン</b>: ADD MUSIC・SHOW MORE・+ PLAYLIST は枠のない文字だけのボタン。音量のつまみは 4 × 6 px（シークの半分の高さ）。</li>
+      <li><b>設定</b>: 上部バーの歯車から開くパネルに、言語（English / 日本語）・フォルダを開く・保存先の変更をまとめる。言語はミニプレイヤーにも効く。曲名などの中身は訳さない。</li>
+      <li><b>セーフティエリア</b>: 上辺は空けず、左右下の外周 20 px には何も置かない。ロゴ列（y 0〜40）の部品は中心を y 20 にそろえ、窓のボタンのホバーの四角は帯いっぱい。最小化 / 最大化 / 閉じるは自前で描く（Windows 11 のスナップレイアウトの一覧は出ない）。</li>
+      <li><b>アプリアイコン</b>: 2 段に積んだドットの「PM / P1」（B を参照）。</li>
     </ol>
   </div>
 </div>
