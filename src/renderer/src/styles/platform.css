@@ -9,6 +9,7 @@ html[data-platform='mobile'] {
   --caption-width: 12px;
   /* スマホは OS の安全領域（env）を body で取るので、自前のセーフティエリアは使わない */
   --safe-area: 0px;
+  --safe-area-top: 0px;
   --page-gutter: 30px;
   --titlebar-height: 40px;
   -webkit-touch-callout: none;

@@ -84,12 +84,12 @@ export function createMainWindow() {
     /*
      * タイトルバーは自前の面に溶け込ませる。
      * 最小化 / 最大化 / 閉じるも OS には描かせず、ページ側（上部バーの右端）で描く。
-     * OS のボタンは窓の右上の角に固定されてしまい、外周のセーフティエリア（20 px）の内側や
-     * ロゴ列の中央（窓の y 35）にそろえられないため。
+     * OS のボタンは窓の右上の角に固定されてしまい、外周のセーフティエリアの内側や
+     * ロゴ列の中央（窓の y 25）にそろえられないため。
      * macOS だけは信号機ボタンを残し、ロゴ列の中央にそろう位置へずらす（ボタンの高さは 12）。
      */
     titleBarStyle: 'hidden',
-    trafficLightPosition: process.platform === 'darwin' ? { x: 30, y: 29 } : undefined,
+    trafficLightPosition: process.platform === 'darwin' ? { x: 30, y: 19 } : undefined,
     autoHideMenuBar: true,
     webPreferences: SHARED_WEB_PREFERENCES()
   })

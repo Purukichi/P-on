@@ -123,9 +123,9 @@
   .hit { cursor: pointer; background: none; border: 0; padding: 0; color: inherit; font: inherit; }
   .hit:focus-visible { outline: 1px solid var(--ink); outline-offset: 2px; }
 
-  /* --- 上部バー（ロゴ列 20..50）。窓の外周 20 px はセーフティエリアで、何も置かない。
-     ロゴ列の部品はすべて高さ 30 の行の中央（窓の y 35）に中心をそろえる --- */
-  .topbar { position: absolute; left: 20px; top: 20px; right: 20px; height: 30px; box-shadow: inset 0 -1px 0 var(--rule); display: flex; align-items: center; padding-left: 10px; }
+  /* --- 上部バー（ロゴ列 10..40）。窓の外周はセーフティエリア（上 10・左右下 20）で、何も置かない。
+     ロゴ列の部品はすべて高さ 30 の行の中央（窓の y 25）に中心をそろえる --- */
+  .topbar { position: absolute; left: 20px; top: 10px; right: 20px; height: 30px; box-shadow: inset 0 -1px 0 var(--rule); display: flex; align-items: center; padding-left: 10px; }
   .logo { color: var(--ink); display: flex; align-items: center; height: 30px; padding-right: 10px; }
   .vol { display: flex; align-items: center; gap: 8px; margin-left: 20px; width: 170px; }
   .topbar .tbtn-app { height: 18px; padding: 0 8px; border-radius: 9px; }
@@ -150,8 +150,8 @@
   .caption { position: absolute; right: 0; top: 0; width: 120px; height: 30px; display: flex; color: var(--ink2); }
   .caption span { flex: 1; display: grid; place-items: center; }
 
-  /* --- 中段（50..560） --- */
-  .stage { position: absolute; left: 20px; top: 50px; right: 20px; height: 510px; display: grid; grid-template-columns: 360px 430px 1fr; }
+  /* --- 中段（40..560） --- */
+  .stage { position: absolute; left: 20px; top: 40px; right: 20px; height: 520px; display: grid; grid-template-columns: 360px 430px 1fr; }
   .col { position: relative; padding: 20px 10px; min-width: 0; }
   .col + .col.q { border-left: 1px solid var(--rule); }
   .col.q { padding-left: 20px; }
@@ -221,7 +221,7 @@
   .tip { position: fixed; z-index: 100; pointer-events: none; max-width: 300px; background: rgb(17 18 16 / 96%); color: #f4f4f1; border-radius: 3px; padding: 9px 12px 10px; font: 300 var(--fs-m)/1.65 var(--sans); }
   .tip b { display: block; font: 400 var(--fs-s) var(--mono); letter-spacing: .12em; color: var(--accent); margin-bottom: 4px; }
 
-  .about { position: absolute; left: 30px; top: 56px; width: 300px; background: var(--solid); box-shadow: 0 0 0 1px var(--solid-rule); padding: 20px; z-index: 20; display: none; }
+  .about { position: absolute; left: 30px; top: 46px; width: 300px; background: var(--solid); box-shadow: 0 0 0 1px var(--solid-rule); padding: 20px; z-index: 20; display: none; }
   .win[data-about="open"] .about { display: block; }
   .about .row { display: flex; justify-content: space-between; margin-top: 20px; }
   .about p { font-size: var(--fs-m); margin: 14px 0 0; color: var(--ink2); }
